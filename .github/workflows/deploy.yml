@@ -23,22 +23,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Bring in the app files (first run only)
-        if: hashFiles('index.html') == ''
-        env:
-          BUILD_URL: https://d.uguu.se/TZiJHLAD.txt
-          BUILD_SHA256: 6e51b2c3992993fb8241a896943f0331909124be3c4a3134c23710cb4dc5dab9
+      - name: Pull in a new build if one is queued
+        if: hashFiles('.build-source') != ''
         run: |
+          BUILD_URL=$(sed -n 1p .build-source)
+          BUILD_SHA256=$(sed -n 2p .build-source)
           curl -fsSL "$BUILD_URL" -o build.txt
           base64 -d build.txt > build.zip
           echo "$BUILD_SHA256  build.zip" | sha256sum -c -
           unzip -o build.zip
           cp -r holdem-table/. .
-          rm -rf holdem-table build.zip build.txt
+          rm -rf holdem-table build.zip build.txt .build-source
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Add Hold'em Table app files"
+          git commit -m "Apply queued build"
           git push
 
       - uses: actions/configure-pages@v5
