@@ -12,7 +12,6 @@
 <meta name="apple-mobile-web-app-title" content="Hold'em">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Serif+Display&display=swap" rel="stylesheet">
@@ -318,7 +317,7 @@ input,select{padding:10px 12px;border-radius:12px;border:1px solid var(--line);b
 .avbig{width:140px;height:140px;border-radius:32px;overflow:hidden;margin:4px auto 12px;box-shadow:0 10px 24px rgba(0,0,0,.25)}
 .avbig svg{width:100%;height:100%;display:block}
 .avrows{display:grid;gap:6px}
-.avrow{display:grid;grid-template-columns:96px 34px 1fr 34px;align-items:center;gap:6px;font-size:.9rem}
+.avrow{display:grid;grid-template-columns:92px 34px 1fr 34px;align-items:center;gap:6px;font-size:.9rem}
 .avrow .avl{color:var(--muted);font-weight:700}
 .avrow .avv{text-align:center;text-transform:capitalize}
 .avrow .mini{height:32px;font-size:1.1rem;margin:0}
@@ -1137,93 +1136,180 @@ function seeded(seed){return function(){seed=(seed*1664525+1013904223)>>>0;retur
 var SKINS=["#f6d5b8","#eec29b","#d9a47a","#b97f55","#8d5a3b","#61402a"];
 var HAIRC=["#1d1a17","#3b2a1d","#6b4423","#a0612b","#c9a050","#d8d2c4","#8a8580","#b8322a"];
 function avatarSVG(a,mood){a=moodify(a,mood);
-  var sk=a.skin||"#eec29b",hc=a.hairColor||"#3b2a1d",o=[],cloth=a.cloth||"#2b3a55";
-  var rx=a.shape==="long"?14:a.shape==="square"?17:18,ry=a.shape==="long"?21:a.shape==="square"?18:19,cy=33;
+  var sk=a.skin||"#eec29b",hc=a.hairColor||"#3b2a1d",cloth=a.cloth||"#2b3a55",hat=a.hat||"none",hatC=a.hatColor||"#b8322a",o=[];
+  var rx=a.shape==="long"?14:a.shape==="square"?17:18,ry=a.shape==="long"?21:a.shape==="square"?18:19,cy=33,top=cy-ry,L=32-rx,R=32+rx;
+  var hcD=shade(hc,-28),hcL=shade(hc,40),skD=shade(sk,-22);
+  function P(d,f,extra){o.push("<path d='"+d+"' fill='"+f+"'"+(extra||"")+"/>");}
+  function cap(h,col){return "M"+(L-1)+" "+(cy-3)+"C"+(L-2)+" "+(top-4)+" "+(R+2)+" "+(top-4)+" "+(R+1)+" "+(cy-3)+"L"+(R-1)+" "+(cy-6)+"C"+(R-3)+" "+(top+h)+" "+(L+3)+" "+(top+h)+" "+(L+1)+" "+(cy-6)+"Z";}
+  /* background */
   o.push("<rect width='64' height='64' fill='"+(a.bg||"#2a3b34")+"'/><circle cx='48' cy='10' r='18' fill='rgba(255,255,255,.07)'/>");
-  o.push("<rect x='26' y='"+(cy+ry-8)+"' width='12' height='14' rx='4' fill='"+shade(sk,-22)+"'/>");
-  o.push("<path d='M8 64c2-11 12-15 24-15s22 4 24 15z' fill='"+cloth+"'/>");
-  if(a.extra==="bowtie")o.push("<path d='M26 52l6 3 6-3v6l-6-3-6 3z' fill='#c8102e'/>");
-  if(a.extra==="chain")o.push("<path d='M22 52q10 8 20 0' stroke='#e5c040' stroke-width='2' fill='none'/>");
-  if(a.extra==="pearls")o.push([24,28,32,36,40].map(function(x,k){return "<circle cx='"+x+"' cy='"+(52+(k===2?3:k%4===0?0:2))+"' r='1.8' fill='#fff8ec'/>";}).join(""));
-  if(a.extra==="scarf")o.push("<path d='M20 50q12 6 24 0l2 5q-14 7-28 0z' fill='#d2453a'/>");
-  if(a.extra==="collar")o.push("<path d='M18 50l14 6 14-6 4 8-18 2-18-2z' fill='#f2f2f2'/><path d='M24 52l8 4 8-4' stroke='#c9a14a' stroke-width='1.5' fill='none'/>");
-  if(a.hair==="long"||a.hair==="bob")o.push("<ellipse cx='32' cy='"+(cy+2)+"' rx='"+(rx+4)+"' ry='"+(ry+3)+"' fill='"+hc+"'/>");
-  if(a.hair==="bouffant")o.push("<ellipse cx='32' cy='"+(cy-8)+"' rx='"+(rx+8)+"' ry='"+(ry+2)+"' fill='"+hc+"'/>");
-  o.push("<ellipse cx='"+(32-rx)+"' cy='"+(cy+1)+"' rx='3.5' ry='5' fill='"+sk+"'/><ellipse cx='"+(32+rx)+"' cy='"+(cy+1)+"' rx='3.5' ry='5' fill='"+sk+"'/>");
-  if(a.shape==="square")o.push("<rect x='"+(32-rx)+"' y='"+(cy-ry)+"' width='"+(rx*2)+"' height='"+(ry*2)+"' rx='9' fill='"+sk+"'/>");
+  var hair=a.hair||"none";if(hair==="sideburns"){hair="short";}
+  /* back hair */
+  var jaw=cy+ry*0.45;
+  if(hair==="bob")P("M"+(L-4)+" "+(cy-4)+"C"+(L-6)+" "+(top-7)+" "+(R+6)+" "+(top-7)+" "+(R+4)+" "+(cy-4)+"L"+(R+4)+" "+jaw+"Q"+(R+1)+" "+(jaw+5)+" "+(R-3)+" "+jaw+"L"+(L+3)+" "+jaw+"Q"+(L-1)+" "+(jaw+5)+" "+(L-4)+" "+jaw+"Z",hc);
+  if(hair==="long"||hair==="braids")P("M"+(L-4)+" "+(cy-4)+"C"+(L-6)+" "+(top-7)+" "+(R+6)+" "+(top-7)+" "+(R+4)+" "+(cy-4)+"C"+(R+7)+" "+(cy+12)+" "+(R+6)+" "+(cy+ry+4)+" "+(R+2)+" "+(cy+ry+9)+"L"+(L-2)+" "+(cy+ry+9)+"C"+(L-6)+" "+(cy+ry+4)+" "+(L-7)+" "+(cy+12)+" "+(L-4)+" "+(cy-4)+"Z",hc);
+  if(hair==="mullet")P("M"+(L)+" "+(cy-2)+"L"+(R)+" "+(cy-2)+"L"+(R+3)+" "+(cy+ry+6)+"Q32 "+(cy+ry+10)+" "+(L-3)+" "+(cy+ry+6)+"Z",hc);
+  if(hair==="afro")o.push("<circle cx='32' cy='"+(top+8)+"' r='"+(rx+10)+"' fill='"+hc+"'/>");
+  if(hair==="curly"){for(var t=0;t<=8;t++){var ang=Math.PI*(1+t/8),cx2=32+(rx+3)*Math.cos(ang),cy2=cy-2+(ry+2)*Math.sin(ang);o.push("<circle cx='"+cx2.toFixed(1)+"' cy='"+cy2.toFixed(1)+"' r='6.5' fill='"+hc+"'/>");}}
+  if(hair==="bouffant")o.push("<ellipse cx='32' cy='"+(top+3)+"' rx='"+(rx+7)+"' ry='13' fill='"+hc+"'/>");
+  if(hair==="bun")o.push("<circle cx='32' cy='"+(top-4)+"' r='7' fill='"+hc+"'/><circle cx='30' cy='"+(top-6)+"' r='2' fill='"+hcL+"' opacity='.5'/>");
+  if(hair==="ponytail")P("M"+(R-2)+" "+(top+4)+"C"+(R+10)+" "+(top+2)+" "+(R+11)+" "+(cy+8)+" "+(R+5)+" "+(cy+16)+"C"+(R+6)+" "+(cy+6)+" "+(R+3)+" "+(top+10)+" "+(R-4)+" "+(top+8)+"Z",hc);
+  /* body and outfit */
+  var of=a.outfit||"tee",body="M8 64c2-11 12-15 24-15s22 4 24 15z";
+  if(of==="tank"){P(body,sk);P("M20 64c1-7 3-12 6-14l3 1c-2 4-3 9-3 13zM44 64c-1-7-3-12-6-14l-3 1c2 4 3 9 3 13z",cloth);P("M24 64c1-5 3-9 8-9s7 4 8 9z",cloth);}
+  else{var bc=of==="tux"?"#141414":of==="leather"?"#1d1d1f":cloth;P(body,bc);
+    if(of==="suit"||of==="tux"){P("M27 49l5 11 5-11z","#f4f4f4");P("M24 50l8 13-5-1-6-9zM40 50l-8 13 5-1 6-9z",shade(bc,-18));}
+    if(of==="hoodie"){o.push("<path d='M18 52q14 9 28 0' stroke='"+shade(cloth,-25)+"' stroke-width='4' fill='none'/><path d='M29 54v7M35 54v7' stroke='#f2f2f2' stroke-width='1.3'/>");}
+    if(of==="leather"){P("M26 49l6 8 6-8-2 9-4 2-4-2z","#2c2c2e");o.push("<path d='M32 57v7' stroke='#9a9a9a' stroke-width='1'/><path d='M14 58q4-5 10-6' stroke='rgba(255,255,255,.18)' stroke-width='1.5' fill='none'/>");}
+    if(of==="hawaiian"){[[16,57],[24,61],[40,58],[48,61],[34,62],[20,63]].forEach(function(q,k){o.push("<circle cx='"+q[0]+"' cy='"+q[1]+"' r='2.2' fill='"+["#ffd54a","#ff7a9a","#ffffff"][k%3]+"'/>");});P("M27 49l5 7 5-7z",shade(cloth,30));}
+    if(of==="flannel"){o.push("<path d='M12 56h40M10 60h44M20 50v14M28 49v15M36 49v15M44 50v14' stroke='rgba(0,0,0,.25)' stroke-width='1.5'/>");}
+    if(of==="overalls"){o.push("<rect x='22' y='55' width='20' height='9' rx='2' fill='#3b5b8a'/><path d='M24 56l-3-7M40 56l3-7' stroke='#3b5b8a' stroke-width='3'/><circle cx='24' cy='57' r='1' fill='#e5c040'/><circle cx='40' cy='57' r='1' fill='#e5c040'/>");}
+    if(of==="jersey"){o.push("<path d='M26 49l6 6 6-6' stroke='#f2f2f2' stroke-width='2' fill='none'/><text x='32' y='63' font-size='7' font-weight='800' text-anchor='middle' fill='#f2f2f2' font-family='sans-serif'>23</text>");}
+  }
+  /* neck */
+  o.push("<rect x='26' y='"+(cy+ry-8)+"' width='12' height='14' rx='4' fill='"+skD+"'/>");
+  if(of==="turtleneck")o.push("<rect x='24' y='"+(cy+ry-3)+"' width='16' height='10' rx='4' fill='"+shade(cloth,-12)+"'/>");
+  var ex=a.extra||"none";
+  if(ex==="bowtie"||of==="tux")P("M26 52l6 3 6-3v6l-6-3-6 3z","#c8102e");
+  if(ex==="tie")P("M30 50h4l-1 3 3 9-4 3-4-3 3-9z","#c8102e");
+  if(ex==="chain")o.push("<path d='M22 52q10 8 20 0' stroke='#e5c040' stroke-width='2' fill='none'/><circle cx='32' cy='57.5' r='2' fill='#e5c040'/>");
+  if(ex==="pearls")o.push([24,28,32,36,40].map(function(x,k){return "<circle cx='"+x+"' cy='"+(52+(k===2?3:k===1||k===3?2:0))+"' r='1.8' fill='#fff8ec'/>";}).join(""));
+  if(ex==="scarf")P("M20 50q12 6 24 0l2 5q-14 7-28 0zM38 54l3 9-5 1-1-8z","#d2453a");
+  if(ex==="bandana")P("M21 50q11 7 22 0l-11 12z","#c8102e");
+  if(ex==="collar")o.push("<path d='M18 50l14 6 14-6 4 8-18 2-18-2z' fill='#f2f2f2'/>");
+  if(ex==="medal")o.push("<path d='M29 50l3 7 3-7' stroke='#1e63d0' stroke-width='2.5' fill='none'/><circle cx='32' cy='59' r='3.2' fill='#e5c040' stroke='#b8862b'/>");
+  if(ex==="lei")o.push([18,22,26,30,34,38,42,46].map(function(x,k){return "<circle cx='"+x+"' cy='"+(51+Math.sin(k/7*Math.PI)*5).toFixed(1)+"' r='2.4' fill='"+["#ff7a9a","#ffd54a","#ffffff","#ff9a4a"][k%4]+"'/>";}).join(""));
+  if(ex==="suspenders")o.push("<path d='M22 52l2 12M42 52l-2 12' stroke='#8a1d2a' stroke-width='2.5'/>");
+  if(ex==="stethoscope")o.push("<path d='M24 51q0 9 8 9t8-9' stroke='#4a4a4a' stroke-width='1.8' fill='none'/><circle cx='32' cy='60' r='1.8' fill='#9a9a9a'/>");
+  /* ears and head */
+  o.push("<ellipse cx='"+L+"' cy='"+(cy+1)+"' rx='3.5' ry='5' fill='"+sk+"'/><ellipse cx='"+R+"' cy='"+(cy+1)+"' rx='3.5' ry='5' fill='"+sk+"'/>");
+  if(a.shape==="square")o.push("<rect x='"+L+"' y='"+top+"' width='"+(rx*2)+"' height='"+(ry*2)+"' rx='9' fill='"+sk+"'/>");
   else o.push("<ellipse cx='32' cy='"+cy+"' rx='"+rx+"' ry='"+ry+"' fill='"+sk+"'/>");
   o.push("<ellipse cx='32' cy='"+(cy+ry*0.55)+"' rx='"+(rx*0.8)+"' ry='"+(ry*0.4)+"' fill='rgba(0,0,0,.06)'/><ellipse cx='"+(32-rx*0.45)+"' cy='"+(cy-ry*0.45)+"' rx='"+(rx*0.35)+"' ry='"+(ry*0.25)+"' fill='rgba(255,255,255,.12)'/>");
-  if(a.extra==="earring")o.push("<circle cx='"+(32-rx)+"' cy='"+(cy+6)+"' r='2' fill='#e5c040'/>");
-  /* hair on top */
-  var top=cy-ry;
-  if(a.hair==="slick")o.push("<path d='M"+(32-rx)+" "+(top+10)+"q2-12 "+rx+"-12q"+(rx-2)+" 0 "+rx+" 12q-6-7-"+rx+"-6q-"+(rx-6)+" 0-"+rx+" 6z' fill='"+hc+"'/>");
-  if(a.hair==="pomp")o.push("<path d='M"+(32-rx)+" "+(top+10)+"q-2-16 14-17q20-2 "+(rx+2)+" 10q-8-4-16-1q-8 2-"+(rx-4)+" 8z' fill='"+hc+"'/>");
-  if(a.hair==="curly")o.push([-14,-7,0,7,14].map(function(x){return "<circle cx='"+(32+x)+"' cy='"+(top+3)+"' r='6' fill='"+hc+"'/>";}).join(""));
-  if(a.hair==="bun")o.push("<circle cx='32' cy='"+(top-3)+"' r='6' fill='"+hc+"'/><path d='M"+(32-rx)+" "+(top+9)+"q"+rx+"-14 "+(rx*2)+" 0q-"+rx+"-6-"+(rx*2)+" 0z' fill='"+hc+"'/>");
-  if(a.hair==="bob"||a.hair==="long")o.push("<path d='M"+(32-rx)+" "+(top+12)+"q"+rx+"-18 "+(rx*2)+" 0q-"+rx+"-8-"+(rx*2)+" 0z' fill='"+hc+"'/>");
-  if(a.hair==="bouffant")o.push("<path d='M"+(32-rx)+" "+(top+10)+"q"+rx+"-10 "+(rx*2)+" 0q-"+rx+"-5-"+(rx*2)+" 0z' fill='"+hc+"'/>");
-  if(a.hair==="mohawk")o.push("<path d='M28 "+(top+4)+"l2-12 2 6 2-7 2 7 2-6 0 12z' fill='"+hc+"'/>");
-  if(a.hair==="flattop")o.push("<rect x='"+(32-rx+1)+"' y='"+(top-5)+"' width='"+(rx*2-2)+"' height='10' rx='2' fill='"+hc+"'/>");
-  if(a.hair==="sideburns")o.push("<rect x='"+(32-rx)+"' y='"+(cy-6)+"' width='4' height='14' fill='"+hc+"'/><rect x='"+(32+rx-4)+"' y='"+(cy-6)+"' width='4' height='14' fill='"+hc+"'/>");
-  /* brows + eyes */
-  var ey=cy-4,ex=7;
-  var bw=a.brows==="angry"?["M"+(32-ex-4)+" "+(ey-6)+"l7 3","M"+(32+ex+4)+" "+(ey-6)+"l-7 3"]:a.brows==="worried"?["M"+(32-ex-4)+" "+(ey-4)+"l7 -3","M"+(32+ex+4)+" "+(ey-4)+"l-7 -3"]:["M"+(32-ex-4)+" "+(ey-6)+"q4-3 8 0","M"+(32+ex-4)+" "+(ey-6)+"q4-3 8 0"];
-  o.push("<path d='"+bw.join(" ")+"' stroke='"+(a.browColor||hc)+"' stroke-width='2.4' stroke-linecap='round' fill='none'/>");
-  if(a.eyes==="shades")o.push("<rect x='"+(32-ex-6)+"' y='"+(ey-4)+"' width='11' height='7' rx='3' fill='#111'/><rect x='"+(32+ex-5)+"' y='"+(ey-4)+"' width='11' height='7' rx='3' fill='#111'/><path d='M"+(32-ex+5)+" "+(ey-1)+"h4' stroke='#111' stroke-width='2'/>");
-  else{
-    var r=a.eyes==="wide"?3.6:2.4;
-    if(a.eyes==="squint")o.push("<path d='M"+(32-ex-3)+" "+ey+"h6M"+(32+ex-3)+" "+ey+"h6' stroke='#1a1a1a' stroke-width='2.2' stroke-linecap='round'/>");
-    else o.push("<circle cx='"+(32-ex)+"' cy='"+ey+"' r='"+(r+1.4)+"' fill='#fff'/><circle cx='"+(32+ex)+"' cy='"+ey+"' r='"+(r+1.4)+"' fill='#fff'/><circle cx='"+(32-ex+.6)+"' cy='"+ey+"' r='"+r*.6+"' fill='#1a1a1a'/><circle cx='"+(32+ex+.6)+"' cy='"+ey+"' r='"+r*.6+"' fill='#1a1a1a'/>");
-    if(a.eyes==="glasses")o.push("<circle cx='"+(32-ex)+"' cy='"+ey+"' r='5.5' fill='none' stroke='#222' stroke-width='1.6'/><circle cx='"+(32+ex)+"' cy='"+ey+"' r='5.5' fill='none' stroke='#222' stroke-width='1.6'/><path d='M"+(32-ex+5.5)+" "+ey+"h3' stroke='#222' stroke-width='1.6'/>");
-    if(a.eyes==="cateye")o.push("<path d='M"+(32-ex-7)+" "+(ey-3)+"q7-4 12 1q-1 6-6 6q-5 0-6-7zM"+(32+ex+7)+" "+(ey-3)+"q-7-4-12 1q1 6 6 6q5 0 6-7z' fill='none' stroke='#b0306a' stroke-width='1.8'/>");
-    if(a.eyes==="monocle")o.push("<circle cx='"+(32+ex)+"' cy='"+ey+"' r='5.5' fill='rgba(255,255,255,.15)' stroke='#e5c040' stroke-width='1.6'/><path d='M"+(32+ex+5)+" "+(ey+3)+"q4 10 0 18' stroke='#e5c040' stroke-width='1' fill='none'/>");
+  if(ex==="earring")o.push("<circle cx='"+L+"' cy='"+(cy+6)+"' r='2' fill='#e5c040'/>");
+  /* front hair */
+  var hl=function(d){o.push("<path d='"+d+"' stroke='"+hcL+"' stroke-opacity='.45' stroke-width='1.2' fill='none' stroke-linecap='round'/>");};
+  if(hair==="buzz")P(cap(5),hc," opacity='.65'");
+  if(hair==="short"||hair==="curly"||hair==="afro"||hair==="mullet"||hair==="ponytail"||hair==="bun"){P(cap(hair==="afro"?5:7),hc);hl("M"+(L+4)+" "+(top+2)+"Q32 "+(top-3)+" "+(R-6)+" "+(top+1));}
+  if(a.hair==="sideburns")o.push("<rect x='"+(L)+"' y='"+(cy-6)+"' width='4' height='13' rx='2' fill='"+hc+"'/><rect x='"+(R-4)+"' y='"+(cy-6)+"' width='4' height='13' rx='2' fill='"+hc+"'/>");
+  if(hair==="curly"){for(var q=0;q<5;q++)o.push("<circle cx='"+(L+4+q*(rx*2-8)/4).toFixed(1)+"' cy='"+(top+7)+"' r='3.2' fill='"+hc+"'/>");}
+  if(hair==="sidepart"){P(cap(7),hc);P("M"+(L+1)+" "+(top+9)+"C"+(L+5)+" "+(top-3)+" "+(32+8)+" "+(top-3)+" "+(R)+" "+(top+7)+"C"+(32+5)+" "+(top+2)+" "+(32-3)+" "+(top+3)+" "+(L+1)+" "+(top+9)+"Z",hc);o.push("<path d='M"+(32-6)+" "+(top-1)+"q-1 4-2 6' stroke='"+hcD+"' stroke-width='1.2' fill='none'/>");hl("M"+(32-2)+" "+(top)+"Q"+(32+6)+" "+(top-1)+" "+(R-3)+" "+(top+4));}
+  if(hair==="slick"){P(cap(4),hc);for(var c2=0;c2<3;c2++)hl("M"+(L+5+c2*6)+" "+(top+5)+"Q"+(32+c2*3)+" "+(top-3)+" "+(R-4)+" "+(top+3+c2*2));}
+  if(hair==="pomp"){P(cap(6),hc);P("M"+(L+1)+" "+(top+5)+"C"+(L-1)+" "+(top-13)+" "+(R+5)+" "+(top-15)+" "+(R)+" "+(top+3)+"C"+(32+7)+" "+(top-4)+" "+(32-4)+" "+(top-2)+" "+(L+1)+" "+(top+5)+"Z",hc);hl("M"+(L+4)+" "+(top-2)+"Q32 "+(top-12)+" "+(R-2)+" "+(top-4));}
+  if(hair==="spiky"){P(cap(6),hc);var sp="M"+(L)+" "+(top+6);for(var k2=0;k2<6;k2++){var x1=L+k2*(rx*2)/6,x2=x1+(rx*2)/12,x3=x1+(rx*2)/6;sp+="L"+x2.toFixed(1)+" "+(top-8+(k2%2)*3)+"L"+x3.toFixed(1)+" "+(top+3);}P(sp+"Z",hc);}
+  if(hair==="bob"){P("M"+(L)+" "+(cy-4)+"C"+(L-1)+" "+(top-5)+" "+(R+1)+" "+(top-5)+" "+(R)+" "+(cy-4)+"L"+(R-1)+" "+(top+9)+"L"+(L+1)+" "+(top+9)+"Z",hc);hl("M"+(L+4)+" "+(top+1)+"Q32 "+(top-4)+" "+(R-4)+" "+(top+1));}
+  if(hair==="long"||hair==="braids"){P(cap(7),hc);o.push("<path d='M32 "+(top-2)+"v9' stroke='"+hcD+"' stroke-width='1.2'/>");P("M32 "+(top-1)+"C"+(32-8)+" "+(top+1)+" "+(L+1)+" "+(top+8)+" "+(L+1)+" "+(cy+4)+"L"+(L-2)+" "+(cy+4)+"C"+(L-3)+" "+(top+4)+" "+(32-6)+" "+(top-3)+" 32 "+(top-2)+"Z",hc);P("M32 "+(top-1)+"C"+(32+8)+" "+(top+1)+" "+(R-1)+" "+(top+8)+" "+(R-1)+" "+(cy+4)+"L"+(R+2)+" "+(cy+4)+"C"+(R+3)+" "+(top+4)+" "+(32+6)+" "+(top-3)+" 32 "+(top-2)+"Z",hc);}
+  if(hair==="braids"){[L-1,R+1].forEach(function(x){for(var b=0;b<5;b++)o.push("<ellipse cx='"+x+"' cy='"+(cy+6+b*5)+"' rx='3' ry='2.8' fill='"+(b%2?hcD:hc)+"'/>");});}
+  if(hair==="receding"){P("M"+(L-1)+" "+(cy-3)+"C"+(L-2)+" "+(top+2)+" "+(L+4)+" "+(top+1)+" "+(L+6)+" "+(top+3)+"L"+(L+2)+" "+(cy-6)+"Z",hc);P("M"+(R+1)+" "+(cy-3)+"C"+(R+2)+" "+(top+2)+" "+(R-4)+" "+(top+1)+" "+(R-6)+" "+(top+3)+"L"+(R-2)+" "+(cy-6)+"Z",hc);P("M"+(32-3)+" "+(top+1)+"q3-3 6 0z",hc," opacity='.7'");}
+  if(hair==="mohawk")P("M28 "+(top+6)+"L27 "+(top-6)+"L30 "+(top-2)+"L31 "+(top-11)+"L33 "+(top-3)+"L35 "+(top-9)+"L36 "+(top-1)+"L38 "+(top-5)+"L37 "+(top+6)+"Z",hc);
+  if(hair==="flattop")o.push("<path d='"+cap(8)+"' fill='"+hc+"'/><rect x='"+(L+1)+"' y='"+(top-7)+"' width='"+(rx*2-2)+"' height='12' rx='2' fill='"+hc+"'/>");
+  if(hair==="bouffant"){P(cap(8),hc);hl("M"+(L+2)+" "+(top-2)+"Q32 "+(top-12)+" "+(R-2)+" "+(top-2));}
+  /* brows and eyes */
+  var ey=cy-4,e7=7,eyes=a.eyes||"normal",covered=["shades","aviators","mirrored","roundshades","starglasses","goggles"].indexOf(eyes)>=0;
+  var bc2=a.browColor||hcD,bw=a.brows==="angry"?["M"+(32-e7-4)+" "+(ey-6)+"l7 3","M"+(32+e7+4)+" "+(ey-6)+"l-7 3"]:a.brows==="worried"?["M"+(32-e7-4)+" "+(ey-4)+"l7 -3","M"+(32+e7+4)+" "+(ey-4)+"l-7 -3"]:["M"+(32-e7-4)+" "+(ey-6)+"q4-3 8 0","M"+(32+e7-4)+" "+(ey-6)+"q4-3 8 0"];
+  o.push("<path d='"+bw.join(" ")+"' stroke='"+bc2+"' stroke-width='"+(a.brows==="bushy"?3.6:a.brows==="thin"?1.4:2.4)+"' stroke-linecap='round' fill='none'/>");
+  if(!covered){
+    var r=eyes==="wide"?3.6:2.4;
+    if(eyes==="squint")o.push("<path d='M"+(32-e7-3)+" "+ey+"h6M"+(32+e7-3)+" "+ey+"h6' stroke='#1a1a1a' stroke-width='2.2' stroke-linecap='round'/>");
+    else if(eyes==="sleepy")o.push("<path d='M"+(32-e7-3)+" "+ey+"q3 3 6 0M"+(32+e7-3)+" "+ey+"q3 3 6 0' stroke='#1a1a1a' stroke-width='2' fill='none' stroke-linecap='round'/>");
+    else if(eyes==="eyepatch")o.push("<circle cx='"+(32+e7)+"' cy='"+ey+"' r='3.8' fill='#fff'/><circle cx='"+(32+e7+.6)+"' cy='"+ey+"' r='1.5' fill='#1a1a1a'/><path d='M"+(L)+" "+(ey-8)+"L"+(R)+" "+(ey-3)+"' stroke='#111' stroke-width='1.4'/><ellipse cx='"+(32-e7)+"' cy='"+ey+"' rx='5' ry='4.5' fill='#111'/>");
+    else o.push("<circle cx='"+(32-e7)+"' cy='"+ey+"' r='"+(r+1.4)+"' fill='#fff'/><circle cx='"+(32+e7)+"' cy='"+ey+"' r='"+(r+1.4)+"' fill='#fff'/><circle cx='"+(32-e7+.6)+"' cy='"+ey+"' r='"+r*.6+"' fill='#1a1a1a'/><circle cx='"+(32+e7+.6)+"' cy='"+ey+"' r='"+r*.6+"' fill='#1a1a1a'/>");
+    if(eyes==="glasses")o.push("<circle cx='"+(32-e7)+"' cy='"+ey+"' r='5.5' fill='none' stroke='#222' stroke-width='1.6'/><circle cx='"+(32+e7)+"' cy='"+ey+"' r='5.5' fill='none' stroke='#222' stroke-width='1.6'/><path d='M"+(32-e7+5.5)+" "+ey+"h3' stroke='#222' stroke-width='1.6'/>");
+    if(eyes==="square")o.push("<rect x='"+(32-e7-6)+"' y='"+(ey-4.5)+"' width='12' height='9' rx='2' fill='none' stroke='#111' stroke-width='2.4'/><rect x='"+(32+e7-6)+"' y='"+(ey-4.5)+"' width='12' height='9' rx='2' fill='none' stroke='#111' stroke-width='2.4'/><path d='M"+(32-1)+" "+ey+"h2' stroke='#111' stroke-width='2'/>");
+    if(eyes==="cateye")o.push("<path d='M"+(32-e7-7)+" "+(ey-3)+"q7-4 12 1q-1 6-6 6q-5 0-6-7zM"+(32+e7+7)+" "+(ey-3)+"q-7-4-12 1q1 6 6 6q5 0 6-7z' fill='none' stroke='#b0306a' stroke-width='1.8'/>");
+    if(eyes==="monocle")o.push("<circle cx='"+(32+e7)+"' cy='"+ey+"' r='5.5' fill='rgba(255,255,255,.15)' stroke='#e5c040' stroke-width='1.6'/><path d='M"+(32+e7+5)+" "+(ey+3)+"q4 10 0 18' stroke='#e5c040' stroke-width='1' fill='none'/>");
+  }else{
+    var lensY=ey-4;
+    if(eyes==="shades")o.push("<path d='M"+(32-e7-7)+" "+lensY+"h12v4q0 5-6 5t-6-5zM"+(32+e7-5)+" "+lensY+"h12v4q0 5-6 5t-6-5z' fill='#111'/><path d='M"+(32-e7+5)+" "+(lensY+1)+"h4' stroke='#111' stroke-width='2'/><path d='M"+(32-e7-5)+" "+(lensY+2)+"l3 0' stroke='rgba(255,255,255,.35)' stroke-width='1.2'/>");
+    if(eyes==="aviators")o.push("<path d='M"+(32-e7-6)+" "+(lensY)+"q6-1 11 0q1 8-5 9q-6 0-6-9zM"+(32+e7+6)+" "+(lensY)+"q-6-1-11 0q-1 8 5 9q6 0 6-9z' fill='rgba(60,45,30,.85)' stroke='#c9a14a' stroke-width='1.2'/><path d='M"+(32-2)+" "+(lensY)+"h4' stroke='#c9a14a' stroke-width='1.2'/>");
+    if(eyes==="mirrored")o.push("<defs><linearGradient id='mg"+(a.bg||"").slice(1)+"' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#6ad4ff'/><stop offset='.5' stop-color='#b06aff'/><stop offset='1' stop-color='#ff6aa8'/></linearGradient></defs><rect x='"+(L+1)+"' y='"+(lensY-1)+"' width='"+(rx*2-2)+"' height='8' rx='4' fill='url(#mg"+(a.bg||"").slice(1)+")' stroke='#222' stroke-width='1'/>");
+    if(eyes==="roundshades")o.push("<circle cx='"+(32-e7)+"' cy='"+ey+"' r='5' fill='#1a1a1a' stroke='#c9a14a' stroke-width='1'/><circle cx='"+(32+e7)+"' cy='"+ey+"' r='5' fill='#1a1a1a' stroke='#c9a14a' stroke-width='1'/><path d='M"+(32-2)+" "+ey+"h4' stroke='#c9a14a' stroke-width='1'/>");
+    if(eyes==="starglasses"){[32-e7,32+e7].forEach(function(cx3){var st="";for(var s2=0;s2<10;s2++){var rr=s2%2?2.8:6.5,an=-Math.PI/2+s2*Math.PI/5;st+=(s2?"L":"M")+(cx3+rr*Math.cos(an)).toFixed(1)+" "+(ey+rr*Math.sin(an)).toFixed(1);}o.push("<path d='"+st+"Z' fill='#ff3ec8' stroke='#fff' stroke-width='.8'/>");});}
+    if(eyes==="goggles")o.push("<rect x='"+(L)+"' y='"+(ey-3)+"' width='"+(rx*2)+"' height='3' fill='#5a3a1a'/><circle cx='"+(32-e7)+"' cy='"+ey+"' r='5.5' fill='rgba(120,200,255,.55)' stroke='#8a5a2a' stroke-width='2'/><circle cx='"+(32+e7)+"' cy='"+ey+"' r='5.5' fill='rgba(120,200,255,.55)' stroke='#8a5a2a' stroke-width='2'/>");
   }
-  /* nose */
+  /* nose, cheeks, mouth */
   if(a.nose==="big")o.push("<ellipse cx='32' cy='"+(cy+4)+"' rx='4.5' ry='5' fill='rgba(0,0,0,.12)'/><ellipse cx='32' cy='"+(cy+3)+"' rx='4' ry='4.5' fill='"+sk+"' stroke='rgba(0,0,0,.18)'/>");
   else if(a.nose==="hook")o.push("<path d='M32 "+(cy-1)+"q6 6 1 9q-3 1-4-1' stroke='rgba(0,0,0,.35)' stroke-width='1.6' fill='none'/>");
+  else if(a.nose==="button")o.push("<circle cx='32' cy='"+(cy+3)+"' r='2.4' fill='"+shade(sk,-14)+"'/>");
   else o.push("<path d='M31 "+(cy+1)+"q2 4 3 4' stroke='rgba(0,0,0,.3)' stroke-width='1.5' fill='none'/>");
-  if(a.blush)o.push("<circle cx='"+(32-ex-3)+"' cy='"+(cy+5)+"' r='3.5' fill='rgba(220,70,70,.3)'/><circle cx='"+(32+ex+3)+"' cy='"+(cy+5)+"' r='3.5' fill='rgba(220,70,70,.3)'/>");
-  if(a.mark)o.push("<circle cx='"+(32+9)+"' cy='"+(cy+8)+"' r='1' fill='#2a1a12'/>");
-  /* mouth */
-  var my=cy+11;
-  if(a.mouth==="grin")o.push("<path d='M24 "+my+"q8 9 16 0z' fill='#5a1a1a'/><path d='M25.5 "+(my+.5)+"h13v2.2h-13z' fill='#fff'/>");
-  else if(a.mouth==="smirk")o.push("<path d='M26 "+(my+1)+"q6 3 12-3' stroke='#5a1a1a' stroke-width='2.2' fill='none' stroke-linecap='round'/>");
-  else if(a.mouth==="o")o.push("<ellipse cx='32' cy='"+(my+1)+"' rx='3' ry='3.6' fill='#5a1a1a'/>");
-  else if(a.mouth==="frown")o.push("<path d='M26 "+(my+3)+"q6-5 12 0' stroke='#5a1a1a' stroke-width='2.2' fill='none' stroke-linecap='round'/>");
-  else if(a.mouth==="flat")o.push("<path d='M27 "+(my+1)+"h10' stroke='#5a1a1a' stroke-width='2.2' stroke-linecap='round'/>");
+  if(a.blush)o.push("<circle cx='"+(32-e7-3)+"' cy='"+(cy+5)+"' r='3.5' fill='rgba(220,70,70,.3)'/><circle cx='"+(32+e7+3)+"' cy='"+(cy+5)+"' r='3.5' fill='rgba(220,70,70,.3)'/>");
+  if(a.freckles)o.push([[-9,4],[-7,6],[-10,7],[9,4],[7,6],[10,7]].map(function(f){return "<circle cx='"+(32+f[0])+"' cy='"+(cy+f[1])+"' r='.7' fill='rgba(120,60,30,.6)'/>";}).join(""));
+  if(a.mark)o.push("<circle cx='41' cy='"+(cy+8)+"' r='1' fill='#2a1a12'/>");
+  var my=cy+11,m=a.mouth||"smile";
+  if(m==="grin")o.push("<path d='M24 "+my+"q8 9 16 0z' fill='#5a1a1a'/><path d='M25.5 "+(my+.5)+"h13v2.2h-13z' fill='#fff'/>");
+  else if(m==="smirk")o.push("<path d='M26 "+(my+1)+"q6 3 12-3' stroke='#5a1a1a' stroke-width='2.2' fill='none' stroke-linecap='round'/>");
+  else if(m==="o")o.push("<ellipse cx='32' cy='"+(my+1)+"' rx='3' ry='3.6' fill='#5a1a1a'/>");
+  else if(m==="frown")o.push("<path d='M26 "+(my+3)+"q6-5 12 0' stroke='#5a1a1a' stroke-width='2.2' fill='none' stroke-linecap='round'/>");
+  else if(m==="flat")o.push("<path d='M27 "+(my+1)+"h10' stroke='#5a1a1a' stroke-width='2.2' stroke-linecap='round'/>");
+  else if(m==="tongue")o.push("<path d='M25 "+my+"q7 7 14 0z' fill='#5a1a1a'/><path d='M30 "+(my+2)+"q2 6 5 0z' fill='#e86a7a'/>");
+  else if(m==="teeth")o.push("<rect x='26' y='"+(my-1)+"' width='12' height='5' rx='2' fill='#fff' stroke='#5a1a1a' stroke-width='1.2'/><path d='M30 "+(my-1)+"v5M34 "+(my-1)+"v5' stroke='#ccc' stroke-width='.8'/>");
   else o.push("<path d='M26 "+my+"q6 5 12 0' stroke='#5a1a1a' stroke-width='2.2' fill='none' stroke-linecap='round'/>");
   if(a.lips)o.push("<path d='M26 "+my+"q6 5 12 0q-6 2-12 0z' fill='#c8304a'/>");
-  if(a.toothpick)o.push("<path d='M37 "+(my+1)+"l9-3' stroke='#d9b37a' stroke-width='1.6'/>");
   /* facial hair */
-  if(a.facial==="mustache")o.push("<path d='M24 "+(my-3)+"q8-6 16 0q-8-2-16 0z' fill='"+hc+"' stroke='"+hc+"' stroke-width='2'/>");
-  if(a.facial==="handlebar")o.push("<path d='M32 "+(my-4)+"q-8-2-11 2q-3 3 1 4q-1-3 3-3q4 0 7-3zM32 "+(my-4)+"q8-2 11 2q3 3-1 4q1-3-3-3q-4 0-7-3z' fill='"+hc+"'/>");
-  if(a.facial==="beard")o.push("<path d='M"+(32-rx+1)+" "+(cy+2)+"q2 "+(ry+2)+" "+(rx-1)+" "+(ry)+"q"+(rx-3)+" 0 "+(rx-1)+"-"+ry+"q-4 9-"+(rx-1)+" 10q-"+(rx-3)+"-1-"+(rx-1)+"-10z' fill='"+hc+"'/>");
-  if(a.facial==="goatee")o.push("<path d='M28 "+(my+4)+"q4 8 8 0z' fill='"+hc+"'/>");
-  if(a.facial==="stubble")o.push("<path d='M"+(32-rx+3)+" "+(cy+5)+"q"+(rx-3)+" "+(ry+2)+" "+(2*rx-6)+" 0' stroke='rgba(40,30,25,.35)' stroke-width='6' fill='none' stroke-dasharray='1 2'/>");
-  /* hats and headgear */
-  if(a.hat==="captain")o.push("<path d='M14 "+(top+6)+"q18-14 36 0z' fill='#fafafa'/><rect x='13' y='"+(top+5)+"' width='38' height='5' rx='2' fill='#1a2238'/><circle cx='32' cy='"+(top+1)+"' r='3' fill='#e5c040'/>");
-  if(a.hat==="fedora")o.push("<ellipse cx='32' cy='"+(top+5)+"' rx='24' ry='4' fill='"+(a.hatColor||"#3a2f28")+"'/><path d='M19 "+(top+5)+"q1-14 13-14q12 0 13 14z' fill='"+(a.hatColor||"#3a2f28")+"'/><rect x='19' y='"+(top)+"' width='26' height='3' fill='#111'/>"+(a.feather?"<path d='M44 "+(top-1)+"q8-8 4-14q-2 8-6 12z' fill='#2e8b57'/>":""));
-  if(a.hat==="top")o.push("<ellipse cx='32' cy='"+(top+4)+"' rx='20' ry='3.5' fill='#141414'/><rect x='21' y='"+(top-18)+"' width='22' height='22' rx='2' fill='#141414'/><rect x='21' y='"+(top-1)+"' width='22' height='3' fill='#7a1a2a'/>");
-  if(a.hat==="cowboy")o.push("<path d='M6 "+(top+5)+"q26 10 52 0q-4 4-10 4h-32q-6 0-10-4z' fill='#b07a3c'/><path d='M18 "+(top+6)+"q0-16 7-16q4 0 7 4q3-4 7-4q7 0 7 16z' fill='#c48a48'/><rect x='18' y='"+(top+1)+"' width='28' height='3' fill='#5a3a1a'/>");
-  if(a.hat==="chef")o.push("<rect x='20' y='"+(top-4)+"' width='24' height='9' fill='#fff'/><circle cx='24' cy='"+(top-6)+"' r='7' fill='#fff'/><circle cx='32' cy='"+(top-9)+"' r='8' fill='#fff'/><circle cx='40' cy='"+(top-6)+"' r='7' fill='#fff'/>");
-  if(a.hat==="paper")o.push("<path d='M18 "+(top+6)+"l3-10h22l3 10z' fill='#fff' stroke='#ddd'/><rect x='18' y='"+(top+3)+"' width='28' height='3' fill='#c8102e'/>");
-  if(a.hat==="hardhat")o.push("<path d='M14 "+(top+7)+"q0-16 18-16q18 0 18 16z' fill='#f2c200'/><rect x='11' y='"+(top+5)+"' width='42' height='4' rx='2' fill='#e0b000'/><rect x='30' y='"+(top-9)+"' width='4' height='14' fill='#e0b000'/>");
-  if(a.hat==="beanie")o.push("<path d='M14 "+(top+8)+"q0-18 18-18q18 0 18 18z' fill='"+(a.hatColor||"#2f5d8a")+"'/><rect x='13' y='"+(top+4)+"' width='38' height='6' rx='3' fill='rgba(0,0,0,.25)'/>");
-  if(a.hat==="tiara")o.push("<path d='M22 "+(top+4)+"l3-6 3 4 4-7 4 7 3-4 3 6z' fill='#e5c040'/><circle cx='32' cy='"+(top-2)+"' r='1.6' fill='#7fd8ff'/>");
-  if(a.hat==="tyrolean")o.push("<path d='M16 "+(top+6)+"q2-14 16-14q14 0 16 14z' fill='#3e5a2a'/><ellipse cx='32' cy='"+(top+6)+"' rx='20' ry='3' fill='#33491f'/><path d='M44 "+(top-2)+"q10-10 6-16q-3 9-8 14z' fill='#c9a14a'/>");
-  if(a.hat==="hood")o.push("<path d='M8 64q-2-38 24-44q26 6 24 44h-8q0-26-16-30q-16 4-16 30z' fill='"+(a.hatColor||"#2b2b33")+"'/>");
-  if(a.extra==="earpiece")o.push("<path d='M"+(32+rx+2)+" "+(cy+2)+"q4 8-2 14' stroke='#222' stroke-width='1.6' fill='none'/><circle cx='"+(32+rx+1)+"' cy='"+(cy+1)+"' r='2' fill='#222'/>");
-  if(a.extra==="headset")o.push("<path d='M"+(32-rx-2)+" "+cy+"q0-"+(ry+6)+" "+(rx+2)+" -"+(ry+6)+"q"+(rx+2)+" 0 "+(rx+2)+" "+(ry+6)+"' stroke='#38f29b' stroke-width='2.4' fill='none'/><rect x='"+(32+rx-1)+"' y='"+(cy-3)+"' width='5' height='8' rx='2' fill='#38f29b'/><path d='M"+(32+rx+1)+" "+(cy+5)+"q-4 8-12 8' stroke='#38f29b' stroke-width='1.6' fill='none'/>");
+  var fh=a.facial||"none",fc=hc;
+  if(fh==="mustache")P("M24 "+(my-3)+"q8-6 16 0q-8-2-16 0z",fc," stroke='"+fc+"' stroke-width='2'");
+  if(fh==="pencil")o.push("<path d='M26 "+(my-3)+"q6-2 12 0' stroke='"+fc+"' stroke-width='1.2' fill='none'/>");
+  if(fh==="walrus")P("M22 "+(my-4)+"q10-7 20 0l-2 5q-8-3-16 0z",fc);
+  if(fh==="horseshoe")o.push("<path d='M26 "+(my+6)+"V"+(my-1)+"q6-4 12 0V"+(my+6)+"' stroke='"+fc+"' stroke-width='2.6' fill='none'/>");
+  if(fh==="handlebar")P("M32 "+(my-4)+"q-8-2-11 2q-3 3 1 4q-1-3 3-3q4 0 7-3zM32 "+(my-4)+"q8-2 11 2q3 3-1 4q1-3-3-3q-4 0-7-3z",fc);
+  if(fh==="beard")P("M"+(L+1)+" "+(cy+2)+"q2 "+(ry+2)+" "+(rx-1)+" "+(ry)+"q"+(rx-3)+" 0 "+(rx-1)+"-"+ry+"q-4 9-"+(rx-1)+" 10q-"+(rx-3)+"-1-"+(rx-1)+"-10z",fc);
+  if(fh==="chinstrap")o.push("<path d='M"+(L+1)+" "+(cy)+"q2 "+(ry+1)+" "+(rx-1)+" "+(ry-1)+"q"+(rx-3)+" 0 "+(rx-1)+"-"+(ry-1)+"' stroke='"+fc+"' stroke-width='2.8' fill='none'/>");
+  if(fh==="goatee")P("M28 "+(my+4)+"q4 8 8 0z",fc);
+  if(fh==="soulpatch")P("M30.5 "+(my+3.5)+"h3l-1.5 3z",fc);
+  if(fh==="stubble")o.push("<path d='M"+(L+3)+" "+(cy+5)+"q"+(rx-3)+" "+(ry+2)+" "+(2*rx-6)+" 0' stroke='rgba(40,30,25,.35)' stroke-width='6' fill='none' stroke-dasharray='1 2'/>");
+  if(fh==="sideburns")o.push("<rect x='"+(L)+"' y='"+(cy-6)+"' width='4' height='14' rx='2' fill='"+fc+"'/><rect x='"+(R-4)+"' y='"+(cy-6)+"' width='4' height='14' rx='2' fill='"+fc+"'/>");
+  /* mouth items */
+  var it=a.item||(a.toothpick?"toothpick":"none");
+  if(it==="toothpick")o.push("<path d='M37 "+(my+1)+"l9-3' stroke='#d9b37a' stroke-width='1.6'/>");
+  if(it==="lollipop")o.push("<path d='M37 "+(my+1)+"l8 4' stroke='#f2f2f2' stroke-width='1.4'/><circle cx='47' cy='"+(my+6)+"' r='4' fill='#ff3ec8'/><path d='M45 "+(my+5)+"q2-2 4 1' stroke='#fff' stroke-width='1' fill='none'/>");
+  if(it==="gum")o.push("<circle cx='32' cy='"+(my+3)+"' r='5' fill='#ff9acb' stroke='#e86aa6' stroke-width='.8'/><circle cx='30' cy='"+(my+1)+"' r='1.2' fill='rgba(255,255,255,.7)'/>");
+  /* hats */
+  var hcl=hatC,hcd=shade(hatC,-30),hcli=shade(hatC,35);
+  function dome(h){return "M"+(L-2)+" "+(top+h)+"C"+(L-2)+" "+(top-9)+" "+(R+2)+" "+(top-9)+" "+(R+2)+" "+(top+h)+"Z";}
+  if(hat==="ballcap"){P(dome(8),hcl);o.push("<path d='M"+(L-3)+" "+(top+8)+"Q32 "+(top+3)+" "+(R+3)+" "+(top+8)+"Q32 "+(top+14)+" "+(L-3)+" "+(top+8)+"Z' fill='"+hcd+"'/><circle cx='32' cy='"+(top-4)+"' r='1.4' fill='"+hcd+"'/><circle cx='32' cy='"+(top+2)+"' r='3' fill='"+hcli+"'/>");}
+  if(hat==="backcap"){o.push("<path d='M"+(R-8)+" "+(top-2)+"q10-8 16 0q-6 3-16 0z' fill='"+hcd+"'/>");P(dome(7),hcl);o.push("<path d='M28 "+(top+7)+"q4-5 8 0' fill='"+sk+"'/><path d='M27 "+(top+7)+"h10' stroke='"+hcd+"' stroke-width='1.2'/>");}
+  if(hat==="trucker"){P(dome(8),"#f2f2f2");o.push("<path d='"+dome(8)+"' fill='none'/><path d='M"+(L-2)+" "+(top+8)+"C"+(L-2)+" "+(top-2)+" "+(L+4)+" "+(top-7)+" "+(L+8)+" "+(top-8)+"L"+(L+8)+" "+(top+8)+"ZM"+(R+2)+" "+(top+8)+"C"+(R+2)+" "+(top-2)+" "+(R-4)+" "+(top-7)+" "+(R-8)+" "+(top-8)+"L"+(R-8)+" "+(top+8)+"Z' fill='"+hcl+"'/><path d='M"+(L-3)+" "+(top+8)+"Q32 "+(top+4)+" "+(R+3)+" "+(top+8)+"Q32 "+(top+14)+" "+(L-3)+" "+(top+8)+"Z' fill='"+hcd+"'/><text x='32' y='"+(top+3)+"' font-size='5' font-weight='800' text-anchor='middle' fill='"+hcl+"' font-family='sans-serif'>ALL IN</text>");}
+  if(hat==="visor")o.push("<rect x='"+(L-1)+"' y='"+(top+4)+"' width='"+(rx*2+2)+"' height='4' rx='2' fill='#1a1a1a'/><path d='M"+(L-4)+" "+(top+8)+"Q32 "+(top+4)+" "+(R+4)+" "+(top+8)+"Q32 "+(top+17)+" "+(L-4)+" "+(top+8)+"Z' fill='rgba(30,160,90,.78)' stroke='#0d5a32' stroke-width='.8'/>");
+  if(hat==="beret")o.push("<ellipse cx='"+(32-3)+"' cy='"+(top+1)+"' rx='"+(rx+4)+"' ry='6' fill='"+hcl+"' transform='rotate(-10 32 "+top+")'/><circle cx='"+(32-2)+"' cy='"+(top-5)+"' r='1.5' fill='"+hcd+"'/>");
+  if(hat==="bucket")o.push("<path d='M"+(L)+" "+(top+5)+"C"+(L)+" "+(top-8)+" "+(R)+" "+(top-8)+" "+(R)+" "+(top+5)+"Z' fill='"+hcl+"'/><path d='M"+(L-5)+" "+(top+10)+"L"+(L)+" "+(top+3)+"H"+(R)+"L"+(R+5)+" "+(top+10)+"Q32 "+(top+13)+" "+(L-5)+" "+(top+10)+"Z' fill='"+hcd+"'/>");
+  if(hat==="newsboy")o.push("<ellipse cx='32' cy='"+(top+1)+"' rx='"+(rx+5)+"' ry='8' fill='"+hcl+"'/><path d='M"+(L)+" "+(top+6)+"Q32 "+(top+3)+" "+(R)+" "+(top+6)+"Q32 "+(top+11)+" "+(L)+" "+(top+6)+"Z' fill='"+hcd+"'/><circle cx='32' cy='"+(top-6)+"' r='1.4' fill='"+hcd+"'/><path d='M"+(L+3)+" "+(top-1)+"Q32 "+(top-8)+" "+(R-3)+" "+(top-1)+"' stroke='"+hcd+"' stroke-width='.8' fill='none'/>");
+  if(hat==="headband")o.push("<rect x='"+(L-1)+"' y='"+(top+6)+"' width='"+(rx*2+2)+"' height='5' rx='2' fill='"+hcl+"'/><rect x='"+(L-1)+"' y='"+(top+7.8)+"' width='"+(rx*2+2)+"' height='1.4' fill='#fff'/>");
+  if(hat==="bandana")o.push("<path d='"+dome(6)+"' fill='"+hcl+"'/><path d='M"+(R)+" "+(top+4)+"l7 2-3 4zM"+(R)+" "+(top+4)+"l6 7-4 1z' fill='"+hcd+"'/>"+[0,1,2,3].map(function(k){return "<circle cx='"+(L+4+k*rx*0.6).toFixed(1)+"' cy='"+(top-1+(k%2)*3)+"' r='1' fill='#fff'/>";}).join(""));
+  if(hat==="bowler")o.push("<ellipse cx='32' cy='"+(top+5)+"' rx='"+(rx+5)+"' ry='3' fill='#141414'/><path d='M"+(L+1)+" "+(top+5)+"C"+(L+1)+" "+(top-12)+" "+(R-1)+" "+(top-12)+" "+(R-1)+" "+(top+5)+"Z' fill='#1a1a1a'/><rect x='"+(L+1)+"' y='"+(top+1)+"' width='"+(rx*2-2)+"' height='2.5' fill='#5a1a1a'/>");
+  if(hat==="pirate")o.push("<path d='M"+(L-6)+" "+(top+5)+"Q32 "+(top-16)+" "+(R+6)+" "+(top+5)+"Q32 "+(top-2)+" "+(L-6)+" "+(top+5)+"Z' fill='#141414'/><path d='M"+(L-6)+" "+(top+5)+"Q32 "+(top-2)+" "+(R+6)+" "+(top+5)+"' stroke='#c9a14a' stroke-width='1.2' fill='none'/><circle cx='32' cy='"+(top-4)+"' r='2.6' fill='#f2f2f2'/><path d='M29 "+(top-1)+"l6 0M30 "+(top)+"l4 2M34 "+(top)+"l-4 2' stroke='#f2f2f2' stroke-width='.9'/>");
+  if(hat==="crown")o.push("<path d='M"+(L+1)+" "+(top+5)+"L"+(L+1)+" "+(top-8)+"L"+(L+7)+" "+(top-2)+"L32 "+(top-11)+"L"+(R-7)+" "+(top-2)+"L"+(R-1)+" "+(top-8)+"L"+(R-1)+" "+(top+5)+"Z' fill='#e8b923' stroke='#b8862b' stroke-width='1'/><circle cx='32' cy='"+(top)+"' r='2' fill='#c8102e'/><circle cx='"+(L+6)+"' cy='"+(top+2)+"' r='1.4' fill='#1e63d0'/><circle cx='"+(R-6)+"' cy='"+(top+2)+"' r='1.4' fill='#2e8b57'/>");
+  if(hat==="viking")o.push("<path d='M"+(L-6)+" "+(top+2)+"Q"+(L-12)+" "+(top-10)+" "+(L-4)+" "+(top-16)+"Q"+(L-6)+" "+(top-6)+" "+(L+2)+" "+(top-1)+"ZM"+(R+6)+" "+(top+2)+"Q"+(R+12)+" "+(top-10)+" "+(R+4)+" "+(top-16)+"Q"+(R+6)+" "+(top-6)+" "+(R-2)+" "+(top-1)+"Z' fill='#f3ead2' stroke='#b8a77a' stroke-width='.8'/><path d='"+dome(7)+"' fill='#8a9096'/><rect x='"+(L-2)+"' y='"+(top+4)+"' width='"+(rx*2+4)+"' height='4' fill='#6a7076'/><path d='M32 "+(top-8)+"v15' stroke='#6a7076' stroke-width='2'/>");
+  if(hat==="wizard")o.push("<path d='M"+(L-1)+" "+(top+5)+"L"+(32+5)+" "+(top-26)+"L"+(R+1)+" "+(top+5)+"Z' fill='#4a2a8a'/><ellipse cx='32' cy='"+(top+5)+"' rx='"+(rx+7)+"' ry='3.5' fill='#3a1f70'/><path d='M30 "+(top-8)+"l1 2 2 .3-1.5 1.4.4 2-1.9-1-1.9 1 .4-2-1.5-1.4 2-.3z' fill='#ffd54a'/><circle cx='"+(32+4)+"' cy='"+(top-16)+"' r='1.2' fill='#ffd54a'/>");
+  if(hat==="headphones")o.push("<path d='M"+(L-3)+" "+(cy)+"C"+(L-3)+" "+(top-12)+" "+(R+3)+" "+(top-12)+" "+(R+3)+" "+(cy)+"' stroke='#222' stroke-width='3.5' fill='none'/><rect x='"+(L-6)+"' y='"+(cy-6)+"' width='7' height='12' rx='3' fill='"+hcl+"'/><rect x='"+(R-1)+"' y='"+(cy-6)+"' width='7' height='12' rx='3' fill='"+hcl+"'/>");
+  if(hat==="captain")o.push("<path d='M14 "+(top+6)+"q18-14 36 0z' fill='#fafafa'/><rect x='13' y='"+(top+5)+"' width='38' height='5' rx='2' fill='#1a2238'/><circle cx='32' cy='"+(top+1)+"' r='3' fill='#e5c040'/>");
+  if(hat==="fedora")o.push("<ellipse cx='32' cy='"+(top+5)+"' rx='24' ry='4' fill='"+(a.hatColor||"#3a2f28")+"'/><path d='M19 "+(top+5)+"q1-14 13-14q12 0 13 14z' fill='"+(a.hatColor||"#3a2f28")+"'/><path d='M26 "+(top-8)+"q6 4 12 0' stroke='rgba(0,0,0,.25)' stroke-width='1.2' fill='none'/><rect x='19' y='"+(top)+"' width='26' height='3' fill='#111'/>"+(a.feather?"<path d='M44 "+(top-1)+"q8-8 4-14q-2 8-6 12z' fill='#2e8b57'/>":""));
+  if(hat==="top")o.push("<ellipse cx='32' cy='"+(top+4)+"' rx='20' ry='3.5' fill='#141414'/><rect x='21' y='"+(top-18)+"' width='22' height='22' rx='2' fill='#141414'/><rect x='21' y='"+(top-1)+"' width='22' height='3' fill='#7a1a2a'/>");
+  if(hat==="cowboy")o.push("<path d='M6 "+(top+5)+"q26 10 52 0q-4 4-10 4h-32q-6 0-10-4z' fill='"+(a.hatColor?hcd:"#b07a3c")+"'/><path d='M18 "+(top+6)+"q0-16 7-16q4 0 7 4q3-4 7-4q7 0 7 16z' fill='"+(a.hatColor?hcl:"#c48a48")+"'/><rect x='18' y='"+(top+1)+"' width='28' height='3' fill='#5a3a1a'/>");
+  if(hat==="chef")o.push("<rect x='20' y='"+(top-4)+"' width='24' height='9' fill='#fff'/><circle cx='24' cy='"+(top-6)+"' r='7' fill='#fff'/><circle cx='32' cy='"+(top-9)+"' r='8' fill='#fff'/><circle cx='40' cy='"+(top-6)+"' r='7' fill='#fff'/>");
+  if(hat==="paper")o.push("<path d='M18 "+(top+6)+"l3-10h22l3 10z' fill='#fff' stroke='#ddd'/><rect x='18' y='"+(top+3)+"' width='28' height='3' fill='#c8102e'/>");
+  if(hat==="hardhat")o.push("<path d='M14 "+(top+7)+"q0-16 18-16q18 0 18 16z' fill='#f2c200'/><rect x='11' y='"+(top+5)+"' width='42' height='4' rx='2' fill='#e0b000'/><rect x='30' y='"+(top-9)+"' width='4' height='14' fill='#e0b000'/>");
+  if(hat==="beanie")o.push("<path d='M14 "+(top+8)+"q0-18 18-18q18 0 18 18z' fill='"+(a.hatColor||"#2f5d8a")+"'/><rect x='13' y='"+(top+4)+"' width='38' height='6' rx='3' fill='rgba(0,0,0,.25)'/><circle cx='32' cy='"+(top-11)+"' r='3.5' fill='"+shade(a.hatColor||"#2f5d8a",40)+"'/>");
+  if(hat==="tiara")o.push("<path d='M22 "+(top+4)+"l3-6 3 4 4-7 4 7 3-4 3 6z' fill='#e5c040'/><circle cx='32' cy='"+(top-2)+"' r='1.6' fill='#7fd8ff'/>");
+  if(hat==="tyrolean")o.push("<path d='M16 "+(top+6)+"q2-14 16-14q14 0 16 14z' fill='#3e5a2a'/><ellipse cx='32' cy='"+(top+6)+"' rx='20' ry='3' fill='#33491f'/><path d='M44 "+(top-2)+"q10-10 6-16q-3 9-8 14z' fill='#c9a14a'/>");
+  if(hat==="hood")o.push("<path d='M8 64q-2-38 24-44q26 6 24 44h-8q0-26-16-30q-16 4-16 30z' fill='"+(a.hatColor||"#2b2b33")+"'/>");
+  if(ex==="earpiece")o.push("<path d='M"+(R+2)+" "+(cy+2)+"q4 8-2 14' stroke='#222' stroke-width='1.6' fill='none'/><circle cx='"+(R+1)+"' cy='"+(cy+1)+"' r='2' fill='#222'/>");
+  if(ex==="headset")o.push("<path d='M"+(L-2)+" "+cy+"q0-"+(ry+6)+" "+(rx+2)+" -"+(ry+6)+"q"+(rx+2)+" 0 "+(rx+2)+" "+(ry+6)+"' stroke='#38f29b' stroke-width='2.4' fill='none'/><rect x='"+(R-1)+"' y='"+(cy-3)+"' width='5' height='8' rx='2' fill='#38f29b'/><path d='M"+(R+1)+" "+(cy+5)+"q-4 8-12 8' stroke='#38f29b' stroke-width='1.6' fill='none'/>");
+  if(ex==="pencil")o.push("<path d='M"+(R-1)+" "+(cy-8)+"l8-6' stroke='#f2c200' stroke-width='2.4'/><path d='M"+(R+7)+" "+(cy-14)+"l1.5-1' stroke='#e86a7a' stroke-width='2.4'/>");
+  if(ex==="cards")o.push("<g transform='rotate(-20 "+(R+2)+" "+(top+8)+")'><rect x='"+(R-2)+"' y='"+(top+2)+"' width='7' height='10' rx='1' fill='#fff' stroke='#999' stroke-width='.5'/><text x='"+(R+1.5)+"' y='"+(top+9.5)+"' font-size='5' text-anchor='middle' fill='#c8102e' font-family='sans-serif'>A</text></g>");
   o.push(moodFx(mood,cy,rx,ry));
   return "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'>"+o.join("")+"</svg>";
 }
 function randomAvatar(name,skill){
-  var r=seeded(hashStr(name||"x")),pk=function(a){return a[Math.floor(r()*a.length)];};
+  var r=seeded(hashStr(name||"x")),pk=function(a){return a[Math.floor(r()*a.length)];},ch=function(p){return r()<p;};
   var bgs={beginner:"#1f4d33",regular:"#1e3a66",tough:"#5a1f1a"};
-  return {bg:bgs[skill]||"#2a3b34",skin:pk(SKINS),hairColor:pk(HAIRC),shape:pk(["round","long","square"]),hair:pk(["slick","curly","bob","bun","pomp","flattop","long","none","sideburns"]),
-    eyes:pk(["normal","normal","glasses","squint","wide","shades"]),nose:pk(["small","big","hook","small"]),mouth:pk(["smile","grin","smirk","flat","o","frown"]),
-    facial:pk(["none","none","none","mustache","beard","stubble","goatee"]),hat:pk(["none","none","none","none","fedora","beanie","cowboy"]),
-    brows:pk(["normal","normal","angry","worried"]),cloth:pk(["#2b3a55","#5a2b3a","#2f4a2a","#444","#6a4a1a","#1a1a1a"]),blush:r()<.3};
+  return {bg:bgs[skill]||"#2a3b34",skin:pk(SKINS),hairColor:pk(HAIRC),shape:pk(["round","long","square"]),
+    hair:pk(["buzz","short","sidepart","slick","pomp","spiky","curly","afro","bob","long","ponytail","bun","mullet","receding","none","braids"]),
+    eyes:ch(.55)?pk(["normal","wide","squint","sleepy"]):pk(["glasses","square","shades","aviators","roundshades","cateye"]),
+    nose:pk(["small","big","hook","button"]),mouth:pk(["smile","grin","smirk","flat","o","frown","teeth"]),brows:pk(["normal","normal","bushy","thin","angry","worried"]),
+    facial:ch(.55)?"none":pk(["stubble","mustache","pencil","walrus","handlebar","horseshoe","goatee","soulpatch","chinstrap","beard","sideburns"]),
+    hat:ch(.5)?"none":pk(["ballcap","backcap","trucker","visor","beanie","bucket","newsboy","fedora","bowler","headband","cowboy","beret","headphones"]),hatColor:pk(["#b8322a","#1e3a66","#2e8b57","#1a1a1a","#f2f2f2","#e8b923","#c87a2a"]),
+    extra:ch(.6)?"none":pk(["bowtie","tie","scarf","earring","chain","suspenders","cards","pencil","collar"]),item:ch(.85)?"none":pk(["toothpick","lollipop","gum"]),
+    outfit:pk(["tee","tee","suit","hoodie","leather","hawaiian","flannel","turtleneck","jersey","overalls","tank"]),cloth:pk(["#2b3a55","#5a2b3a","#2f4a2a","#444444","#6a4a1a","#1a1a1a","#c8102e","#2a8a8a"]),blush:r()<.3,freckles:r()<.15};
 }
 /* original characters, loosely parodying genres, not specific films or real people */
 var THEMES={
@@ -1706,21 +1792,42 @@ function moodOf(i){if(!H||!T)return "";var p=T.players[i],s=H.s[i];if(!p)return 
   if(H.done&&H.showdown&&s&&!s.folded&&!(H.winners&&H.winners[i]))return "sad";
   if(p.tilt>0)return "tilt";return "";}
 /* player avatar */
-var AVOPT={skin:SKINS,shape:["round","long","square"],hair:["none","slick","curly","bob","bun","pomp","flattop","long","mohawk","sideburns","bouffant"],hairColor:HAIRC,brows:["normal","angry","worried"],
-  eyes:["normal","wide","squint","glasses","cateye","shades","monocle"],nose:["small","big","hook"],mouth:["smile","grin","smirk","flat","o"],facial:["none","mustache","handlebar","beard","goatee","stubble"],
-  hat:["none","beanie","fedora","paper","hardhat","hood","cowboy","captain","top","tyrolean","tiara"],extra:["none","bowtie","scarf","earring","collar","earpiece","chain","pearls","headset"],
-  cloth:["#2b3a55","#5a2b3a","#2f4a2a","#444444","#6a4a1a","#1a1a1a","#c8102e","#f2f2f2"],bg:["#2a3b34","#1e3a66","#5a1f1a","#3a1a4a","#4a3a0a","#111111","#0e5c5d","#6a2a12"]};
-var AVLOCK={eyes:{shades:"level10",monocle:"level20"},hat:{cowboy:"hammer",captain:"final_table",top:"first_title",tyrolean:"daily7",tiara:"main_event"},extra:{chain:"br50k",pearls:"quads",headset:"hands1000"}};
-var AVLABEL={skin:"Skin",shape:"Face",hair:"Hair",hairColor:"Hair color",brows:"Brows",eyes:"Eyes",nose:"Nose",mouth:"Mouth",facial:"Facial hair",hat:"Hat",extra:"Extra",cloth:"Shirt",bg:"Background"};
-function heroAv(){S.avatar=S.avatar||{skin:"#eec29b",shape:"round",hair:"slick",hairColor:"#3b2a1d",brows:"normal",eyes:"normal",nose:"small",mouth:"smile",facial:"stubble",hat:"none",extra:"none",cloth:"#2b3a55",bg:"#2a3b34"};return S.avatar;}
+var AVOPT={skin:SKINS.concat(["#ffe0c8","#4a2e1e"]),shape:["round","long","square"],
+  hair:["none","buzz","short","sidepart","slick","pomp","spiky","curly","afro","bob","long","ponytail","bun","braids","mullet","receding","mohawk","flattop","bouffant"],
+  hairColor:HAIRC.concat(["#f0d080","#5a7ad8","#d84a9a","#e8e8e8"]),brows:["normal","bushy","thin","angry","worried"],
+  eyes:["normal","wide","squint","sleepy","glasses","square","cateye","shades","aviators","roundshades","goggles","starglasses","eyepatch","mirrored","monocle"],
+  nose:["small","button","big","hook"],mouth:["smile","grin","smirk","flat","o","teeth","tongue"],
+  facial:["none","stubble","mustache","pencil","walrus","handlebar","horseshoe","goatee","soulpatch","chinstrap","beard","sideburns"],
+  item:["none","toothpick","lollipop","gum"],
+  hat:["none","ballcap","backcap","trucker","visor","beanie","bucket","newsboy","beret","fedora","bowler","headband","bandana","headphones","hood","paper","hardhat","chef","cowboy","captain","top","tyrolean","pirate","viking","wizard","tiara","crown"],
+  hatColor:["#b8322a","#1e3a66","#2e8b57","#1a1a1a","#f2f2f2","#e8b923","#6a2a8a","#c87a2a","#3a2f28"],
+  extra:["none","bowtie","tie","scarf","bandana","collar","suspenders","earring","pencil","cards","stethoscope","lei","earpiece","chain","pearls","headset","medal"],
+  outfit:["tee","suit","tux","hoodie","leather","hawaiian","flannel","turtleneck","overalls","jersey","tank"],
+  cloth:["#2b3a55","#5a2b3a","#2f4a2a","#444444","#6a4a1a","#1a1a1a","#c8102e","#f2f2f2","#e8b923","#2a8a8a"],
+  bg:["#2a3b34","#1e3a66","#5a1f1a","#3a1a4a","#4a3a0a","#111111","#0e5c5d","#6a2a12","#c87a9a","#d8c08a"]};
+var AVLOCK={eyes:{mirrored:"level10",monocle:"level20",aviators:"first_cash",eyepatch:"badbeat"},
+  hat:{cowboy:"hammer",captain:"final_table",top:"first_title",tyrolean:"daily7",tiara:"main_event",crown:"main_event",pirate:"bigpot",viking:"ladder_champ",wizard:"level20"},
+  extra:{chain:"br50k",pearls:"quads",headset:"hands1000",medal:"first_title"}};
+var AVLABEL={skin:"Skin",shape:"Face",hair:"Hair",hairColor:"Hair color",brows:"Brows",eyes:"Eyes",nose:"Nose",mouth:"Mouth",facial:"Facial hair",item:"In mouth",hat:"Hat",hatColor:"Hat color",extra:"Accessory",outfit:"Outfit",cloth:"Outfit color",bg:"Background"};
+var AVNAMES={none:"None",buzz:"Buzz cut",short:"Short",sidepart:"Side part",slick:"Slicked back",pomp:"Pompadour",spiky:"Spiky",curly:"Curly",afro:"Afro",bob:"Bob",long:"Long",ponytail:"Ponytail",bun:"Top bun",braids:"Braids",mullet:"Mullet",receding:"Receding",mohawk:"Mohawk",flattop:"Flattop",bouffant:"Bouffant",
+  bushy:"Bushy",thin:"Thin",sleepy:"Sleepy",glasses:"Round glasses",square:"Thick frames",cateye:"Cat-eye",shades:"Sunglasses",aviators:"Aviators",roundshades:"Round shades",goggles:"Goggles",starglasses:"Party stars",eyepatch:"Eyepatch",mirrored:"Mirrored shades",monocle:"Monocle",
+  button:"Button",teeth:"Gritted teeth",tongue:"Tongue out",pencil:"Pencil",walrus:"Walrus",horseshoe:"Horseshoe",soulpatch:"Soul patch",chinstrap:"Chinstrap",
+  ballcap:"Ball cap",backcap:"Backwards cap",trucker:"Trucker hat",visor:"Dealer visor",bucket:"Bucket hat",newsboy:"Newsboy cap",bowler:"Bowler",headband:"Sweatband",bandana:"Bandana",headphones:"Headphones",paper:"Diner hat",hardhat:"Hard hat",chef:"Chef hat",cowboy:"Cowboy hat",captain:"Captain's hat",top:"Top hat",tyrolean:"Alpine hat",pirate:"Pirate hat",viking:"Viking helmet",wizard:"Wizard hat",tiara:"Tiara",crown:"Crown",
+  bowtie:"Bow tie",tie:"Necktie",scarf:"Scarf",collar:"Disco collar",suspenders:"Suspenders",earring:"Earring",cards:"Card behind ear",stethoscope:"Stethoscope",lei:"Flower lei",earpiece:"Earpiece",chain:"Gold chain",pearls:"Pearls",headset:"Headset",medal:"Gold medal",
+  tee:"T-shirt",suit:"Suit",tux:"Tuxedo",hoodie:"Hoodie",leather:"Leather jacket",hawaiian:"Hawaiian shirt",flannel:"Flannel",turtleneck:"Turtleneck",overalls:"Overalls",jersey:"Jersey",tank:"Tank top",
+  toothpick:"Toothpick",lollipop:"Lollipop",gum:"Bubble gum",round:"Round",square2:"Square"};
+function heroAv(){S.avatar=S.avatar||{skin:"#eec29b",shape:"round",hair:"short",hairColor:"#3b2a1d",brows:"normal",eyes:"normal",nose:"small",mouth:"smile",facial:"stubble",item:"none",hat:"none",hatColor:"#b8322a",extra:"none",outfit:"tee",cloth:"#2b3a55",bg:"#2a3b34"};
+  var A=S.avatar;["item","hatColor","outfit"].forEach(function(k){if(A[k]===undefined)A[k]=AVOPT[k][0];});return A;}
 function avLocked(k,v){var l=AVLOCK[k]&&AVLOCK[k][v];return l&&!car().ach[l]?l:null;}
+function avName(k,v){if(String(v).charAt(0)==="#")return "";if(k==="shape")return v.charAt(0).toUpperCase()+v.slice(1);return AVNAMES[v]||v;}
 function openAvatar(){
-  var A=heroAv(),rows=Object.keys(AVOPT).map(function(k){var v=A[k],isColor=String(v).charAt(0)==="#";
-    return "<div class='avrow'><span class='avl'>"+AVLABEL[k]+"</span><button class='mini avb' data-k='"+k+"' data-d='-1' aria-label='Previous "+AVLABEL[k]+"'>\u2039</button><span class='avv'>"+(isColor?"<i class='sw' style='background:"+v+"'></i>":String(v).replace(/^none$/,"None"))+"</span><button class='mini avb' data-k='"+k+"' data-d='1' aria-label='Next "+AVLABEL[k]+"'>\u203a</button></div>";}).join("");
-  var locks=[];Object.keys(AVLOCK).forEach(function(k){Object.keys(AVLOCK[k]).forEach(function(v){if(avLocked(k,v))locks.push(v+" "+(k==="eyes"?"":k)+" ("+achName(AVLOCK[k][v])+")");});});
-  $("av-body").innerHTML="<div class='avbig'>"+avatarSVG(A)+"</div><div class='avrows'>"+rows+"</div>"+(locks.length?"<p class='muted' style='font-size:.8rem'>Earn more: "+locks.join(", ")+".</p>":"<p class='muted' style='font-size:.8rem'>Everything unlocked.</p>");
+  var A=heroAv(),rows=Object.keys(AVOPT).map(function(k){var v=A[k],isColor=String(v).charAt(0)==="#",list=AVOPT[k],pos=list.indexOf(v)+1;
+    return "<div class='avrow'><span class='avl'>"+AVLABEL[k]+"</span><button class='mini avb' data-k='"+k+"' data-d='-1' aria-label='Previous "+AVLABEL[k]+"'>\u2039</button><span class='avv'>"+(isColor?"<i class='sw' style='background:"+v+"'></i>":avName(k,v))+" <span class='muted' style='font-size:.7rem'>"+pos+"/"+list.length+"</span></span><button class='mini avb' data-k='"+k+"' data-d='1' aria-label='Next "+AVLABEL[k]+"'>\u203a</button></div>";}).join("");
+  var locks=[];Object.keys(AVLOCK).forEach(function(k){Object.keys(AVLOCK[k]).forEach(function(v){if(avLocked(k,v))locks.push(avName(k,v)+" ("+achName(AVLOCK[k][v])+")");});});
+  $("av-body").innerHTML="<div class='avbig'>"+avatarSVG(A)+"</div><div class='row' style='margin:0 0 10px'><button class='btn ghost pill' id='av-rand'>Randomize</button></div><div class='avrows'>"+rows+"</div>"+(locks.length?"<p class='muted' style='font-size:.8rem'>Earn more: "+locks.join(", ")+".</p>":"<p class='muted' style='font-size:.8rem'>Everything unlocked.</p>");
   $("av-body").querySelectorAll(".avb").forEach(function(b){b.onclick=function(){var k=b.dataset.k,list=AVOPT[k],i=list.indexOf(A[k]),d=+b.dataset.d;
     for(var n=0;n<list.length;n++){i=(i+d+list.length)%list.length;if(!avLocked(k,list[i]))break;}A[k]=list[i];save();openAvatar();};});
+  $("av-rand").onclick=function(){Object.keys(AVOPT).forEach(function(k){var ok=AVOPT[k].filter(function(v){return !avLocked(k,v);});A[k]=pick(ok);});if(Math.random()<0.4)A.hat="none";if(Math.random()<0.5)A.extra="none";if(Math.random()<0.6)A.item="none";save();openAvatar();};
   $("scrim").hidden=false;$("avSheet").hidden=false;
 }
 function closeAvatar(){$("avSheet").hidden=true;if($("modal").hidden&&$("tools").hidden&&$("lookSheet").hidden&&$("playerSheet").hidden)$("scrim").hidden=true;if(!$("lobby").hidden)renderLobby();}
