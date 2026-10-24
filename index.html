@@ -330,6 +330,17 @@ input,select{padding:10px 12px;border-radius:12px;border:1px solid var(--line);b
 @media (prefers-reduced-motion:reduce){.fcin,.pc.dealin,.wbanner.pop,#season span,.confetti i{animation:none!important}#season{display:none}}
 .nofx #season span{animation:none}
 
+.gt{width:100%;border-collapse:collapse;font-size:.85rem;margin:6px 0}
+.gt th,.gt td{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left;vertical-align:top}
+.gt th{font-size:.78rem;color:var(--muted);font-weight:700}
+.gt td.g-r{color:#b8862b;font-weight:800}.gt td.g-c{color:#2e8b57;font-weight:700}.gt td.g-f{color:var(--muted)}
+.ggrid{display:grid;grid-template-columns:repeat(13,1fr);gap:1px;margin-top:8px}
+.gcell{font-size:.52rem;font-weight:700;text-align:center;padding:4px 0;border-radius:2px;cursor:pointer;line-height:1}
+.gcell.g3{background:#e8b923;color:#1b1408}.gcell.gc{background:#2e8b57;color:#fff}.gcell.gf{background:rgba(127,127,127,.18);color:var(--muted)}
+.gk{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:-1px}.gk.g3{background:#e8b923}.gk.gc{background:#2e8b57}.gk.gf{background:rgba(127,127,127,.3)}
+details{margin:8px 0}details summary{cursor:pointer;padding:4px 0}
+#gd-op,#gd-me,#gd-opp{margin:6px 0;flex-wrap:wrap}
+
 [hidden]{display:none!important}
 @media (max-width:380px){.seat{width:96px;font-size:.68rem}.center{width:206px}.pc.sm,.slot{width:34px;height:47px}.board{height:47px}}
 @media (prefers-reduced-motion:reduce){.pc.deal{animation:none}#atm .fx1,#atm .fx2{animation:none!important}.dealer{transition:none}}
@@ -571,6 +582,7 @@ function loop(){
 }
 function act(i,a,to){
   var s=H.s[i],p=T.players[i],nm=p.hero?"You":p.name,txt;
+  H.hist=H.hist||[];H.hist.push({i:i,st:H.street,a:(a==="fold"||a==="check"||a==="call")?a:(H.cur===0?"bet":"raise"),toCall:Math.max(0,H.cur-s.sb),pot:potTotal(),nOpp:live().length-1,raises:H.raises});
   if(a==="fold"){s.folded=true;s.label="Fold";txt=nm+(p.hero?" fold.":" folds.");}
   else if(a==="check"){s.label="Check";txt=nm+(p.hero?" check.":" checks.");}
   else if(a==="call"){var amt=put(i,H.cur-s.sb);s.label=s.allin?"All in":"Call";txt=nm+(p.hero?" call ":" calls ")+chips(amt)+(s.allin?", all in.":".");
@@ -1032,37 +1044,6 @@ function rangeDesc(i){
   var bs=Math.round({beginner:5,regular:12,tough:22}[p.skill]*styleOf(p).bluff*(H.street===3?1:0.6));
   return "Their range: "+how+" ("+codes.length+" hand types)"+(H.street>0&&H.lastAgg===i?", narrowed to their strongest "+f+"% on this board, plus "+(H.street<3?"straight and flush draws and ":"")+"about "+bs+"% bluffs based on how often this player bluffs":"")+". Cards you can see are removed.";
 }
-function adviseHero(full){
-  var hs=H.s[0],L=legal(0),pot=potTotal(),need=L.toCall>0?L.toCall/(pot+L.toCall):0,code=codeOf(hs.cards),pos=H.pos[0],ck=chartKey(pos);
-  var opp=live().filter(function(i){return i!==0;}),nO=Math.max(1,Math.min(opp.length,4)),bettor=H.lastAgg>0&&L.toCall>0?H.lastAgg:-1;
-  var dR=eqRandomD(hs.cards,H.board,nO,full?(H.street===0?1500:2000):500),eqR=dR.eq;
-  var vc=bettor>0?villainCombos(bettor):null,dV=vc&&vc.length?eqVsCombosD(hs.cards,H.board,vc,full?2500:700):null,eqV=dV?dV.eq:null;
-  var advice,why,eqUse=eqV!==null?eqV:eqR;
-  if(H.street===0){
-    if(H.raises===0){
-      if(pos==="BB"){advice="Check";why="Nobody raised. See the flop for free.";if(EQ[code]>=62){advice="Raise";why="Strong hand and only limpers in. Raise to about "+chips(T.bb*(3+opp.length-1))+".";}}
-      else if(SETS[ck]&&SETS[ck][code]){advice="Raise";why=code+" is in your "+ck+" opening chart"+(ck!==pos?" (the closest chart for "+pos+" at a full table)":"")+". Raise to about "+chips(T.bb*(T.home?4:2.5))+(T.home?" since home games call a lot,":"")+" plus 1 big blind per limper.";}
-      else{advice=L.toCall===0?"Check":"Fold";why=code+" isn't in your "+ck+" opening chart.";}
-    }else{
-      var premium=["AA","KK","QQ","AKs","AKo"].indexOf(code)>=0,margin=(pos==="BTN"||pos==="CO")?0.02:0.06;
-      if(premium){advice="Reraise";why="Premium hand. 3-bet to about 3 times their raise.";}
-      else if(eqV!==null&&eqV>=need+margin&&EQ[code]>=(pos==="BB"?48:56)){advice="Call";why="Equity "+p1(eqV)+" is above the "+p1(need)+" you need"+(margin>0.02?" plus a "+Math.round(margin*100)+"-point cushion for playing out of position":"")+".";}
-      else{advice=L.toCall===0?"Check":"Fold";why="Equity against their raising range is "+p1(eqUse)+". You need "+p1(need+margin)+" including the cushion for position.";}
-    }
-  }else{
-    if(L.toCall>0){
-      if(eqUse>=0.65&&L.canRaise){advice="Raise";why="Equity "+p1(eqUse)+" is above 65%, so you're ahead of most of what they bet with.";}
-      else if(eqUse>=need){advice="Call";why="Equity "+p1(eqUse)+" is above the "+p1(need)+" you need.";}
-      else{advice="Fold";why="Equity "+p1(eqUse)+" is below the "+p1(need)+" you need.";}
-    }else{
-      var oc=H.street<3?outCards(hs.cards,H.board).length:0;
-      if(eqR>=0.6){advice="Bet";why="Equity "+p1(eqR)+" against "+nO+" random hand"+(nO>1?"s":"")+" is above 60%, so bet half to three quarters of the pot for value.";}
-      else if(oc>=8&&opp.length<=2){advice="Bet or check";why="Big draw ("+oc+" outs). A half-pot semi-bluff is fine heads up; checking is fine too.";}
-      else{advice="Check";why="Equity "+p1(eqR)+" is under the 60% you want for a value bet.";}
-    }
-  }
-  return {advice:advice,why:why,eq:eqUse,eqR:eqR,eqV:eqV,dR:dR,dV:dV,vc:vc,need:need,L:L,pot:pot,code:code,pos:pos,opp:opp,nO:nO,bettor:bettor};
-}
 function openTools(){
   var body=$("tools-body"),html="";closeLook();
   if(!H||!T){return;}
@@ -1091,11 +1072,13 @@ function openTools(){
       html+="<div class='tool'><div class='k'>Board</div><ul style='margin:2px 0;padding-left:1.1em'>"+boardWarn().map(function(w){return "<li>"+w+"</li>";}).join("")+"</ul></div>";
     }
     html+="<div class='tool'><div class='k'>Equity vs "+nO+" random hand"+(nO>1?"s":"")+"</div>"+simWork(dR,"Against random hands")+"</div>";
-    if(dV){
+    if(A.Rg){
+      html+="<div class='tool'><div class='k'>What their actions say</div><div class='muted' style='font-size:.85rem'>Each player's likely hands, weighted by what they did this hand and how they play. A bet or raise from a careful player cuts out most weak hands.</div>"+A.Rg.map(rangeCard).join("")+simWork(dV,"Your equity against all of them")+(A.L.toCall>0?"<div class='formula'>Price to call: "+p1(A.need)+(A.cush?" + "+Math.round(A.cush*100)+" points cushion = "+p1(A.need+A.cush):"")+". Your equity: "+p1(A.eq)+".</div>":"")+"<div class='muted' style='font-size:.85rem'>The full call or fold guide is in the Train tab.</div></div>";
+    }else if(dV){
       var ahead="";if(H.board.length>=3){var me=evaluate(hs.cards.concat(H.board)),a=0;vc.forEach(function(x){if(me>evaluate(x.concat(H.board)))a++;});ahead="<br>Right now your hand beats "+n0(a)+" of those "+n0(vc.length)+" combos ("+p1(a/vc.length)+"). The rest of the equity comes from the cards still to come.";}
       html+="<div class='tool'><div class='k'>Equity vs "+T.players[bettor].name+"'s likely range</div><div class='v' style='font-size:.92rem'>"+rangeDesc(bettor)+" That leaves <b>"+n0(dV.combos)+"</b> possible two-card combos."+ahead+"</div>"+simWork(dV,"Against that range")+"</div>";
     }
-    html+="<div class='tool'><div class='k'>Opponents in the hand</div>"+opp.map(function(i){var p=T.players[i];return "<div style='margin:4px 0'><span class='dot "+p.skill+"'></span> <b>"+p.name+"</b> ("+SKILL_LABEL[p.skill]+", "+chips(p.stack)+(p.tilt>0?", on tilt":"")+"): "+styleText(p)+"</div>";}).join("")+"</div>";
+    html+="<div class='tool'><div class='k'>Opponents in the hand</div>"+opp.map(function(i){var p=T.players[i];return "<div style='margin:4px 0'><span class='dot "+p.skill+"'></span> <b>"+p.name+"</b> ("+SKILL_LABEL[p.skill]+", "+chips(p.stack)+(p.tilt>0?", on tilt":"")+"):<div style='font-size:.88rem;display:grid;gap:3px;margin-top:3px'>"+styleLong(p)+"</div></div>";}).join("")+"</div>";
   }else{
     html+="<div class='tool'><div class='v'>"+(H.done?"Hand over.":"You're not in this hand.")+" The tools work during your hands. The log and deck check are below.</div></div>";
   }
@@ -1136,7 +1119,7 @@ function seeded(seed){return function(){seed=(seed*1664525+1013904223)>>>0;retur
 var SKINS=["#f6d5b8","#eec29b","#d9a47a","#b97f55","#8d5a3b","#61402a"];
 var HAIRC=["#1d1a17","#3b2a1d","#6b4423","#a0612b","#c9a050","#d8d2c4","#8a8580","#b8322a"];
 var AVC=0;
-function avatarSVG(a,mood){a=moodify(a,mood);
+function avatarSVG(a,mood){a=moodify(a,mood);var fem=a.look==="fem";
   var sk=a.skin||"#eec29b",hc=a.hairColor||"#3b2a1d",cloth=a.cloth||"#2b3a55",hat=a.hat||"none",hatC=a.hatColor||"#b8322a",o=[];
   var rx=a.shape==="long"?14:a.shape==="square"?17:18,ry=a.shape==="long"?21:a.shape==="square"?18:19,cy=33,top=cy-ry,L=32-rx,R=32+rx;
   var hcD=shade(hc,-28),hcL=shade(hc,40),skD=shade(sk,-22);
@@ -1162,11 +1145,19 @@ function avatarSVG(a,mood){a=moodify(a,mood);
   if(hair==="bouffant")o.push("<ellipse cx='32' cy='"+(top+3)+"' rx='"+(rx+7)+"' ry='13' fill='"+hc+"'/>");
   if(hair==="bun")o.push("<circle cx='32' cy='"+(top-4)+"' r='7' fill='"+hc+"'/><circle cx='30' cy='"+(top-6)+"' r='2' fill='"+hcL+"' opacity='.5'/>");
   if(hair==="ponytail")P("M"+(R-2)+" "+(top+4)+"C"+(R+10)+" "+(top+2)+" "+(R+11)+" "+(cy+8)+" "+(R+5)+" "+(cy+16)+"C"+(R+6)+" "+(cy+6)+" "+(R+3)+" "+(top+10)+" "+(R-4)+" "+(top+8)+"Z",hc);
+    if(hair==="wavy")P("M"+(L-5)+" "+(cy-4)+"C"+(L-7)+" "+(top-7)+" "+(R+7)+" "+(top-7)+" "+(R+5)+" "+(cy-4)+"C"+(R+9)+" "+(cy+8)+" "+(R+5)+" "+(cy+14)+" "+(R+8)+" "+(cy+ry+6)+"Q"+(R+4)+" "+(cy+ry+11)+" "+(R)+" "+(cy+ry+7)+"Q32 "+(cy+ry+12)+" "+(L)+" "+(cy+ry+7)+"Q"+(L-4)+" "+(cy+ry+11)+" "+(L-8)+" "+(cy+ry+6)+"C"+(L-5)+" "+(cy+14)+" "+(L-9)+" "+(cy+8)+" "+(L-5)+" "+(cy-4)+"Z",hc);
+  if(hair==="sideswept")P("M"+(L-4)+" "+(cy-4)+"C"+(L-6)+" "+(top-7)+" "+(R+6)+" "+(top-7)+" "+(R+4)+" "+(cy-4)+"C"+(R+7)+" "+(cy+12)+" "+(R+6)+" "+(cy+ry+4)+" "+(R+2)+" "+(cy+ry+9)+"L"+(L-2)+" "+(cy+ry+9)+"C"+(L-6)+" "+(cy+ry+4)+" "+(L-7)+" "+(cy+12)+" "+(L-4)+" "+(cy-4)+"Z",hc);
+  if(hair==="highpony"){P("M30 "+(top+1)+"C33 "+(top-11)+" "+(R+6)+" "+(top-11)+" "+(R+7)+" "+(top-2)+"C"+(R+11)+" "+(cy-2)+" "+(R+9)+" "+(cy+8)+" "+(R+5)+" "+(cy+15)+"C"+(R+6)+" "+(cy+2)+" "+(R+3)+" "+(top+4)+" 32 "+(top+4)+"Z",hc);}
+  if(hair==="pigtails"){P("M"+(L+1)+" "+(cy-9)+"C"+(L-6)+" "+(cy-7)+" "+(L-10)+" "+(cy+6)+" "+(L-6)+" "+(cy+15)+"C"+(L-3)+" "+(cy+8)+" "+(L-2)+" "+(cy-2)+" "+(L+2)+" "+(cy-5)+"Z",hc);P("M"+(R-1)+" "+(cy-9)+"C"+(R+6)+" "+(cy-7)+" "+(R+10)+" "+(cy+6)+" "+(R+6)+" "+(cy+15)+"C"+(R+3)+" "+(cy+8)+" "+(R+2)+" "+(cy-2)+" "+(R-2)+" "+(cy-5)+"Z",hc);}
+  if(hair==="spacebuns")o.push("<circle cx='"+(L+5)+"' cy='"+(top-1)+"' r='6' fill='"+hc+"'/><circle cx='"+(R-5)+"' cy='"+(top-1)+"' r='6' fill='"+hc+"'/><circle cx='"+(L+3)+"' cy='"+(top-3)+"' r='1.6' fill='"+hcL+"' opacity='.5'/><circle cx='"+(R-7)+"' cy='"+(top-3)+"' r='1.6' fill='"+hcL+"' opacity='.5'/>");
   o.push(hC);
   /* body and outfit */
-  var of=a.outfit||"tee",body="M8 64c2-11 12-15 24-15s22 4 24 15z";
-  if(of==="tank"){P(body,sk);P("M20 64c1-7 3-12 6-14l3 1c-2 4-3 9-3 13zM44 64c-1-7-3-12-6-14l-3 1c2 4 3 9 3 13z",cloth);P("M24 64c1-5 3-9 8-9s7 4 8 9z",cloth);}
+  var of=a.outfit||"tee",body=fem?"M11 64c2-10 10-14 21-14s19 4 21 14z":"M8 64c2-11 12-15 24-15s22 4 24 15z";
+  if(of==="dress"){P(body,sk);P("M19 64L21 55Q32 60 43 55L45 64Z",cloth);o.push("<path d='M23 55L26 49M41 55L38 49' stroke='"+cloth+"' stroke-width='1.8'/>");}
+  else if(of==="tank"){P(body,sk);P("M20 64c1-7 3-12 6-14l3 1c-2 4-3 9-3 13zM44 64c-1-7-3-12-6-14l-3 1c2 4 3 9 3 13z",cloth);P("M24 64c1-5 3-9 8-9s7 4 8 9z",cloth);}
   else{var bc=of==="tux"?"#141414":of==="leather"?"#1d1d1f":cloth;P(body,bc);
+    if(of==="blouse"){P("M26 49Q32 55 38 49L36 49Q32 52 28 49Z",sk);o.push("<path d='M25 50q7 7 14 0' stroke='#f4f4f4' stroke-width='2.2' fill='none'/><circle cx='32' cy='58' r='.9' fill='#f4f4f4'/><circle cx='32' cy='62' r='.9' fill='#f4f4f4'/>");}
+    if(of==="cardigan"){P("M27 49L32 64L37 49Z",shade(cloth,70));o.push("<path d='M27 49L32 64M37 49L32 64' stroke='"+shade(cloth,-25)+"' stroke-width='1.2'/><circle cx='30.5' cy='56' r='.9' fill='"+shade(cloth,-30)+"'/><circle cx='31.3' cy='60' r='.9' fill='"+shade(cloth,-30)+"'/>");}
     if(of==="suit"||of==="tux"){P("M27 49l5 11 5-11z","#f4f4f4");P("M24 50l8 13-5-1-6-9zM40 50l-8 13 5-1 6-9z",shade(bc,-18));}
     if(of==="hoodie"){o.push("<path d='M18 52q14 9 28 0' stroke='"+shade(cloth,-25)+"' stroke-width='4' fill='none'/><path d='M29 54v7M35 54v7' stroke='#f2f2f2' stroke-width='1.3'/>");}
     if(of==="leather"){P("M26 49l6 8 6-8-2 9-4 2-4-2z","#2c2c2e");o.push("<path d='M32 57v7' stroke='#9a9a9a' stroke-width='1'/><path d='M14 58q4-5 10-6' stroke='rgba(255,255,255,.18)' stroke-width='1.5' fill='none'/>");}
@@ -1176,7 +1167,7 @@ function avatarSVG(a,mood){a=moodify(a,mood);
     if(of==="jersey"){o.push("<path d='M26 49l6 6 6-6' stroke='#f2f2f2' stroke-width='2' fill='none'/><text x='32' y='63' font-size='7' font-weight='800' text-anchor='middle' fill='#f2f2f2' font-family='sans-serif'>23</text>");}
   }
   /* neck */
-  o.push("<rect x='26' y='"+(cy+ry-8)+"' width='12' height='14' rx='4' fill='"+skD+"'/>");
+  o.push("<rect x='"+(fem?27:26)+"' y='"+(cy+ry-8)+"' width='"+(fem?10:12)+"' height='14' rx='4' fill='"+skD+"'/>");
   if(of==="turtleneck")o.push("<rect x='24' y='"+(cy+ry-3)+"' width='16' height='10' rx='4' fill='"+shade(cloth,-12)+"'/>");
   var ex=a.extra||"none";
   if(ex==="bowtie"||of==="tux")P("M26 52l6 3 6-3v6l-6-3-6 3z","#c8102e");
@@ -1195,6 +1186,7 @@ function avatarSVG(a,mood){a=moodify(a,mood);
   if(a.shape==="square")o.push("<rect x='"+L+"' y='"+top+"' width='"+(rx*2)+"' height='"+(ry*2)+"' rx='9' fill='"+sk+"'/>");
   else o.push("<ellipse cx='32' cy='"+cy+"' rx='"+rx+"' ry='"+ry+"' fill='"+sk+"'/>");
   o.push("<ellipse cx='32' cy='"+(cy+ry*0.55)+"' rx='"+(rx*0.8)+"' ry='"+(ry*0.4)+"' fill='rgba(0,0,0,.06)'/><ellipse cx='"+(32-rx*0.45)+"' cy='"+(cy-ry*0.45)+"' rx='"+(rx*0.35)+"' ry='"+(ry*0.25)+"' fill='rgba(255,255,255,.12)'/>");
+  if(ex==="hoops")o.push("<circle cx='"+L+"' cy='"+(cy+8)+"' r='3' fill='none' stroke='#e5c040' stroke-width='1.3'/><circle cx='"+R+"' cy='"+(cy+8)+"' r='3' fill='none' stroke='#e5c040' stroke-width='1.3'/>");
   if(ex==="earring")o.push("<circle cx='"+L+"' cy='"+(cy+6)+"' r='2' fill='#e5c040'/>");
   /* front hair */
   o.push(hO);
@@ -1214,6 +1206,13 @@ function avatarSVG(a,mood){a=moodify(a,mood);
   if(hair==="mohawk")P("M28 "+(top+6)+"L27 "+(top-6)+"L30 "+(top-2)+"L31 "+(top-11)+"L33 "+(top-3)+"L35 "+(top-9)+"L36 "+(top-1)+"L38 "+(top-5)+"L37 "+(top+6)+"Z",hc);
   if(hair==="flattop")o.push(capStr(8,hc)+"<rect x='"+(L+1)+"' y='"+(top-7)+"' width='"+(rx*2-2)+"' height='12' rx='2' fill='"+hc+"'/>");
   if(hair==="bouffant"){o.push(capStr(8,hc));hl("M"+(L+2)+" "+(top-2)+"Q32 "+(top-12)+" "+(R-2)+" "+(top-2));}
+  if(hair==="pixie"){o.push(capStr(5,hc));P("M"+(L)+" "+(top+9)+"C"+(L+2)+" "+(top-2)+" "+(32+5)+" "+(top-3)+" "+(R-1)+" "+(top+3)+"C"+(32+3)+" "+(top+3)+" "+(32-4)+" "+(top+6)+" "+(L)+" "+(top+11)+"Z",hc);hl("M"+(L+4)+" "+(top+3)+"Q32 "+(top-2)+" "+(R-4)+" "+(top+2));}
+  if(hair==="wavy"||hair==="pigtails"||hair==="spacebuns"){o.push(capStr(7,hc));o.push("<path d='M32 "+(top-1)+"v8' stroke='"+hcD+"' stroke-width='1.2'/>");if(hair==="wavy"){P("M32 "+(top-1)+"C"+(32-8)+" "+(top+1)+" "+(L+1)+" "+(top+8)+" "+(L+1)+" "+(cy+4)+"L"+(L-2)+" "+(cy+4)+"C"+(L-3)+" "+(top+4)+" "+(32-6)+" "+(top-3)+" 32 "+(top-2)+"Z",hc);P("M32 "+(top-1)+"C"+(32+8)+" "+(top+1)+" "+(R-1)+" "+(top+8)+" "+(R-1)+" "+(cy+4)+"L"+(R+2)+" "+(cy+4)+"C"+(R+3)+" "+(top+4)+" "+(32+6)+" "+(top-3)+" 32 "+(top-2)+"Z",hc);}
+    if(hair==="pigtails")o.push("<circle cx='"+(L-2)+"' cy='"+(cy-6)+"' r='2' fill='#e86a8a'/><circle cx='"+(R+2)+"' cy='"+(cy-6)+"' r='2' fill='#e86a8a'/>");}
+  if(hair==="highpony"){o.push(capStr(4,hc));o.push("<ellipse cx='31' cy='"+(top)+"' rx='2.4' ry='1.6' fill='#e86a8a'/>");hl("M"+(L+5)+" "+(top+5)+"Q32 "+(top-2)+" "+(R-4)+" "+(top+3));}
+  if(hair==="sideswept"){o.push(capStr(7,hc));P("M"+(L-1)+" "+(cy-1)+"C"+(L-2)+" "+(top+2)+" "+(32)+" "+(top-4)+" "+(R+1)+" "+(top+4)+"C"+(32+4)+" "+(top+3)+" "+(32-5)+" "+(top+8)+" "+(L+3)+" "+(cy-3)+"Z",hc);hl("M"+(L+2)+" "+(top+6)+"Q"+(32-2)+" "+(top-2)+" "+(R-3)+" "+(top+3));}
+  if(ex==="bow"&&hat==="none")o.push("<path d='M"+(R-6)+" "+(top+1)+"l-6 -4v8zM"+(R-6)+" "+(top+1)+"l6 -4v8z' fill='#e04a6a'/><circle cx='"+(R-6)+"' cy='"+(top+1)+"' r='1.8' fill='#b8304a'/>");
+  if(ex==="flower")o.push([0,72,144,216,288].map(function(d){var r=d*Math.PI/180;return "<circle cx='"+(L+1+3*Math.cos(r)).toFixed(1)+"' cy='"+(top+10+3*Math.sin(r)).toFixed(1)+"' r='2.4' fill='#ff9ab8'/>";}).join("")+"<circle cx='"+(L+1)+"' cy='"+(top+10)+"' r='1.6' fill='#ffd54a'/>");
   o.push(hC);
   /* brows and eyes */
   var ey=cy-4,e7=7,eyes=a.eyes||"normal",covered=["shades","aviators","mirrored","roundshades","starglasses","goggles"].indexOf(eyes)>=0;
@@ -1229,6 +1228,7 @@ function avatarSVG(a,mood){a=moodify(a,mood);
     if(eyes==="square")o.push("<rect x='"+(32-e7-6)+"' y='"+(ey-4.5)+"' width='12' height='9' rx='2' fill='none' stroke='#111' stroke-width='2.4'/><rect x='"+(32+e7-6)+"' y='"+(ey-4.5)+"' width='12' height='9' rx='2' fill='none' stroke='#111' stroke-width='2.4'/><path d='M"+(32-1)+" "+ey+"h2' stroke='#111' stroke-width='2'/>");
     if(eyes==="cateye")o.push("<path d='M"+(32-e7-7)+" "+(ey-3)+"q7-4 12 1q-1 6-6 6q-5 0-6-7zM"+(32+e7+7)+" "+(ey-3)+"q-7-4-12 1q1 6 6 6q5 0 6-7z' fill='none' stroke='#b0306a' stroke-width='1.8'/>");
     if(eyes==="monocle")o.push("<circle cx='"+(32+e7)+"' cy='"+ey+"' r='5.5' fill='rgba(255,255,255,.15)' stroke='#e5c040' stroke-width='1.6'/><path d='M"+(32+e7+5)+" "+(ey+3)+"q4 10 0 18' stroke='#e5c040' stroke-width='1' fill='none'/>");
+    if(fem&&eyes!=="eyepatch")o.push("<path d='M"+(32-e7+3.6)+" "+(ey-2.4)+"Q"+(32-e7)+" "+(ey-5.6)+" "+(32-e7-3.6)+" "+(ey-2.6)+"l-1.8 -1.3M"+(32+e7-3.6)+" "+(ey-2.4)+"Q"+(32+e7)+" "+(ey-5.6)+" "+(32+e7+3.6)+" "+(ey-2.6)+"l1.8 -1.3' stroke='#1a1a1a' stroke-width='1.3' fill='none' stroke-linecap='round'/>");
   }else{
     var lensY=ey-4;
     if(eyes==="shades")o.push("<path d='M"+(32-e7-7)+" "+lensY+"h12v4q0 5-6 5t-6-5zM"+(32+e7-5)+" "+lensY+"h12v4q0 5-6 5t-6-5z' fill='#111'/><path d='M"+(32-e7+5)+" "+(lensY+1)+"h4' stroke='#111' stroke-width='2'/><path d='M"+(32-e7-5)+" "+(lensY+2)+"l3 0' stroke='rgba(255,255,255,.35)' stroke-width='1.2'/>");
@@ -1255,7 +1255,8 @@ function avatarSVG(a,mood){a=moodify(a,mood);
   else if(m==="tongue")o.push("<path d='M25 "+my+"q7 7 14 0z' fill='#5a1a1a'/><path d='M30 "+(my+2)+"q2 6 5 0z' fill='#e86a7a'/>");
   else if(m==="teeth")o.push("<rect x='26' y='"+(my-1)+"' width='12' height='5' rx='2' fill='#fff' stroke='#5a1a1a' stroke-width='1.2'/><path d='M30 "+(my-1)+"v5M34 "+(my-1)+"v5' stroke='#ccc' stroke-width='.8'/>");
   else o.push("<path d='M26 "+my+"q6 5 12 0' stroke='#5a1a1a' stroke-width='2.2' fill='none' stroke-linecap='round'/>");
-  if(a.lips)o.push("<path d='M26 "+my+"q6 5 12 0q-6 2-12 0z' fill='#c8304a'/>");
+  var lc=a.lipColor&&a.lipColor!=="none"?a.lipColor:(a.lips?"#c8304a":null);
+  if(lc){if(m==="smile"||m==="smirk"||m==="flat"||m==="frown")o.push("<path d='M25.5 "+(my-0.5)+"q3.2-2.2 6.5-0.6q3.3-1.6 6.5 0.6q-3.2 5.8-13 0z' fill='"+lc+"'/>");else o.push("<path d='M24 "+my+"q8 9 16 0' stroke='"+lc+"' stroke-width='1.6' fill='none'/>");}
   /* facial hair */
   var fh=a.facial||"none",fc=hc;
   if(fh==="mustache")P("M24 "+(my-3)+"q8-6 16 0q-8-2-16 0z",fc," stroke='"+fc+"' stroke-width='2'");
@@ -1316,8 +1317,15 @@ function avatarSVG(a,mood){a=moodify(a,mood);
   o.push(moodFx(mood,cy,rx,ry));
   return "<svg viewBox='-5 -12 74 76' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'>"+o.join("")+"</svg>";
 }
+var FEMN={Rosa:1,Priya:1,Mei:1,Tess:1,Nina:1,June:1,Bea:1,Dot:1,Vera:1,Lena:1,Kit:1};
 function randomAvatar(name,skill){
   var r=seeded(hashStr(name||"x")),pk=function(a){return a[Math.floor(r()*a.length)];},ch=function(p){return r()<p;};
+  if(FEMN[name]){var bgs0={beginner:"#1f4d33",regular:"#1e3a66",tough:"#5a1f1a"};return {look:"fem",bg:bgs0[skill]||"#2a3b34",skin:pk(SKINS),hairColor:pk(HAIRC),shape:pk(["round","long","round","square"]),
+    hair:pk(["long","wavy","bob","ponytail","bun","braids","curly","afro","pixie","sideswept","highpony","pigtails","spacebuns","short"]),eyes:ch(.65)?pk(["normal","wide","squint"]):pk(["glasses","cateye","shades","roundshades","square"]),
+    nose:pk(["small","button","small","hook"]),mouth:pk(["smile","grin","smirk","flat","o"]),brows:pk(["normal","thin","angry","worried"]),facial:"none",lipColor:ch(.6)?pk(["#c8304a","#e86a8a","#8a2a4a","#c98a7a"]):"none",
+    hat:ch(.75)?"none":pk(["ballcap","beanie","bucket","beret","fedora","visor","headband","headphones","cowboy"]),hatColor:pk(["#b8322a","#1e3a66","#2e8b57","#1a1a1a","#f2f2f2","#e8b923","#c87a2a"]),
+    extra:ch(.45)?"none":pk(["hoops","earring","pearls","scarf","chain","bow","flower","cards"]),item:ch(.9)?"none":pk(["lollipop","gum"]),
+    outfit:pk(["tee","blouse","dress","cardigan","hoodie","leather","jersey","turtleneck","suit"]),cloth:pk(["#2b3a55","#5a2b3a","#2f4a2a","#444444","#6a4a1a","#1a1a1a","#c8102e","#2a8a8a","#8a3a6a"]),blush:r()<.35,freckles:r()<.15};}
   var bgs={beginner:"#1f4d33",regular:"#1e3a66",tough:"#5a1f1a"};
   return {bg:bgs[skill]||"#2a3b34",skin:pk(SKINS),hairColor:pk(HAIRC),shape:pk(["round","long","square"]),
     hair:pk(["buzz","short","sidepart","slick","pomp","spiky","curly","afro","bob","long","ponytail","bun","mullet","receding","none","braids"]),
@@ -1462,7 +1470,7 @@ function openPlayer(i){
   var sk=SKILL_LABEL[p.skill]||p.skill;
   $("p-body").innerHTML="<div class='pcard'><div class='pav'>"+avatarSVG(pr.av)+"</div><div style='min-width:0'><div class='venue'>"+pr.job+"</div><h2>"+pr.name+"</h2><div class='muted' style='margin-top:4px'><span class='dot "+p.skill+"'></span> "+sk+" \u00b7 "+chips(p.stack)+"</div></div></div>"+
     "<p style='margin:12px 0'>"+pr.bio+"</p>"+(pr.lines?"<div class='formula'>Catchphrase: \u201c"+pr.lines.win[0]+"\u201d</div>":"")+
-    "<div class='tool'><div class='k'>How they play</div><div class='v'>"+styleText(p)+(p.tilt>0?" <b>On tilt right now:</b> playing looser and bluffing more for a few hands.":"")+"</div></div>";
+    "<div class='tool'><div class='k'>How they play</div><div class='v' style='font-size:.92rem;display:grid;gap:4px'>"+styleLong(p)+(p.tilt>0?" <b>On tilt right now:</b> playing looser and bluffing more for a few hands.":"")+"</div></div>";
   closeTools();$("scrim").hidden=false;$("playerSheet").hidden=false;$("p-close").focus({preventScroll:true});
 }
 function closePlayer(){$("playerSheet").hidden=true;if($("modal").hidden&&$("tools").hidden&&$("lookSheet").hidden)$("scrim").hidden=true;}
@@ -1737,7 +1745,7 @@ function renderRealTab(){
 
 /* ===== training tab ===== */
 function renderTrainTab(){
-  var D=dailyState(),day=D.days[dayKey()],LK=S.leaks||{n:0,agree:0,by:{}},rd=reads(),h=missionsHTML();
+  var D=dailyState(),day=D.days[dayKey()],LK=S.leaks||{n:0,agree:0,by:{}},rd=reads(),h=missionsHTML()+"<div id='guide-wrap'>"+guideHTML()+"</div>";
   h+="<div class='panel glass'><div class='evtop'><div><div class='venue'>New every day</div><h2>Daily puzzles</h2></div><div class='tier'>\ud83d\udd25 "+D.streak+"</div></div><p class='muted' style='font-size:.85rem'>Three spots: an opening decision, a drawing decision, and a river call. Streak best: "+D.best+".</p><div class='pzlist'>"+day.p.map(function(P,i){var a=day.a[i];return "<button class='pzbtn"+(a===null?"":a===P.ans?" ok":" no")+"' data-pz='"+i+"'><b>"+(i+1)+". "+P.title+"</b><span>"+(a===null?"Not answered":a===P.ans?"Correct":"Missed")+"</span></button>";}).join("")+"</div></div>";
   h+="<div class='panel glass'><h2>Leak finder</h2>";
   if(!LK.n)h+="<p class='muted'>Play some hands. Every decision you make gets checked against the math, and your biggest leaks show up here.</p>";
@@ -1755,6 +1763,7 @@ function renderTrainTab(){
   $("l-body").querySelectorAll("[data-pz]").forEach(function(b){b.onclick=function(){openPuzzle(+b.dataset.pz);};});
   $("l-body").querySelectorAll("[data-hr]").forEach(function(b){b.onclick=function(){openReview(+b.dataset.hr);};});
   if($("lk-reset"))$("lk-reset").onclick=function(){S.leaks={n:0,agree:0,by:{}};save();renderLobby();};
+  if($("guide-wrap"))wireGuide($("guide-wrap"));
 }
 function cardTxtC(c){var su=suitCh(c);return "<span class='c-"+su+"' style='font-weight:800'>"+(rankCh(c)==="T"?"10":rankCh(c))+SYM[su]+"</span>";}
 function openReview(k){
@@ -1809,24 +1818,24 @@ function moodOf(i){if(!H||!T)return "";var p=T.players[i],s=H.s[i];if(!p)return 
   if(H.done&&H.showdown&&s&&!s.folded&&!(H.winners&&H.winners[i]))return "sad";
   if(p.tilt>0)return "tilt";return "";}
 /* player avatar */
-var AVOPT={skin:SKINS.concat(["#ffe0c8","#4a2e1e"]),shape:["round","long","square"],
-  hair:["none","buzz","short","sidepart","slick","pomp","spiky","curly","afro","bob","long","ponytail","bun","braids","mullet","receding","mohawk","flattop","bouffant"],
+var AVOPT={look:["masc","fem"],skin:SKINS.concat(["#ffe0c8","#4a2e1e"]),shape:["round","long","square"],
+  hair:["none","buzz","short","sidepart","slick","pomp","spiky","curly","afro","bob","long","ponytail","bun","braids","mullet","receding","mohawk","flattop","bouffant","pixie","wavy","sideswept","highpony","pigtails","spacebuns"],
   hairColor:HAIRC.concat(["#f0d080","#5a7ad8","#d84a9a","#e8e8e8"]),brows:["normal","bushy","thin","angry","worried"],
   eyes:["normal","wide","squint","sleepy","glasses","square","cateye","shades","aviators","roundshades","goggles","starglasses","eyepatch","mirrored","monocle"],
   nose:["small","button","big","hook"],mouth:["smile","grin","smirk","flat","o","teeth","tongue"],
   facial:["none","stubble","mustache","pencil","walrus","handlebar","horseshoe","goatee","soulpatch","chinstrap","beard","sideburns"],
-  item:["none","toothpick","lollipop","gum"],
+  item:["none","toothpick","lollipop","gum"],lipColor:["none","#c8304a","#e86a8a","#8a2a4a","#c98a7a","#6a2a7a"],
   hat:["none","ballcap","backcap","trucker","visor","beanie","bucket","newsboy","beret","fedora","bowler","headband","bandana","headphones","hood","paper","hardhat","chef","cowboy","captain","top","tyrolean","pirate","viking","wizard","tiara","crown"],
   hatColor:["#b8322a","#1e3a66","#2e8b57","#1a1a1a","#f2f2f2","#e8b923","#6a2a8a","#c87a2a","#3a2f28"],
-  extra:["none","bowtie","tie","scarf","bandana","collar","suspenders","earring","pencil","cards","stethoscope","lei","earpiece","chain","pearls","headset","medal"],
-  outfit:["tee","suit","tux","hoodie","leather","hawaiian","flannel","turtleneck","overalls","jersey","tank"],
+  extra:["none","bowtie","tie","scarf","bandana","collar","suspenders","earring","pencil","cards","stethoscope","lei","hoops","bow","flower","earpiece","chain","pearls","headset","medal"],
+  outfit:["tee","blouse","dress","cardigan","suit","tux","hoodie","leather","hawaiian","flannel","turtleneck","overalls","jersey","tank"],
   cloth:["#2b3a55","#5a2b3a","#2f4a2a","#444444","#6a4a1a","#1a1a1a","#c8102e","#f2f2f2","#e8b923","#2a8a8a"],
   bg:["#2a3b34","#1e3a66","#5a1f1a","#3a1a4a","#4a3a0a","#111111","#0e5c5d","#6a2a12","#c87a9a","#d8c08a"]};
 var AVLOCK={eyes:{mirrored:"level10",monocle:"level20",aviators:"first_cash",eyepatch:"badbeat"},
   hat:{cowboy:"hammer",captain:"final_table",top:"first_title",tyrolean:"daily7",tiara:"main_event",crown:"main_event",pirate:"bigpot",viking:"ladder_champ",wizard:"level20"},
   extra:{chain:"br50k",pearls:"quads",headset:"hands1000",medal:"first_title"}};
-var AVLABEL={skin:"Skin",shape:"Face",hair:"Hair",hairColor:"Hair color",brows:"Brows",eyes:"Eyes",nose:"Nose",mouth:"Mouth",facial:"Facial hair",item:"In mouth",hat:"Hat",hatColor:"Hat color",extra:"Accessory",outfit:"Outfit",cloth:"Outfit color",bg:"Background"};
-var AVNAMES={none:"None",buzz:"Buzz cut",short:"Short",sidepart:"Side part",slick:"Slicked back",pomp:"Pompadour",spiky:"Spiky",curly:"Curly",afro:"Afro",bob:"Bob",long:"Long",ponytail:"Ponytail",bun:"Top bun",braids:"Braids",mullet:"Mullet",receding:"Receding",mohawk:"Mohawk",flattop:"Flattop",bouffant:"Bouffant",
+var AVLABEL={look:"Features",lipColor:"Lip color",skin:"Skin",shape:"Face",hair:"Hair",hairColor:"Hair color",brows:"Brows",eyes:"Eyes",nose:"Nose",mouth:"Mouth",facial:"Facial hair",item:"In mouth",hat:"Hat",hatColor:"Hat color",extra:"Accessory",outfit:"Outfit",cloth:"Outfit color",bg:"Background"};
+var AVNAMES={masc:"Masculine",fem:"Feminine",pixie:"Pixie cut",wavy:"Long waves",sideswept:"Side-swept",highpony:"High ponytail",pigtails:"Pigtails",spacebuns:"Space buns",blouse:"Blouse",dress:"Sundress",cardigan:"Cardigan",hoops:"Hoop earrings",bow:"Hair bow",flower:"Flower",none:"None",buzz:"Buzz cut",short:"Short",sidepart:"Side part",slick:"Slicked back",pomp:"Pompadour",spiky:"Spiky",curly:"Curly",afro:"Afro",bob:"Bob",long:"Long",ponytail:"Ponytail",bun:"Top bun",braids:"Braids",mullet:"Mullet",receding:"Receding",mohawk:"Mohawk",flattop:"Flattop",bouffant:"Bouffant",
   bushy:"Bushy",thin:"Thin",sleepy:"Sleepy",glasses:"Round glasses",square:"Thick frames",cateye:"Cat-eye",shades:"Sunglasses",aviators:"Aviators",roundshades:"Round shades",goggles:"Goggles",starglasses:"Party stars",eyepatch:"Eyepatch",mirrored:"Mirrored shades",monocle:"Monocle",
   button:"Button",teeth:"Gritted teeth",tongue:"Tongue out",pencil:"Pencil",walrus:"Walrus",horseshoe:"Horseshoe",soulpatch:"Soul patch",chinstrap:"Chinstrap",
   ballcap:"Ball cap",backcap:"Backwards cap",trucker:"Trucker hat",visor:"Dealer visor",bucket:"Bucket hat",newsboy:"Newsboy cap",bowler:"Bowler",headband:"Sweatband",bandana:"Bandana",headphones:"Headphones",paper:"Diner hat",hardhat:"Hard hat",chef:"Chef hat",cowboy:"Cowboy hat",captain:"Captain's hat",top:"Top hat",tyrolean:"Alpine hat",pirate:"Pirate hat",viking:"Viking helmet",wizard:"Wizard hat",tiara:"Tiara",crown:"Crown",
@@ -1834,7 +1843,7 @@ var AVNAMES={none:"None",buzz:"Buzz cut",short:"Short",sidepart:"Side part",slic
   tee:"T-shirt",suit:"Suit",tux:"Tuxedo",hoodie:"Hoodie",leather:"Leather jacket",hawaiian:"Hawaiian shirt",flannel:"Flannel",turtleneck:"Turtleneck",overalls:"Overalls",jersey:"Jersey",tank:"Tank top",
   toothpick:"Toothpick",lollipop:"Lollipop",gum:"Bubble gum",round:"Round",square2:"Square"};
 function heroAv(){S.avatar=S.avatar||{skin:"#eec29b",shape:"round",hair:"short",hairColor:"#3b2a1d",brows:"normal",eyes:"normal",nose:"small",mouth:"smile",facial:"stubble",item:"none",hat:"none",hatColor:"#b8322a",extra:"none",outfit:"tee",cloth:"#2b3a55",bg:"#2a3b34"};
-  var A=S.avatar;["item","hatColor","outfit"].forEach(function(k){if(A[k]===undefined)A[k]=AVOPT[k][0];});return A;}
+  var A=S.avatar;["look","item","hatColor","outfit","lipColor"].forEach(function(k){if(A[k]===undefined)A[k]=AVOPT[k][0];});return A;}
 function avLocked(k,v){var l=AVLOCK[k]&&AVLOCK[k][v];return l&&!car().ach[l]?l:null;}
 function avName(k,v){if(String(v).charAt(0)==="#")return "";if(k==="shape")return v.charAt(0).toUpperCase()+v.slice(1);return AVNAMES[v]||v;}
 function openAvatar(){
@@ -1856,7 +1865,7 @@ var CAST_CHAT={frankie:["Anybody want a coney? I'm buying.","My chili's hotter t
   margo:["Everything is going according to plan.","I've accounted for that."],gus:["Meter's running, folks.","Can we speed this up?"],tumbler:["Listen. Hear that? Neither do I.","These chips have a lovely tone."],irving:["I work here. I mean, I don't. Who said that?","Just a regular customer. Very regular."],twitch:["This deck has terrible security.","Running a quick scan on you."],
   juniper:["I'm not here. You didn't see me.","Lovely evening for espionage."],vex:["Soon this table will be mine. All of it.","Do you like my cufflinks? They're lasers."],gilda:["Darling, that's a lovely watch. Was.","I adore a high-stakes room."],barnaby:["Is it customary to wager the castle?","Splendid little game, this."],henchman:["...","(adjusts sunglasses)"],
   dino:["Drinks are on the house. Which is me.","I built this room, you know."],ruthie:["You two would make a lovely couple.","I've seen worse bluffs at a wedding."],tex:["Back home we call that a little bet.","Y'all ever seen a real oil well?"],stranger:["This next hand goes out to the lovely dealer.","Hold for applause."],lorraine:["Pulling the lever!","Feels like a jackpot kind of night."]};
-Object.keys(THEMES).forEach(function(k){THEMES[k].cast.forEach(function(c){c.lines.chat=CAST_CHAT[c.id]||[];});});
+Object.keys(THEMES).forEach(function(k){THEMES[k].cast.forEach(function(c){c.lines.chat=CAST_CHAT[c.id]||[];if(["delphine","millie","margo","juniper","gilda","ruthie","lorraine"].indexOf(c.id)>=0&&c.av)c.av.look="fem";});});
 function sayText(i,t,ms){if(!H||!T||!t)return;H.talk=H.talk||{};H.talk[i]={t:t,until:Date.now()+(H.skip?900:(ms||2800))};render();setTimeout(render,H.skip?950:(ms||2800)+100);}
 function chatLine(p,kind){if(p.cid){var c=castById(p.cid);if(kind==="idle"&&c&&c.lines.chat&&c.lines.chat.length)return pick(c.lines.chat);}var pool=CHAT[p.skill]||CHAT.regular;return pool[kind]?pick(pool[kind]):"";}
 function chatterStart(){if(!H||H.skip||Math.random()>0.12)return;var bots=H.seats.filter(function(i){return i!==0;});if(!bots.length)return;var i=pick(bots);setTimeout(function(){if(H&&!H.done)sayText(i,chatLine(T.players[i],"idle"),3000);},900);}
@@ -1915,6 +1924,159 @@ function missions(){var M=S.miss=S.miss||{},dk=dayKey(),wk=weekKey();
 function mission(ev,n){var M=missions();[[M.d,50,40],[M.w,250,150]].forEach(function(g){g[0].forEach(function(m){if(m.done||m.ev!==ev)return;m.prog=Math.min(m.goal,m.prog+(n||1));if(m.prog>=m.goal){m.done=true;S.bankroll+=g[1];addXP(g[2]);toast("Mission complete: "+m.t+" (+"+money(g[1])+")");}});});}
 function missionsHTML(){var M=missions(),row=function(m){var pc=Math.round(m.prog/m.goal*100);return "<div class='mis"+(m.done?" done":"")+"'><div class='mt'><span>"+(m.done?"\u2713 ":"")+m.t+"</span><b>"+m.prog+"/"+m.goal+"</b></div><div class='xpbar'><i style='width:"+pc+"%'></i></div></div>";};
   return "<div class='panel glass'><div class='evtop'><div><div class='venue'>Earn cash and XP</div><h2>Missions</h2></div></div><div class='lbl'>Today \u00b7 $50 each</div>"+M.d.map(row).join("")+"<div class='lbl'>This week \u00b7 $250 each</div>"+M.w.map(row).join("")+"</div>";}
+
+var VSOPEN={"UTG":{"22":41.8,"33":43.4,"44":45.4,"55":47.5,"66":48.9,"77":50.7,"88":54.8,"99":56.9,"AA":83.5,"AKs":60,"AQs":56.2,"AJs":55.8,"ATs":51.1,"A9s":45,"A8s":46.9,"A7s":45.4,"A6s":43.9,"A5s":44,"A4s":43.5,"A3s":40.5,"A2s":41.9,"AKo":58.4,"KK":75.4,"KQs":49.2,"KJs":47.1,"KTs":42.2,"K9s":42.4,"K8s":38.6,"K7s":39.6,"K6s":38.9,"K5s":39.2,"K4s":39.5,"K3s":35,"K2s":37,"AQo":55,"KQo":45.8,"QQ":69.2,"QJs":40.6,"QTs":40.7,"Q9s":39.3,"Q8s":38.2,"Q7s":35.2,"Q6s":37,"Q5s":36.6,"Q4s":35.5,"Q3s":34.2,"Q2s":32.7,"AJo":54,"KJo":41.9,"QJo":39.1,"JJ":66.7,"JTs":42.2,"J9s":39.2,"J8s":37.8,"J7s":36.4,"J6s":35.7,"J5s":34.1,"J4s":33.8,"J3s":33.6,"J2s":32,"ATo":47.9,"KTo":40,"QTo":37.8,"JTo":37.2,"TT":61.5,"T9s":38.6,"T8s":39.3,"T7s":36,"T6s":35.9,"T5s":33.4,"T4s":34,"T3s":33.8,"T2s":32.9,"A9o":45,"K9o":37.4,"Q9o":35.6,"J9o":37.2,"T9o":35.5,"98s":39.9,"97s":38.3,"96s":35,"95s":36.6,"94s":33.5,"93s":32.7,"92s":31.7,"A8o":43.5,"K8o":36.6,"Q8o":34.9,"J8o":34.2,"T8o":35.5,"98o":36.2,"87s":39,"86s":35.8,"85s":36.1,"84s":34.4,"83s":31.7,"82s":30.4,"A7o":40.7,"K7o":36.7,"Q7o":34.4,"J7o":33.9,"T7o":33.9,"97o":34.4,"87o":34.3,"76s":37,"75s":35.9,"74s":35,"73s":32.3,"72s":32.2,"A6o":41.3,"K6o":36.3,"Q6o":32.4,"J6o":32.2,"T6o":31.4,"96o":32.6,"86o":35.4,"76o":33.7,"65s":37.2,"64s":34.7,"63s":33.9,"62s":32.1,"A5o":41.3,"K5o":34.7,"Q5o":33.2,"J5o":32.6,"T5o":30,"95o":31.8,"85o":31.8,"75o":32.4,"65o":33.4,"54s":36,"53s":33.9,"52s":32.7,"A4o":41,"K4o":34.5,"Q4o":30.4,"J4o":30.5,"T4o":31.7,"94o":28.1,"84o":30.5,"74o":31.6,"64o":30.5,"54o":32.4,"43s":32.5,"42s":32.1,"A3o":39.9,"K3o":32.9,"Q3o":32.2,"J3o":30.7,"T3o":29.6,"93o":28.4,"83o":27.4,"73o":29.1,"63o":30.8,"53o":31.7,"43o":29.6,"32s":30.3,"A2o":38.6,"K2o":32.3,"Q2o":30.7,"J2o":30.3,"T2o":30.8,"92o":28.2,"82o":27.4,"72o":27.6,"62o":27.4,"52o":28.7,"42o":28.9,"32o":27.5},"HJ":{"22":43.5,"33":45.8,"44":46.4,"55":50.2,"66":51.7,"77":52.9,"88":56.5,"99":58.6,"AA":83.3,"AKs":63.7,"AQs":59.6,"AJs":57.1,"ATs":54.6,"A9s":50.1,"A8s":47.5,"A7s":46.6,"A6s":47.3,"A5s":46.5,"A4s":45,"A3s":46.2,"A2s":44.3,"AKo":60.6,"KK":76.7,"KQs":52.6,"KJs":49.6,"KTs":45.7,"K9s":43.7,"K8s":43.4,"K7s":42.8,"K6s":41.4,"K5s":41.3,"K4s":40.6,"K3s":37.5,"K2s":38.5,"AQo":58.6,"KQo":50,"QQ":71.7,"QJs":45.1,"QTs":45.5,"Q9s":42.4,"Q8s":39.1,"Q7s":37.9,"Q6s":38.3,"Q5s":37,"Q4s":35.6,"Q3s":37.4,"Q2s":36.2,"AJo":54.6,"KJo":45.8,"QJo":43.9,"JJ":67,"JTs":43,"J9s":39.1,"J8s":37.9,"J7s":37.7,"J6s":36.5,"J5s":36.9,"J4s":34.9,"J3s":33.8,"J2s":34.6,"ATo":52.1,"KTo":43.8,"QTo":40.7,"JTo":36.7,"TT":61.8,"T9s":38.9,"T8s":38,"T7s":37.2,"T6s":35.9,"T5s":33.8,"T4s":34.7,"T3s":35.1,"T2s":33.5,"A9o":48.2,"K9o":41.8,"Q9o":38.4,"J9o":35.7,"T9o":36.2,"98s":39.7,"97s":38.9,"96s":36.6,"95s":35.2,"94s":33.7,"93s":32.9,"92s":33.5,"A8o":45.5,"K8o":40.8,"Q8o":36.6,"J8o":36,"T8o":35.7,"98o":35.9,"87s":37.7,"86s":37.6,"85s":35.3,"84s":35.1,"83s":33.6,"82s":32.8,"A7o":42.7,"K7o":40.5,"Q7o":34.5,"J7o":33.6,"T7o":35.4,"97o":35.3,"87o":35.3,"76s":38.8,"75s":36.1,"74s":35.9,"73s":32.4,"72s":32,"A6o":43.3,"K6o":39.2,"Q6o":35.7,"J6o":34.4,"T6o":32.3,"96o":34.5,"86o":33.7,"76o":34.6,"65s":36.9,"64s":35.6,"63s":33.5,"62s":32.6,"A5o":44.3,"K5o":36.1,"Q5o":34.5,"J5o":31.8,"T5o":30.3,"95o":31.1,"85o":34,"75o":33.1,"65o":32.7,"54s":38,"53s":33.7,"52s":33.3,"A4o":42.6,"K4o":37.5,"Q4o":34.5,"J4o":29.9,"T4o":28.8,"94o":30.1,"84o":31,"74o":31.4,"64o":32.4,"54o":32.5,"43s":34.8,"42s":33.4,"A3o":42.5,"K3o":36.2,"Q3o":32.2,"J3o":31.8,"T3o":29.4,"93o":29.7,"83o":28.6,"73o":28.9,"63o":30.4,"53o":30.9,"43o":31,"32s":32.8,"A2o":41.5,"K2o":36.3,"Q2o":32.5,"J2o":28.8,"T2o":28,"92o":27.5,"82o":29.2,"72o":28.4,"62o":29.1,"52o":29.8,"42o":28.4,"32o":30.4},"CO":{"22":44.8,"33":44.5,"44":47,"55":50.2,"66":53.5,"77":54.4,"88":56.9,"99":60.2,"AA":83.4,"AKs":63.8,"AQs":61.7,"AJs":59,"ATs":56,"A9s":52.6,"A8s":50.7,"A7s":49.8,"A6s":47.6,"A5s":48.9,"A4s":48.6,"A3s":46.3,"A2s":45.6,"AKo":62.7,"KK":77.3,"KQs":51.5,"KJs":49.5,"KTs":48.4,"K9s":46.4,"K8s":43,"K7s":42.1,"K6s":42.5,"K5s":41.8,"K4s":41.7,"K3s":40.3,"K2s":41,"AQo":57.3,"KQo":47.8,"QQ":72.2,"QJs":47.7,"QTs":44.1,"Q9s":43.6,"Q8s":43.1,"Q7s":40.1,"Q6s":40.9,"Q5s":38.6,"Q4s":36.9,"Q3s":38.9,"Q2s":37.3,"AJo":57.5,"KJo":47.8,"QJo":44.8,"JJ":67.8,"JTs":42.9,"J9s":41,"J8s":41.3,"J7s":37.8,"J6s":38.7,"J5s":37.7,"J4s":35.9,"J3s":37.1,"J2s":35.1,"ATo":53.3,"KTo":45.5,"QTo":44.2,"JTo":41.2,"TT":64.4,"T9s":41.9,"T8s":39.5,"T7s":38.1,"T6s":36.4,"T5s":37,"T4s":34.5,"T3s":33.8,"T2s":34.1,"A9o":48.9,"K9o":41.4,"Q9o":40.4,"J9o":37.3,"T9o":39.7,"98s":40.6,"97s":39,"96s":37.6,"95s":36,"94s":33.6,"93s":35.5,"92s":35.3,"A8o":47,"K8o":42.1,"Q8o":38.9,"J8o":37,"T8o":36,"98o":36.7,"87s":39,"86s":39.1,"85s":37.3,"84s":34.4,"83s":33.5,"82s":33.3,"A7o":46.3,"K7o":39.8,"Q7o":36.3,"J7o":35.3,"T7o":34.3,"97o":35,"87o":36,"76s":38.8,"75s":36.3,"74s":36,"73s":33.9,"72s":33.7,"A6o":44.7,"K6o":40.5,"Q6o":36.5,"J6o":33.6,"T6o":34.2,"96o":34.4,"86o":35.1,"76o":36.6,"65s":37.5,"64s":36.9,"63s":33.2,"62s":33.5,"A5o":46.1,"K5o":38.2,"Q5o":37,"J5o":33.6,"T5o":32.6,"95o":31.3,"85o":33.5,"75o":33.1,"65o":33.8,"54s":37.5,"53s":35.5,"52s":32.9,"A4o":43.6,"K4o":39.4,"Q4o":35.2,"J4o":32.4,"T4o":31.4,"94o":31,"84o":30.9,"74o":31.1,"64o":32.4,"54o":34.4,"43s":35.5,"42s":31.1,"A3o":43.9,"K3o":37.9,"Q3o":34.5,"J3o":32.2,"T3o":30,"93o":31.8,"83o":30,"73o":31.2,"63o":31.8,"53o":31.5,"43o":31.4,"32s":31.1,"A2o":42,"K2o":35.4,"Q2o":32.8,"J2o":31.6,"T2o":31.2,"92o":29.8,"82o":29.6,"72o":28.2,"62o":29.3,"52o":29.6,"42o":28.7,"32o":29.4},"BTN":{"22":46.7,"33":48.5,"44":49.6,"55":51.6,"66":55.5,"77":59.1,"88":60.2,"99":62.1,"AA":83.7,"AKs":65.5,"AQs":64.6,"AJs":62.2,"ATs":59.9,"A9s":58.1,"A8s":54.4,"A7s":53.8,"A6s":52.6,"A5s":52.7,"A4s":51.6,"A3s":52.2,"A2s":50.7,"AKo":64.3,"KK":77.5,"KQs":56.1,"KJs":54,"KTs":53.8,"K9s":50.8,"K8s":49.1,"K7s":46.7,"K6s":46.4,"K5s":45.4,"K4s":44.6,"K3s":42.9,"K2s":45.1,"AQo":61.5,"KQo":53.5,"QQ":72.4,"QJs":52.6,"QTs":49.9,"Q9s":48,"Q8s":45.4,"Q7s":43.9,"Q6s":43.8,"Q5s":42.6,"Q4s":41.3,"Q3s":40.2,"Q2s":40.3,"AJo":58.3,"KJo":51.1,"QJo":48.9,"JJ":72.2,"JTs":47.6,"J9s":46.9,"J8s":45.6,"J7s":42.3,"J6s":40.7,"J5s":41.3,"J4s":39.9,"J3s":38.8,"J2s":39.8,"ATo":59.2,"KTo":52.6,"QTo":48.2,"JTo":45.6,"TT":67.5,"T9s":45.3,"T8s":43.5,"T7s":41.8,"T6s":40.2,"T5s":38.2,"T4s":36.6,"T3s":37.8,"T2s":36.8,"A9o":54.7,"K9o":48.4,"Q9o":44.2,"J9o":41.8,"T9o":42,"98s":42.5,"97s":41,"96s":40.3,"95s":37.8,"94s":35.6,"93s":36.4,"92s":35.7,"A8o":53.6,"K8o":44.1,"Q8o":42.6,"J8o":40.8,"T8o":39.9,"98o":39.2,"87s":40.1,"86s":38.8,"85s":38.1,"84s":35.2,"83s":35,"82s":34.8,"A7o":51.1,"K7o":45.2,"Q7o":37.8,"J7o":39.4,"T7o":39.3,"97o":38.7,"87o":37.2,"76s":40.4,"75s":38.8,"74s":36.7,"73s":34.6,"72s":31.8,"A6o":50.4,"K6o":44.7,"Q6o":41.3,"J6o":36.5,"T6o":35.7,"96o":35,"86o":36.8,"76o":37.6,"65s":37.6,"64s":39.3,"63s":36.3,"62s":34.1,"A5o":50,"K5o":43.2,"Q5o":41,"J5o":39.3,"T5o":34.9,"95o":33.7,"85o":34.7,"75o":33.9,"65o":34.5,"54s":38.2,"53s":36.8,"52s":35.2,"A4o":47,"K4o":42.2,"Q4o":39.7,"J4o":36.6,"T4o":35.3,"94o":33.5,"84o":31.8,"74o":33.9,"64o":35.5,"54o":34.7,"43s":37.6,"42s":33.8,"A3o":47.4,"K3o":42.2,"Q3o":38.6,"J3o":35.8,"T3o":35.4,"93o":31.5,"83o":31.9,"73o":32.4,"63o":32.2,"53o":33.5,"43o":32.3,"32s":32.3,"A2o":45.9,"K2o":40.9,"Q2o":35.2,"J2o":34.9,"T2o":34.3,"92o":33.6,"82o":29.7,"72o":30,"62o":30.3,"52o":32.3,"42o":30,"32o":29.6},"SB":{"22":48.1,"33":46.7,"44":52,"55":51.9,"66":56.1,"77":57.6,"88":59.5,"99":63.1,"AA":84.8,"AKs":64.8,"AQs":63,"AJs":62.3,"ATs":60.5,"A9s":58.5,"A8s":55.1,"A7s":53.1,"A6s":52.3,"A5s":51.9,"A4s":50.5,"A3s":49.4,"A2s":48.8,"AKo":65.5,"KK":78.2,"KQs":54.6,"KJs":53.6,"KTs":52.4,"K9s":50.5,"K8s":48.9,"K7s":46.1,"K6s":47,"K5s":44.1,"K4s":44,"K3s":43,"K2s":42.5,"AQo":62,"KQo":53.3,"QQ":72.8,"QJs":51.7,"QTs":47.8,"Q9s":47.3,"Q8s":45,"Q7s":42.6,"Q6s":42.6,"Q5s":42.6,"Q4s":41.5,"Q3s":42.6,"Q2s":39.9,"AJo":59.6,"KJo":51.5,"QJo":46.8,"JJ":70.7,"JTs":46.1,"J9s":45.3,"J8s":42.2,"J7s":43.1,"J6s":39.3,"J5s":39.4,"J4s":39.4,"J3s":39.3,"J2s":37,"ATo":58.2,"KTo":50.6,"QTo":47.5,"JTo":45.2,"TT":66.3,"T9s":41.8,"T8s":43.3,"T7s":42.4,"T6s":40.1,"T5s":38,"T4s":39.1,"T3s":36.8,"T2s":36.7,"A9o":53.8,"K9o":46.8,"Q9o":43.5,"J9o":43.2,"T9o":42.7,"98s":41.5,"97s":38.7,"96s":40.1,"95s":37.2,"94s":35.7,"93s":35.7,"92s":34.9,"A8o":51,"K8o":43.6,"Q8o":40.6,"J8o":39.6,"T8o":39.9,"98o":39,"87s":39.4,"86s":38.7,"85s":39.5,"84s":36.8,"83s":33.6,"82s":34.5,"A7o":48.5,"K7o":42,"Q7o":39.1,"J7o":37.4,"T7o":37.2,"97o":37.3,"87o":38,"76s":38.4,"75s":38.7,"74s":36.2,"73s":35.8,"72s":33.6,"A6o":49.4,"K6o":43.9,"Q6o":39.7,"J6o":37.7,"T6o":35.7,"96o":35.7,"86o":35,"76o":37.2,"65s":37.7,"64s":37.1,"63s":35.4,"62s":32.8,"A5o":48.1,"K5o":42.2,"Q5o":37.9,"J5o":36.1,"T5o":33.3,"95o":33.7,"85o":35.6,"75o":34.7,"65o":35,"54s":37.4,"53s":36.9,"52s":36.4,"A4o":47.6,"K4o":39.7,"Q4o":38.8,"J4o":34.5,"T4o":34.5,"94o":31.8,"84o":30.1,"74o":32.7,"64o":33.3,"54o":33.2,"43s":37.8,"42s":34.4,"A3o":46.8,"K3o":40.8,"Q3o":36.3,"J3o":34.1,"T3o":34.9,"93o":32.5,"83o":30.8,"73o":32.8,"63o":33.1,"53o":33.8,"43o":34,"32s":35,"A2o":44.3,"K2o":39.5,"Q2o":37.6,"J2o":34.6,"T2o":32.7,"92o":29.9,"82o":30.6,"72o":31.1,"62o":31.7,"52o":31.4,"42o":30.9,"32o":30.9}};
+/* ===== reading ranges from actions ===== */
+function sig(x){return 1/(1+Math.exp(-x/0.035));}
+function hsTable(board){H._hs=H._hs||{};var k=board.join(",");if(H._hs[k])return H._hs[k];
+  var dead={};board.forEach(function(c){dead[c]=1;});var sc=[],map={};
+  for(var a=0;a<52;a++){if(dead[a])continue;for(var b=a+1;b<52;b++){if(dead[b])continue;var v=evaluate([a,b].concat(board));sc.push(v);map[a*52+b]=v;}}
+  sc.sort(function(x,y){return x-y;});
+  var t={map:map,pct:function(v){var lo=0,hi=sc.length,m;while(lo<hi){m=(lo+hi)>>1;if(sc[m]<v)lo=m+1;else hi=m;}var lt=lo;hi=sc.length;while(lo<hi){m=(lo+hi)>>1;if(sc[m]<=v)lo=m+1;else hi=m;}return (lt+(lo-lt)/2)/sc.length;}};
+  H._hs[k]=t;return t;}
+function comboPct(c,board){var t=hsTable(board),a=Math.min(c[0],c[1]),b=Math.max(c[0],c[1]),v=t.map[a*52+b];return v===undefined?0.5:t.pct(v);}
+function comboOuts(c,board){H._do=H._do||{};var k=board.join(",")+"|"+Math.min(c[0],c[1])+"-"+Math.max(c[0],c[1]);if(H._do[k]!==undefined)return H._do[k];
+  var d={};c.concat(board).forEach(function(x){d[x]=1;});return (H._do[k]=drawOuts(c,board,d));}
+function actLike(p,e,c,brd,isPreAgg){
+  var pr=PROF[p.skill]||PROF.regular,E=eff(p),n=Math.max(1,Math.min(e.nOpp,3)),str=Math.pow(comboPct(c,brd),n),outs=e.st<3?comboOuts(c,brd):0;
+  var betT=pr.bet-(E.agg-1)*0.08,rth=pr.raise-(E.agg-1)*0.06+0.05*Math.max(0,e.raises-1);if(e.raises>=2)rth=Math.max(rth,0.92);
+  if(e.a==="check"){var sb=sig(str-betT);return Math.max(0.03,(1-sb)+sb*E.trap);}
+  if(e.a==="bet"){var ps=sig(str-betT)*(1-(str>=pr.raise?E.trap:0)),pd=outs>=8?Math.min(0.9,pr.bluff*2.2*E.bluff):0,pc=(e.st===1&&isPreAgg&&e.nOpp<=2)?Math.min(0.95,pr.cbet*E.agg):0,pb=e.nOpp===1?pr.bluff*E.bluff:0;return Math.max(0.01,ps+(1-ps)*Math.max(pd,pc,pb));}
+  if(e.a==="raise"){var rs=sig(str-rth)*0.75*(1-E.trap*0.7),rd=outs>=8&&e.raises<=1?0.1*E.agg*E.bluff:0,rb=(e.nOpp===1&&e.st>=2&&e.raises===1)?0.035*E.bluff*E.agg:0;return Math.max(0.004,rs+(1-rs)*(rd+rb));}
+  if(e.a==="call"){var need=e.toCall/(e.pot+e.toCall),bf=Math.min(1.5,e.toCall/Math.max(1,e.pot-e.toCall)),esc=(1+0.7*Math.max(0,e.raises-1))*(1+0.35*(e.st-1));
+    var adj=str-pr.disc*bf*esc-(e.raises>=2?0.05*(e.raises-1):0)+pr.slack+E.sticky,de=outs?(e.st===1?Math.min(outs*4,60):outs*2)/100:0;adj=Math.max(adj,de);
+    return Math.max(0.02,sig(adj-need)*(1-sig(str-rth)*0.75*(1-E.trap*0.7)));}
+  return 1;}
+function actionRange(i){
+  H._ar=H._ar||{};var key=i+"|"+H.board.length+"|"+(H.hist||[]).length;if(H._ar[key])return H._ar[key];
+  var dead={};H.s[0].cards.concat(H.board).forEach(function(c){dead[c]=1;});
+  var p=T.players[i],list=[],ws=[];
+  preRangeCodes(i).forEach(function(cd){combosOfCode(cd).forEach(function(x){if(!dead[x[0]]&&!dead[x[1]]){list.push(x);ws.push(1);}});});
+  var hist=(H.hist||[]).filter(function(e){return e.i===i&&e.st>0&&e.a!=="fold";});
+  hist.forEach(function(e){var brd=H.board.slice(0,e.st===1?3:e.st===2?4:5);for(var k=0;k<list.length;k++)if(ws[k]>0.0005)ws[k]*=actLike(p,e,list[k],brd,H.preAgg===i);});
+  var tot=0;ws.forEach(function(w){tot+=w;});if(tot<=0){ws=ws.map(function(){return 1;});tot=ws.length;}
+  return (H._ar[key]={i:i,combos:list,w:ws,tot:tot,hist:hist});}
+function eqVsRangesD(hole,board,R,iters){
+  var cum=R.map(function(r){var c=[],s=0;r.w.forEach(function(w){s+=w;c.push(s);});return c;}),used=new Uint8Array(52),w=0,t=0,l=0,n=0,c;
+  for(var it=0;it<iters;it++){used.fill(0);hole.concat(board).forEach(function(x){used[x]=1;});var hands=[],ok=true;
+    for(var r=0;r<R.length;r++){var tries=0,h;do{var x=Math.random()*R[r].tot,lo=0,hi=cum[r].length-1;while(lo<hi){var m=(lo+hi)>>1;if(cum[r][m]<x)lo=m+1;else hi=m;}h=R[r].combos[lo];tries++;}while((used[h[0]]||used[h[1]])&&tries<15);
+      if(used[h[0]]||used[h[1]]){ok=false;break;}used[h[0]]=used[h[1]]=1;hands.push(h);}
+    if(!ok)continue;
+    var bd=board.slice();while(bd.length<5){do{c=rnd(52);}while(used[c]);used[c]=1;bd.push(c);}
+    var me=evaluate(hole.concat(bd)),best=0;hands.forEach(function(h){var v=evaluate(h.concat(bd));if(v>best)best=v;});
+    if(me>best)w++;else if(me===best)t++;else l++;n++;}
+  return {eq:n?(w+t/2)/n:0,w:w,t:t,l:l,n:n};}
+function rangeMix(r){
+  var me=evaluate(H.s[0].cards.concat(H.board)),m={strong:0,pair:0,draw:0,air:0,beats:0};
+  r.combos.forEach(function(c,k){var w=r.w[k];if(w<=0)return;var v=evaluate(c.concat(H.board)),ct=catOf(v);
+    if(ct>=2)m.strong+=w;else if(ct===1)m.pair+=w;else if(H.street<3&&comboOuts(c,H.board)>=8)m.draw+=w;else m.air+=w;if(v>me)m.beats+=w;});
+  ["strong","pair","draw","air","beats"].forEach(function(k){m[k]=m[k]/r.tot;});return m;}
+function heroIP(){var n=T.players.length,best=-1,who=-1;live().forEach(function(j){var o=(j-H.button-1+n*2)%n;if(o>best){best=o;who=j;}});return who===0;}
+function actWord(e){return e.a==="bet"?"bet":e.a==="raise"?"raised":e.a==="call"?"called":e.a==="check"?"checked":e.a;}
+function rangeCard(r){
+  var p=T.players[r.i],mx=rangeMix(r),st=["","Flop","Turn","River"],by={};r.hist.forEach(function(e){(by[e.st]=by[e.st]||[]).push(actWord(e));});
+  var line=Object.keys(by).map(function(k){return st[k]+": "+by[k].join(", then ");}).join(". ");
+  var bar=[["strong","Two pair or better","#c8102e"],["pair","One pair","#e8b923"],["draw","Big draw","#4c8df0"],["air","Nothing yet","#8a8a8a"]];
+  return "<div style='margin:6px 0 10px'><b>"+p.name+"</b> <span class='muted'>("+SKILL_LABEL[p.skill]+")</span><div class='muted' style='font-size:.85rem'>"+(line||"No bets or calls after the flop yet.")+"</div>"+
+    "<div style='display:flex;height:10px;border-radius:5px;overflow:hidden;margin:5px 0'>"+bar.map(function(b){return "<i style='width:"+(mx[b[0]]*100).toFixed(1)+"%;background:"+b[2]+"'></i>";}).join("")+"</div>"+
+    "<div style='font-size:.85rem'>"+bar.map(function(b){return "<span style='color:"+b[2]+"'>\u25cf</span> "+b[1]+" "+Math.round(mx[b[0]]*100)+"%";}).join(" \u00b7 ")+"</div>"+
+    "<div style='font-size:.88rem;margin-top:3px'>Hands that beat you right now: <b>"+Math.round(mx.beats*100)+"%</b> of what they likely hold.</div></div>";}
+function adviseHero(full){
+  var hs=H.s[0],L=legal(0),pot=potTotal(),need=L.toCall>0?L.toCall/(pot+L.toCall):0,code=codeOf(hs.cards),pos=H.pos[0],ck=chartKey(pos);
+  var opp=live().filter(function(i){return i!==0;}),nO=Math.max(1,Math.min(opp.length,4)),bettor=H.lastAgg>0&&L.toCall>0?H.lastAgg:-1;
+  var dR=eqRandomD(hs.cards,H.board,nO,full?(H.street===0?1500:2000):500),eqR=dR.eq,Rg=null,dV=null,eqV=null,vc=null,cush=0,ip=heroIP();
+  if(H.street===0){if(bettor>0){vc=villainCombos(bettor);dV=vc.length?eqVsCombosD(hs.cards,H.board,vc,full?2500:700):null;eqV=dV?dV.eq:null;}}
+  else if(opp.length){Rg=opp.map(actionRange);dV=eqVsRangesD(hs.cards,H.board,Rg,full?2500:800);eqV=dV.n?dV.eq:null;}
+  var advice,why,eqUse=eqV!==null?eqV:eqR,premium=["AA","KK","QQ","AKs","AKo"].indexOf(code)>=0;
+  if(H.street===0){
+    if(H.raises===0){
+      if(pos==="BB"){advice="Check";why="Nobody raised. See the flop for free.";if(EQ[code]>=62){advice="Raise";why="Strong hand and only limpers in. Raise to about "+chips(T.bb*(3+opp.length-1))+".";}}
+      else if(SETS[ck]&&SETS[ck][code]){advice="Raise";why=code+" is in your "+ck+" opening chart"+(ck!==pos?" (the closest chart for "+pos+" at a full table)":"")+". Raise to about "+chips(T.bb*(T.home?4:2.5))+(T.home?" since home games call a lot,":"")+" plus 1 big blind per limper.";}
+      else{advice=L.toCall===0?"Check":"Fold";why=code+" isn't in your "+ck+" opening chart.";}
+    }else if(H.raises===1&&H.preAgg>0&&VSOPEN[chartKey(H.pos[H.preAgg])]){
+      var opP=chartKey(H.pos[H.preAgg]),ev=VSOPEN[opP][code],bb=pos==="BB",behind=H.seats.filter(function(j){return j!==0&&!H.s[j].folded&&!H.s[j].acted;}).length;
+      var real=bb?0.75:0.9,thr=need/real+(bb?0:0.03*Math.min(behind,3));eqUse=ev/100;
+      if(premium||ev>=57){advice="Reraise";why=code+" has about "+ev+"% equity against a "+opP+" opening range. That's strong enough to 3-bet to about 3 times their raise.";}
+      else if(ev/100>=thr){advice="Call";why="Against a "+opP+" opening range, "+code+" has about "+ev+"% equity. The price needs "+p1(need)+", and about "+p1(thr)+" once you allow for "+(bb?"playing the hand out of position":"players still to act behind you")+".";}
+      else{advice=L.toCall===0?"Check":"Fold";why="Against a "+opP+" opening range, "+code+" has only about "+ev+"% equity. You need about "+p1(thr)+" here"+(bb?", allowing for playing out of position":", allowing for players still to act")+".";}
+    }else{
+      if(premium&&["AA","KK"].indexOf(code)>=0){advice="Reraise";why="Aces or kings. Get the money in.";}
+      else if(eqV!==null&&eqV>=need+0.04&&(premium||EQ[code]>=63)){advice="Call";why="This is a reraised pot, so their range is strong. Your equity against it is "+p1(eqV)+", above the "+p1(need)+" you need.";}
+      else{advice=L.toCall===0?"Check":"Fold";why="This is a reraised pot, so their range is strong. Your equity against it is "+p1(eqUse)+". You need "+p1(need+0.04)+".";}
+    }
+  }else{
+    if(L.toCall>0){
+      var bp=T.players[bettor>0?bettor:opp[0]],E=eff(bp),nm=bp.name;
+      if(H.street<3){if(E.agg>=1.1)cush+=0.02;if(!ip)cush+=0.02;}
+      var need2=need+cush;
+      if(eqUse>=0.65&&L.canRaise){advice="Raise";why="Against the hands "+nm+"'s betting points to, your equity is "+p1(eqUse)+". You're ahead of most of them, so raise for value.";}
+      else if(eqUse>=need2){advice="Call";why="Against the hands "+nm+"'s betting points to, your equity is "+p1(eqUse)+". You need "+p1(need)+" to call"+(cush?", plus "+Math.round(cush*100)+" points because "+(H.street<3?"more bets can come":"")+(!ip?" and you're out of position":"")+",":"")+" so calling is right.";}
+      else{advice="Fold";why="Against the hands "+nm+"'s betting points to, your equity is only "+p1(eqUse)+". You need "+p1(need2)+"."+(eqR>=need2?" You'd be fine against random hands, but this betting says they're much stronger than random.":"");}
+    }else{
+      var oc=H.street<3?outCards(hs.cards,H.board).length:0;
+      if(eqUse>=0.58){advice="Bet";why="Your equity against what their checks and calls point to is "+p1(eqUse)+". Bet half to three quarters of the pot for value.";}
+      else if(oc>=8&&opp.length<=2){advice="Bet or check";why="Big draw ("+oc+" outs). A half-pot semi-bluff is fine heads up; checking is fine too.";}
+      else{advice="Check";why="Your equity against what they likely hold is "+p1(eqUse)+", under the 58% you want before betting for value.";}
+    }
+  }
+  return {advice:advice,why:why,eq:eqUse,eqR:eqR,eqV:eqV,dR:dR,dV:dV,vc:vc,Rg:Rg,need:need,cush:cush,L:L,pot:pot,code:code,pos:pos,opp:opp,nO:nO,bettor:bettor};
+}
+/* ===== player style descriptions ===== */
+function styleLong(p){var st=styleOf(p),sk=p.skill,base={beginner:38,regular:22,tough:27}[sk]||25,vp=Math.max(12,Math.min(60,Math.round((base+st.loose*1.6)/5)*5));
+  var passive=st.agg<=0.8||sk==="beginner"&&st.agg<1,aggr=st.agg>=1.25,bl=st.bluff>=1.4,nobl=st.bluff<=0.5||sk==="beginner"&&st.bluff<0.8,sticky=st.sticky>=0.06,folds=st.sticky<=-0.02;
+  var plays="Plays about "+vp+"% of hands"+(vp>=35?", so they're often in the pot with weak cards.":vp<=18?", so when they play, they usually have something.":".");
+  var bets=passive?"A bet from them usually means a real hand, often top pair or better.":aggr?"Bets often, with good hands, draws, and some bluffs.":"Bets good hands and some draws.";
+  if(st.sizing==="polar")bets+=" Big bets mean very strong or nothing; small bets are medium hands.";else if(st.sizing==="big")bets+=" Bets big with good hands.";else if(st.sizing==="small")bets+=" Bets small, even with strong hands, so the size tells you little.";
+  var raises=passive||nobl?"A raise from them almost always means two pair or better. Fold one pair.":aggr&&bl?"Raises with strong hands, draws, and the odd bluff.":"A raise means a strong hand most of the time.";
+  var blf=bl?"Bluffs a lot, especially when checked to.":nobl?"Rarely bluffs.":"Bluffs now and then.";
+  var call=sticky?"Calls down with weak pairs, so bluffing them doesn't work.":folds?"Folds to big bets, so well-timed bluffs work.":"";
+  var trap=st.trap>=0.3?"Sometimes checks very strong hands to trap. Respect a check-raise.":"";
+  var beat=sticky||sk==="beginner"?"Bet your good hands bigger and more often, and skip the bluffs.":bl&&aggr?"Call down more with top pair, and let them bet into you.":folds?"Bet when they check, and fold to their raises.":"Play solid: value bet good hands and respect their raises.";
+  return "<div>"+plays+"</div><div><b>When they bet:</b> "+bets+"</div><div><b>When they raise:</b> "+raises+"</div><div>"+[blf,call,trap].filter(Boolean).join(" ")+"</div><div><b>How to beat them:</b> "+beat+"</div>";}
+/* ===== call or fold guide ===== */
+var GUIDE_ROWS=[["Monster","Two pair, a set, a straight, a flush, or better"],["Top pair, good kicker","Or an overpair (a pocket pair above the board)"],["Top pair, weak kicker",""],["Middle or bottom pair",""],["Big draw","8 or more outs: open-ended straight or flush draw"],["Small draw","4 outs: gutshot"],["Nothing","No pair, no real draw"]];
+var GUIDE={passive:[["Raise","Call or raise","Call"],["Call","Call once, then slow down","Fold"],["Call","Fold","Fold"],["Fold unless tiny","Fold","Fold"],["Call","Call on the flop only","Fold"],["Fold","Fold","Fold"],["Fold","Fold","Fold"]],
+  regular:[["Raise","Raise","Call or raise"],["Call","Call","Fold on the river"],["Call","Fold","Fold"],["Call on the flop","Fold","Fold"],["Call","Call on the flop","Fold"],["Fold","Fold","Fold"],["Fold","Fold","Fold"]],
+  aggressive:[["Raise or call","Raise","Raise"],["Call","Call","Call"],["Call","Call","Fold"],["Call","Fold","Fold"],["Call or raise","Call","Call on the flop"],["Call on the flop","Fold","Fold"],["Fold","Fold","Fold"]]};
+var GUIDE_ST={opp:"regular",op:"UTG",me:"bb"};
+function guideHTML(){
+  var price=[["A quarter of the pot",0.25],["A third of the pot",1/3],["Half the pot",0.5],["Two thirds of the pot",2/3],["Three quarters",0.75],["The pot",1],["1.5 times the pot",1.5],["Twice the pot",2]];
+  var h="<div class='panel glass'><div class='evtop'><div><div class='venue'>When someone bets into you</div><h2>Call or fold guide</h2></div></div>"+
+  "<p style='font-size:.92rem'>Call when your chance of winning against <b>the hands this player would bet with</b> beats the price. Not against random hands: once someone bets, especially a careful player, their hands are much stronger than random. That's how you end up paying off a monster.</p>"+
+  "<details open><summary><b>1. The price</b></summary><table class='gt'><tr><th>They bet</th><th>You need to win</th></tr>"+price.map(function(r){return "<tr><td>"+r[0]+"</td><td><b>"+Math.round(r[1]/(1+2*r[1])*100)+"%</b></td></tr>";}).join("")+"</table>"+
+  "<p class='muted' style='font-size:.85rem'>Price = their bet \u00f7 (pot + their bet + your call). On the flop and turn, add 2 to 5 points when you're out of position or the bettor is aggressive, because more bets are coming.</p></details>"+
+  "<details><summary><b>2. Facing a raise before the flop</b></summary><div class='muted' style='font-size:.85rem;margin:4px 0'>Who raised changes everything. An early-seat raise is a strong range; a button raise is wide. Pick the raiser's seat and where you are.</div>"+
+  "<div class='seg' id='gd-op'>"+["UTG","HJ","CO","BTN","SB"].map(function(s){return "<button data-v='"+s+"'"+(GUIDE_ST.op===s?" aria-pressed='true'":"")+">"+s+"</button>";}).join("")+"</div>"+
+  "<div class='seg' id='gd-me'><button data-v='bb'"+(GUIDE_ST.me==="bb"?" aria-pressed='true'":"")+">I'm in the big blind</button><button data-v='ip'"+(GUIDE_ST.me==="ip"?" aria-pressed='true'":"")+">I'm in a later seat</button></div>"+
+  guideGrid()+"</details>"+
+  "<details><summary><b>3. Facing a bet after the flop</b></summary><div class='muted' style='font-size:.85rem;margin:4px 0'>Find your hand, then the bet. Pick the kind of player betting.</div>"+
+  "<div class='seg' id='gd-opp'><button data-v='passive'"+(GUIDE_ST.opp==="passive"?" aria-pressed='true'":"")+">Passive or beginner</button><button data-v='regular'"+(GUIDE_ST.opp==="regular"?" aria-pressed='true'":"")+">Solid regular</button><button data-v='aggressive'"+(GUIDE_ST.opp==="aggressive"?" aria-pressed='true'":"")+">Aggressive</button></div>"+
+  "<div style='overflow-x:auto'><table class='gt'><tr><th>Your hand</th><th>Small bet<br><span class='muted'>half pot or less</span></th><th>Big bet<br><span class='muted'>2/3 pot or more</span></th><th>They raise you</th></tr>"+
+  GUIDE_ROWS.map(function(r,k){var g=GUIDE[GUIDE_ST.opp][k];return "<tr><td><b>"+r[0]+"</b>"+(r[1]?"<br><span class='muted' style='font-size:.78rem'>"+r[1]+"</span>":"")+"</td>"+g.map(function(x){return "<td class='"+(/Raise/.test(x)?"g-r":/Call/.test(x)?"g-c":"g-f")+"'>"+x+"</td>";}).join("")+"</tr>";}).join("")+"</table></div>"+
+  "<p class='muted' style='font-size:.85rem'>On the river there are no cards to come, so draws are worth nothing. Treat a missed draw as Nothing.</p></details>"+
+  "<details><summary><b>4. How not to pay off a monster</b></summary><ul style='font-size:.9rem;padding-left:1.1em'>"+
+  "<li>A raise from a passive player or a beginner is almost never a bluff. Fold one pair.</li>"+
+  "<li>Three bets in a row (flop, turn, river) from a regular means a strong hand. Top pair is usually behind by the river.</li>"+
+  "<li>A big river bet from someone who rarely bluffs is value. Fold anything that only beats a bluff.</li>"+
+  "<li>More players in the pot means someone is more likely to have it. Tighten up when two or more players call.</li>"+
+  "<li>When the board pairs, or four cards line up for a straight or flush, one pair loses value fast.</li>"+
+  "<li>Your hand is only as good as what they'd bet with. Ask: what worse hand would bet this much here?</li></ul></details>"+
+  "<details><summary><b>5. Who opened, in plain numbers</b></summary><table class='gt'><tr><th>Seat</th><th>Opens about</th><th>Their weakest typical hands</th></tr>"+
+  [["UTG","19%","22, A2s, K9s, 87s, ATo, KJo, QJo"],["HJ","24%","22, K8s, Q9s, 65s, A9o, KTo, JTo"],["CO","29%","22, K5s, Q8s, 54s, A8o, A5o, KTo"],["BTN","45%","22, K2s, Q4s, 43s, A2o, K8o, T8o"],["SB","43%","22, K2s, Q4s, 54s, A2o, K8o, T9o"]].map(function(r){return "<tr><td>"+r[0]+"</td><td>"+r[1]+"</td><td>"+r[2]+"</td></tr>";}).join("")+
+  "</table><p class='muted' style='font-size:.85rem'>Beginners open wider and loose players call wider. Tough players 3-bet more. Adjust from here.</p></details></div>";
+  return h;}
+function guideGrid(){
+  var V=VSOPEN[GUIDE_ST.op],bb=GUIDE_ST.me==="bb",thr=bb?38:45,n3=0,nc=0,tot=0,R2="AKQJT98765432",h="<div class='ggrid'>";
+  for(var r=0;r<13;r++)for(var c=0;c<13;c++){var hi=R2[Math.min(r,c)],lo=R2[Math.max(r,c)],code=r===c?hi+hi:hi+lo+(c>r?"s":"o"),ev=V[code],w=r===c?6:c>r?4:12;
+    var prem=["AA","KK","QQ","AKs","AKo"].indexOf(code)>=0,cls=prem||ev>=57?"g3":ev>=thr?"gc":"gf";if(cls==="g3")n3+=w;else if(cls==="gc")nc+=w;tot+=w;
+    h+="<div class='gcell "+cls+"' title='"+code+": "+ev+"%'>"+code+"</div>";}
+  h+="</div><div style='font-size:.85rem;margin-top:6px'><span class='gk g3'></span> 3-bet "+Math.round(n3/tot*100)+"% \u00b7 <span class='gk gc'></span> Call "+Math.round(nc/tot*100)+"% \u00b7 <span class='gk gf'></span> Fold</div>"+
+    "<p class='muted' style='font-size:.85rem'>Calls need at least "+thr+"% equity against a "+GUIDE_ST.op+" opening range"+(bb?". The big blind gets a discount because you already have a big blind in, but you'll play out of position.":", higher than the big blind because players behind you can still raise and you have no discount.")+" Assumes a raise to about 2.5 big blinds. Tighten against bigger raises. Tap a hand to see its equity.</p>";
+  return h;}
+function wireGuide(root){
+  var rer=function(){var d=root.querySelectorAll("details"),open=[].map.call(d,function(x){return x.open;});root.innerHTML=guideHTML();var d2=root.querySelectorAll("details");open.forEach(function(o,k){if(d2[k])d2[k].open=o;});wireGuide(root);};
+  [["gd-op","op"],["gd-me","me"],["gd-opp","opp"]].forEach(function(x){var el=root.querySelector("#"+x[0]);if(el)el.querySelectorAll("button").forEach(function(b){b.onclick=function(){GUIDE_ST[x[1]]=b.dataset.v;rer();};});});
+  root.querySelectorAll(".gcell").forEach(function(c){c.onclick=function(){toast(c.title);};});}
 
 /* ===== world: events, stakes, career, achievements ===== */
 var EVENTS=[
