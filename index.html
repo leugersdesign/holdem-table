@@ -989,10 +989,12 @@ function openRaise(L){
   rb.innerHTML="<div class='raisebox glass'><div class='presets'>"+pre.map(function(x){return "<button data-to='"+Math.round(x[1])+"'>"+x[0]+"</button>";}).join("")+"</div>"+
     "<input type='range' id='c-slider' min='"+L.minTo+"' max='"+L.maxTo+"' step='"+step+"' value='"+Math.min(L.maxTo,Math.max(L.minTo,Math.round(pre[0][1])))+"' aria-label='Raise amount'>"+
     "<div class='amt'><span class='muted'>"+(H.cur===0?"Bet":"Raise to")+" <b id='c-amt'></b></span><button class='btn b-raise' id='c-go'>Confirm</button></div></div>";
-  var sl=$("c-slider");function upd(){$("c-amt").textContent=chips(+sl.value)+(+sl.value>=L.maxTo?" (all in)":"");}
-  sl.oninput=upd;upd();
-  rb.querySelectorAll("[data-to]").forEach(function(b){b.onclick=function(){sl.value=Math.max(L.minTo,Math.min(L.maxTo,+b.dataset.to));upd();};});
-  $("c-go").onclick=function(){heroDo(["raise",+sl.value]);};
+  var sl=$("c-slider"),amt=Math.min(L.maxTo,Math.max(L.minTo,+sl.value));
+  function upd(){$("c-amt").textContent=chips(amt)+(amt>=L.maxTo?" (all in)":"");}
+  /* the slider snaps to its step, so its last notch means the whole stack */
+  sl.oninput=function(){var v=+sl.value;amt=v>=L.maxTo-step?L.maxTo:Math.max(L.minTo,v);upd();};upd();
+  rb.querySelectorAll("[data-to]").forEach(function(b){b.onclick=function(){var v=b.textContent==="All in"?L.maxTo:Math.max(L.minTo,Math.min(L.maxTo,+b.dataset.to));amt=v;sl.value=v;upd();};});
+  $("c-go").onclick=function(){heroDo(["raise",amt]);};
 }
 
 /* ===== tools ===== */
