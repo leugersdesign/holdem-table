@@ -366,6 +366,12 @@ details{margin:8px 0}details summary{cursor:pointer;padding:4px 0}
 .alertbar{padding:10px 12px;border-radius:12px;font-weight:700;margin:8px 0}.alertbar.bad{background:rgba(200,16,46,.15);color:#c8102e}.alertbar.warn{background:rgba(232,185,35,.18);color:#8a6a00}
 .anl{border-left:3px solid var(--line);padding:4px 10px;margin:8px 0;font-size:.9rem}.anl.ok{border-color:#2e8b57}.anl.no{border-color:#c8102e}
 
+#avSheet{display:flex;flex-direction:column;overflow:hidden;height:88vh}
+#avSheet .sheethead{flex:none}
+#av-body{display:flex;flex-direction:column;flex:1;min-height:0}
+.avtop{flex:none;display:flex;align-items:center;justify-content:center;gap:14px;padding:2px 0 10px;border-bottom:1px solid var(--line)}
+.avtop .avbig{margin:0;width:120px;height:120px}
+.avscroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:10px 2px 6px}
 [hidden]{display:none!important}
 @media (max-width:380px){.seat{width:96px;font-size:.68rem}.center{width:206px}.pc.sm,.slot{width:34px;height:47px}.board{height:47px}}
 @media (prefers-reduced-motion:reduce){.pc.deal{animation:none}#atm .fx1,#atm .fx2{animation:none!important}.dealer{transition:none}}
@@ -1154,11 +1160,13 @@ function avatarSVG(a,mood){a=moodify(a,mood);var fem=a.look==="fem";
   function capStr(h,col,attr){var id="hl"+(AVC++),hy=top+h;return "<defs><clipPath id='"+id+"'><path d='M-20 -30H84V"+(cy-2)+"H"+(R-1.5)+"C"+(R-2.5)+" "+(hy+5)+" "+(32+6)+" "+hy+" 32 "+hy+"C"+(32-6)+" "+hy+" "+(L+2.5)+" "+(hy+5)+" "+(L+1.5)+" "+(cy-2)+"H-20Z'/></clipPath></defs><g clip-path='url(#"+id+")'>"+headShape(1.6,1,col,attr)+"</g>";}
   /* background */
   o.push("<rect x='-5' y='-12' width='74' height='76' fill='"+(a.bg||"#2a3b34")+"'/><circle cx='50' cy='2' r='22' fill='rgba(255,255,255,.07)'/>");
+  if(a.hat==="hood"){var hdc0=a.hatColor||"#2b2b33";o.push("<path d='M"+(L-11)+" 64C"+(L-14)+" "+(cy-6)+" "+(L-9)+" "+(top-9)+" 32 "+(top-10)+"C"+(R+9)+" "+(top-9)+" "+(R+14)+" "+(cy-6)+" "+(R+11)+" 64Z' fill='"+shade(hdc0,-28)+"'/>");}
   var hair=a.hair||"none";if(hair==="sideburns"){hair="short";}
   var CROWNED={ballcap:1,backcap:1,trucker:1,beanie:1,bucket:1,newsboy:1,beret:1,fedora:1,bowler:1,bandana:1,paper:1,hardhat:1,chef:1,cowboy:1,captain:1,top:1,tyrolean:1,pirate:1,viking:1,wizard:1,crown:1,hood:1};
   var bandC=cy-12;
   var cid=CROWNED[hat]?"hc"+(AVC++):"",hO=cid?"<g clip-path='url(#"+cid+")'>":"",hC=cid?"</g>":"";
-  if(cid)o.push("<defs><clipPath id='"+cid+"'>"+(hat==="hood"?"<rect x='"+(L-1)+"' y='"+(top+8)+"' width='"+(R-L+2)+"' height='120'/>":"<rect x='-20' y='"+bandC+"' width='104' height='120'/>")+"</clipPath></defs>");
+  var kxC=halfW(2,4,bandC),sl=1.4,yL=bandC+(32-kxC+20)*sl;
+  if(cid)o.push("<defs><clipPath id='"+cid+"'>"+(hat==="hood"?headShape(-0.5,0,"#000"):"<path d='M-20 "+yL.toFixed(1)+"L"+(32-kxC).toFixed(1)+" "+bandC+"H"+(32+kxC).toFixed(1)+"L84 "+yL.toFixed(1)+"V120H-20Z'/>")+"</clipPath></defs>");
   o.push(hO);
   /* back hair */
   var jaw=cy+ry*0.45;
@@ -1334,7 +1342,11 @@ function avatarSVG(a,mood){a=moodify(a,mood);var fem=a.look==="fem";
   if(hat==="headband"){var kh2=rx*Math.sqrt(Math.max(0,1-Math.pow((band-4-cy)/ry,2)));o.push("<rect x='"+(32-kh2-1)+"' y='"+(band-6)+"' width='"+(kh2*2+2)+"' height='5' rx='2' fill='"+hcl+"'/><rect x='"+(32-kh2-1)+"' y='"+(band-4.2)+"' width='"+(kh2*2+2)+"' height='1.4' fill='#fff'/>");}
   if(hat==="bandana"){o.push(crownEl(0.5,hcl));H("M"+(cr-1)+" "+(band-2)+"l7 2-3 4zM"+(cr-1)+" "+(band-2)+"l6 7-4 1z",hcd);for(var bd=0;bd<5;bd++)o.push("<circle cx='"+(32-kx*0.6+bd*kx*0.3).toFixed(1)+"' cy='"+(band-4-(bd%2)*4)+"' r='1' fill='#fff'/>");}
   if(hat==="headphones")o.push("<path d='M"+(L-3)+" "+(cy)+"C"+(L-3)+" "+(top-12)+" "+(R+3)+" "+(top-12)+" "+(R+3)+" "+(cy)+"' stroke='#222' stroke-width='3.5' fill='none'/><rect x='"+(L-6)+"' y='"+(cy-6)+"' width='7' height='12' rx='3' fill='"+hcl+"'/><rect x='"+(R-1)+"' y='"+(cy-6)+"' width='7' height='12' rx='3' fill='"+hcl+"'/>");
-  if(hat==="hood"){var hdc=a.hatColor||"#2b2b33";H("M"+(L-10)+" 64Q"+(L-12)+" "+(top+2)+" 32 "+(top-7)+"Q"+(R+12)+" "+(top+2)+" "+(R+10)+" 64H"+(R+1)+"Q"+(R+3)+" "+(top+12)+" 32 "+(top+7)+"Q"+(L-3)+" "+(top+12)+" "+(L-1)+" 64Z",hdc);o.push("<path d='M"+(R+1)+" 64Q"+(R+3)+" "+(top+12)+" 32 "+(top+7)+"Q"+(L-3)+" "+(top+12)+" "+(L-1)+" 64' stroke='"+shade(hdc,-30)+"' stroke-width='1.6' fill='none'/>");}
+  if(hat==="hood"){var hdc=a.hatColor||"#2b2b33",rim;
+    if(a.shape==="square")rim="M"+(L-3)+" "+(cy+12)+"V"+(top+9)+"Q"+(L-3)+" "+(top-3)+" "+(L+9)+" "+(top-3)+"H"+(R-9)+"Q"+(R+3)+" "+(top-3)+" "+(R+3)+" "+(top+9)+"V"+(cy+12);
+    else{var rxo=(rx+3)*Math.sqrt(1-Math.pow(12/(ry+3),2));rim="M"+(32-rxo).toFixed(2)+" "+(cy+12)+"A"+(rx+3)+" "+(ry+3)+" 0 1 1 "+(32+rxo).toFixed(2)+" "+(cy+12);}
+    o.push("<path d='M"+(L-11)+" 64C"+(L-14)+" "+(cy-6)+" "+(L-9)+" "+(top-9)+" 32 "+(top-10)+"C"+(R+9)+" "+(top-9)+" "+(R+14)+" "+(cy-6)+" "+(R+11)+" 64H"+(R+5)+"C"+(R+7)+" "+(cy+2)+" "+(R+5)+" "+(top-2)+" 32 "+(top-3)+"C"+(L-5)+" "+(top-2)+" "+(L-7)+" "+(cy+2)+" "+(L-5)+" 64Z' fill='"+hdc+"'/>");
+    o.push("<path d='"+rim+"' stroke='"+hdc+"' stroke-width='6' fill='none' stroke-linecap='round'/><path d='"+rim+"' stroke='"+shade(hdc,-35)+"' stroke-width='1.4' fill='none' transform='translate(0 1.5)' opacity='.6'/>");}
   if(ex==="earpiece")o.push("<path d='M"+(R+2)+" "+(cy+2)+"q4 8-2 14' stroke='#222' stroke-width='1.6' fill='none'/><circle cx='"+(R+1)+"' cy='"+(cy+1)+"' r='2' fill='#222'/>");
   if(ex==="headset")o.push("<path d='M"+(L-2)+" "+cy+"q0-"+(ry+6)+" "+(rx+2)+" -"+(ry+6)+"q"+(rx+2)+" 0 "+(rx+2)+" "+(ry+6)+"' stroke='#38f29b' stroke-width='2.4' fill='none'/><rect x='"+(R-1)+"' y='"+(cy-3)+"' width='5' height='8' rx='2' fill='#38f29b'/><path d='M"+(R+1)+" "+(cy+5)+"q-4 8-12 8' stroke='#38f29b' stroke-width='1.6' fill='none'/>");
   if(ex==="pencil")o.push("<path d='M"+(R-1)+" "+(cy-8)+"l8-6' stroke='#f2c200' stroke-width='2.4'/><path d='M"+(R+7)+" "+(cy-14)+"l1.5-1' stroke='#e86a7a' stroke-width='2.4'/>");
@@ -1878,7 +1890,9 @@ function openAvatar(){
   var A=heroAv(),rows=Object.keys(AVOPT).map(function(k){var v=A[k],isColor=String(v).charAt(0)==="#",list=AVOPT[k],pos=list.indexOf(v)+1;
     return "<div class='avrow'><span class='avl'>"+AVLABEL[k]+"</span><button class='mini avb' data-k='"+k+"' data-d='-1' aria-label='Previous "+AVLABEL[k]+"'>\u2039</button><span class='avv'>"+(isColor?"<i class='sw' style='background:"+v+"'></i>":avName(k,v))+" <span class='muted' style='font-size:.7rem'>"+pos+"/"+list.length+"</span></span><button class='mini avb' data-k='"+k+"' data-d='1' aria-label='Next "+AVLABEL[k]+"'>\u203a</button></div>";}).join("");
   var locks=[];Object.keys(AVLOCK).forEach(function(k){Object.keys(AVLOCK[k]).forEach(function(v){if(avLocked(k,v))locks.push(avName(k,v)+" ("+achName(AVLOCK[k][v])+")");});});
-  $("av-body").innerHTML="<div class='avbig'>"+avatarSVG(A)+"</div><div class='row' style='margin:0 0 10px'><button class='btn ghost pill' id='av-rand'>Randomize</button></div><div class='avrows'>"+rows+"</div>"+(locks.length?"<p class='muted' style='font-size:.8rem'>Earn more: "+locks.join(", ")+".</p>":"<p class='muted' style='font-size:.8rem'>Everything unlocked.</p>");
+  var oldSc=document.querySelector("#av-body .avscroll"),keep=oldSc?oldSc.scrollTop:0;
+  $("av-body").innerHTML="<div class='avtop'><div class='avbig'>"+avatarSVG(A)+"</div><button class='btn ghost pill' id='av-rand'>Randomize</button></div><div class='avscroll'><div class='avrows'>"+rows+"</div>"+(locks.length?"<p class='muted' style='font-size:.8rem'>Earn more: "+locks.join(", ")+".</p>":"<p class='muted' style='font-size:.8rem'>Everything unlocked.</p>")+"</div>";
+  var nsc=document.querySelector("#av-body .avscroll");if(nsc)nsc.scrollTop=keep;
   $("av-body").querySelectorAll(".avb").forEach(function(b){b.onclick=function(){var k=b.dataset.k,list=AVOPT[k],i=list.indexOf(A[k]),d=+b.dataset.d;
     for(var n=0;n<list.length;n++){i=(i+d+list.length)%list.length;if(!avLocked(k,list[i]))break;}A[k]=list[i];save();openAvatar();};});
   $("av-rand").onclick=function(){Object.keys(AVOPT).forEach(function(k){var ok=AVOPT[k].filter(function(v){return !avLocked(k,v);});A[k]=pick(ok);});if(Math.random()<0.4)A.hat="none";if(Math.random()<0.5)A.extra="none";if(Math.random()<0.6)A.item="none";save();openAvatar();};
