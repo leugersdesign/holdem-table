@@ -1158,7 +1158,7 @@ function seeded(seed){return function(){seed=(seed*1664525+1013904223)>>>0;retur
 var SKINS=["#f6d5b8","#eec29b","#d9a47a","#b97f55","#8d5a3b","#61402a"];
 var HAIRC=["#1d1a17","#3b2a1d","#6b4423","#a0612b","#c9a050","#d8d2c4","#8a8580","#b8322a"];
 var AVC=0;
-function avatarSVG(a,mood){a=moodify(a,mood);var fem=a.look==="fem";
+function avatarSVG(a,mood){a=moodify(a,mood);if(a.outfit==="hoodup"){a=Object.assign({},a,{outfit:"hoodie"});if(!a.hat||a.hat==="none"){a.hat="hood";a.hatColor=a.cloth||"#2b3a55";}}var fem=a.look==="fem";
   var sk=a.skin||"#eec29b",hc=a.hairColor||"#3b2a1d",cloth=a.cloth||"#2b3a55",hat=a.hat||"none",hatC=a.hatColor||"#b8322a",o=[];
   var rx=a.shape==="long"?14:a.shape==="square"?17:18,ry=a.shape==="long"?21:a.shape==="square"?18:19,cy=33,top=cy-ry,L=32-rx,R=32+rx;
   var hcD=shade(hc,-28),hcL=shade(hc,40),skD=shade(sk,-22);
@@ -1315,6 +1315,8 @@ function avatarSVG(a,mood){a=moodify(a,mood);var fem=a.look==="fem";
   var it=a.item||(a.toothpick?"toothpick":"none");
   if(it==="toothpick")o.push("<path d='M37 "+(my+1)+"l10-3.5' stroke='#7a5a2a' stroke-width='2.6' stroke-linecap='round'/><path d='M37 "+(my+1)+"l10-3.5' stroke='#f3d9a8' stroke-width='1.6' stroke-linecap='round'/>");
   if(it==="lollipop")o.push("<path d='M37 "+(my+1)+"l8 4' stroke='#f2f2f2' stroke-width='1.4'/><circle cx='47' cy='"+(my+6)+"' r='4' fill='#ff3ec8'/><path d='M45 "+(my+5)+"q2-2 4 1' stroke='#fff' stroke-width='1' fill='none'/>");
+  if(it==="cigarette")o.push("<path d='M"+(37)+" "+(my+1)+"l11 2.4' stroke='#f4f1ea' stroke-width='2.2' stroke-linecap='butt'/><path d='M37 "+(my+1)+"l3 .65' stroke='#d9893a' stroke-width='2.3'/><circle cx='48.2' cy='"+(my+3.4)+"' r='1.2' fill='#ff6a2a'/><path d='M49 "+(my+2)+"q-2-4 1-7q3-3 0-7' stroke='rgba(220,220,220,.55)' stroke-width='1.2' fill='none' stroke-linecap='round'/>");
+  if(it==="cigar")o.push("<path d='M36 "+(my+1)+"l12 3.2' stroke='#6b4423' stroke-width='3.8' stroke-linecap='round'/><path d='M39 "+(my+1.8)+"l2 .55' stroke='#d4af37' stroke-width='4'/><path d='M47 "+(my+4)+"l1.6 .43' stroke='#9a9a9a' stroke-width='3.6'/><circle cx='49' cy='"+(my+4.5)+"' r='1' fill='#ff6a2a'/><path d='M50 "+(my+3)+"q-2-5 1-8q3-3 0-8' stroke='rgba(220,220,220,.5)' stroke-width='1.4' fill='none' stroke-linecap='round'/>");
   if(it==="gum")o.push("<circle cx='32' cy='"+(my+3)+"' r='5' fill='#ff9acb' stroke='#e86aa6' stroke-width='.8'/><circle cx='30' cy='"+(my+1)+"' r='1.2' fill='rgba(255,255,255,.7)'/>");
   /* hats */
   var hcl=hatC,hcd=shade(hatC,-30),hcli=shade(hatC,35),band=cy-12,apex=top-6,abid="ab"+(AVC++);
@@ -1322,7 +1324,7 @@ function avatarSVG(a,mood){a=moodify(a,mood);var fem=a.look==="fem";
   o.push("<defs><clipPath id='"+abid+"'><rect x='-20' y='-30' width='104' height='"+(band+30)+"'/></clipPath></defs>");
   function H(d,f,extra){o.push("<path d='"+d+"' fill='"+f+"'"+(extra||"")+"/>");}
   function crownEl(pp,col){return "<g clip-path='url(#"+abid+")'>"+headShape(2+(pp||0),4,col)+"</g>";}
-  function bill(w,drop,col){H("M"+(32-w)+" "+band+"Q32 "+(band+drop*1.6)+" "+(32+w)+" "+band+"Q32 "+(band+drop*0.5)+" "+(32-w)+" "+band+"Z",col);}
+  function bill(w,drop,col){H("M"+(32-w)+" "+(band-1.5)+"Q32 "+(band-3)+" "+(32+w)+" "+(band-1.5)+"L"+(32+w)+" "+(band+0.5)+"Q32 "+(band+drop*1.5)+" "+(32-w)+" "+(band+0.5)+"Z",col);}
   function rim(y,ext,ry2,col){o.push("<ellipse cx='32' cy='"+y+"' rx='"+(kx+ext)+"' ry='"+ry2+"' fill='"+col+"'/>");}
   function seams(col){o.push("<path d='M32 "+apex+"Q"+(32-kx*0.55)+" "+(apex+4)+" "+(32-kx*0.62)+" "+band+"M32 "+apex+"Q"+(32+kx*0.55)+" "+(apex+4)+" "+(32+kx*0.62)+" "+band+"' stroke='"+col+"' stroke-width='.8' fill='none' opacity='.6'/>");}
   if(hat==="ballcap"){o.push(crownEl(0,hcl));seams(hcd);o.push("<circle cx='32' cy='"+(apex+0.8)+"' r='1.6' fill='"+hcd+"'/><circle cx='32' cy='"+(band-5)+"' r='3' fill='"+hcli+"'/>");bill(kx*0.9,6,hcd);}
@@ -1336,7 +1338,7 @@ function avatarSVG(a,mood){a=moodify(a,mood);var fem=a.look==="fem";
   if(hat==="fedora"){var fc0=a.hatColor||"#3a2f28";rim(band,9,3.6,shade(fc0,-12));H("M"+(cl+1)+" "+band+"C"+(cl+1)+" "+(apex-7)+" "+(cr-1)+" "+(apex-7)+" "+(cr-1)+" "+band+"Z",fc0);o.push("<path d='M"+(32-4)+" "+(apex-1.5)+"q4 3 8 0' stroke='rgba(0,0,0,.3)' stroke-width='1.2' fill='none'/><rect x='"+(cl+1.3)+"' y='"+(band-4.5)+"' width='"+(kx*2-2.6)+"' height='3.5' fill='#111'/>"+(a.feather?"<path d='M"+(cr-3)+" "+(band-3)+"q8-8 4-14q-2 8-6 12z' fill='#2e8b57'/>":""));}
   if(hat==="bowler"){rim(band,4,2.6,"#141414");H("M"+(cl+1)+" "+band+"C"+(cl+1)+" "+(apex-9)+" "+(cr-1)+" "+(apex-9)+" "+(cr-1)+" "+band+"Z","#1c1c1c");o.push("<rect x='"+(cl+1.3)+"' y='"+(band-3.5)+"' width='"+(kx*2-2.6)+"' height='2.5' fill='#5a1a1a'/><path d='M"+(cl+5)+" "+(apex)+"q5-5 11-4' stroke='rgba(255,255,255,.18)' stroke-width='1.4' fill='none'/>");}
   if(hat==="top"){rim(band,5,3,"#141414");o.push("<path d='M"+(cl+2)+" "+band+"L"+(cl+1)+" "+(band-23)+"H"+(cr-1)+"L"+(cr-2)+" "+band+"Z' fill='#1a1a1a'/><ellipse cx='32' cy='"+(band-23)+"' rx='"+(kx-1)+"' ry='2' fill='#262626'/><rect x='"+(cl+1.8)+"' y='"+(band-5)+"' width='"+(kx*2-3.6)+"' height='3.5' fill='#7a1a2a'/>");}
-  if(hat==="cowboy"){var cb=a.hatColor?hcd:"#a8723a",cc=a.hatColor?hcl:"#c48a48";H("M"+(cl-13)+" "+(band-5)+"Q32 "+(band+10)+" "+(cr+13)+" "+(band-5)+"Q"+(cr+8)+" "+(band+3)+" "+(cr)+" "+(band+3)+"H"+(cl)+"Q"+(cl-8)+" "+(band+3)+" "+(cl-13)+" "+(band-5)+"Z",cb);H("M"+(cl+2)+" "+(band+1)+"Q"+(cl+1)+" "+(apex-7)+" "+(cl+9)+" "+(apex-6)+"Q32 "+(apex-1)+" "+(cr-9)+" "+(apex-6)+"Q"+(cr-1)+" "+(apex-7)+" "+(cr-2)+" "+(band+1)+"Z",cc);o.push("<rect x='"+(cl+2.3)+"' y='"+(band-3.5)+"' width='"+(kx*2-4.6)+"' height='3' fill='#5a3a1a'/>");}
+  if(hat==="cowboy"){var cb=a.hatColor?hcd:"#a8723a",cc=a.hatColor?hcl:"#c48a48";H("M"+(cl+2)+" "+(band+4)+"Q"+(cl+1)+" "+(apex-7)+" "+(cl+9)+" "+(apex-6)+"Q32 "+(apex-1)+" "+(cr-9)+" "+(apex-6)+"Q"+(cr-1)+" "+(apex-7)+" "+(cr-2)+" "+(band+4)+"Z",cc);o.push("<rect x='"+(cl+2.3)+"' y='"+(band-3.5)+"' width='"+(kx*2-4.6)+"' height='3' fill='#5a3a1a'/>");H("M"+(cl-13)+" "+(band-5)+"Q"+(cl-4)+" "+(band+2)+" "+(cl+2)+" "+(band+1)+"Q32 "+(band+3)+" "+(cr-2)+" "+(band+1)+"Q"+(cr+4)+" "+(band+2)+" "+(cr+13)+" "+(band-5)+"Q"+(cr+8)+" "+(band+5)+" "+(cr)+" "+(band+5)+"Q32 "+(band+7)+" "+(cl)+" "+(band+5)+"Q"+(cl-8)+" "+(band+5)+" "+(cl-13)+" "+(band-5)+"Z",cb);}
   if(hat==="captain"){o.push(crownEl(0,"#fafafa"));o.push("<ellipse cx='32' cy='"+(apex+5)+"' rx='"+(kx+4)+"' ry='6' fill='#fafafa' stroke='#ddd' stroke-width='.6'/><rect x='"+(cl)+"' y='"+(band-5)+"' width='"+(kx*2)+"' height='5' fill='#1a2238'/><circle cx='32' cy='"+(band-6)+"' r='2.8' fill='#e5c040'/>");bill(kx*0.8,5,"#111");}
   if(hat==="hardhat"){o.push(crownEl(2,"#f2c200"));o.push("<rect x='30.2' y='"+(apex-2)+"' width='3.6' height='"+(band-apex+2)+"' rx='1.5' fill='#e0b000'/>");rim(band,5,2.6,"#e0b000");}
   if(hat==="chef")o.push("<rect x='"+(cl+1)+"' y='"+(band-7)+"' width='"+(kx*2-2)+"' height='8' fill='#fff' stroke='#e2e2e2' stroke-width='.6'/><circle cx='"+(cl+6)+"' cy='"+(band-11)+"' r='7' fill='#fff'/><circle cx='32' cy='"+(band-14)+"' r='8.5' fill='#fff'/><circle cx='"+(cr-6)+"' cy='"+(band-11)+"' r='7' fill='#fff'/><path d='M"+(cl+4)+" "+(band-7)+"q"+(kx-4)+" -3 "+(kx*2-8)+" 0' stroke='#e2e2e2' stroke-width='.6' fill='none'/>");
@@ -1378,7 +1380,7 @@ function randomAvatar(name,skill){
     nose:pk(["small","big","hook","button"]),mouth:pk(["smile","grin","smirk","flat","o","frown","teeth"]),brows:pk(["normal","normal","bushy","thin","angry","worried"]),
     facial:ch(.55)?"none":pk(["stubble","mustache","pencil","walrus","handlebar","horseshoe","goatee","soulpatch","chinstrap","beard","sideburns"]),
     hat:ch(.5)?"none":pk(["ballcap","backcap","trucker","visor","beanie","bucket","newsboy","fedora","bowler","headband","cowboy","beret","headphones"]),hatColor:pk(["#b8322a","#1e3a66","#2e8b57","#1a1a1a","#f2f2f2","#e8b923","#c87a2a"]),
-    extra:ch(.6)?"none":pk(["bowtie","tie","scarf","earring","chain","suspenders","cards","pencil","collar"]),item:ch(.85)?"none":pk(["toothpick","lollipop","gum"]),
+    extra:ch(.6)?"none":pk(["bowtie","tie","scarf","earring","chain","suspenders","cards","pencil","collar"]),item:ch(.8)?"none":pk(["toothpick","lollipop","gum","cigar","cigarette"]),
     outfit:pk(["tee","tee","suit","hoodie","leather","hawaiian","flannel","turtleneck","jersey","overalls","tank"]),cloth:pk(["#2b3a55","#5a2b3a","#2f4a2a","#444444","#6a4a1a","#1a1a1a","#c8102e","#2a8a8a"]),blush:r()<.3,freckles:r()<.15};
 }
 /* original characters, loosely parodying genres, not specific films or real people */
@@ -1872,18 +1874,18 @@ var AVOPT={look:["masc","fem"],skin:SKINS.concat(["#ffe0c8","#4a2e1e"]),shape:["
   eyes:["normal","wide","squint","sleepy","glasses","square","cateye","shades","aviators","roundshades","goggles","starglasses","eyepatch","mirrored","monocle"],
   nose:["small","button","big","hook"],mouth:["smile","grin","smirk","flat","o","teeth","tongue"],
   facial:["none","stubble","mustache","pencil","walrus","handlebar","horseshoe","goatee","soulpatch","chinstrap","beard","sideburns"],
-  item:["none","toothpick","lollipop","gum"],lipColor:["none","#c8304a","#e86a8a","#8a2a4a","#c98a7a","#6a2a7a"],
+  item:["none","toothpick","lollipop","gum","cigarette","cigar"],lipColor:["none","#c8304a","#e86a8a","#8a2a4a","#c98a7a","#6a2a7a"],
   hat:["none","ballcap","backcap","trucker","visor","beanie","bucket","newsboy","beret","fedora","bowler","headband","bandana","headphones","hood","paper","hardhat","chef","cowboy","captain","top","tyrolean","pirate","viking","wizard","tiara","crown"],
   hatColor:["#b8322a","#1e3a66","#2e8b57","#1a1a1a","#f2f2f2","#e8b923","#6a2a8a","#c87a2a","#3a2f28"],
   extra:["none","bowtie","tie","scarf","bandana","collar","suspenders","earring","pencil","cards","stethoscope","lei","hoops","bow","flower","earpiece","chain","pearls","headset","medal"],
-  outfit:["tee","blouse","dress","cardigan","suit","tux","hoodie","leather","hawaiian","flannel","turtleneck","overalls","jersey","tank"],
+  outfit:["tee","blouse","dress","cardigan","suit","tux","hoodie","hoodup","leather","hawaiian","flannel","turtleneck","overalls","jersey","tank"],
   cloth:["#2b3a55","#5a2b3a","#2f4a2a","#444444","#6a4a1a","#1a1a1a","#c8102e","#f2f2f2","#e8b923","#2a8a8a"],
   bg:["#2a3b34","#1e3a66","#5a1f1a","#3a1a4a","#4a3a0a","#111111","#0e5c5d","#6a2a12","#c87a9a","#d8c08a"]};
 var AVLOCK={eyes:{mirrored:"level10",monocle:"level20",aviators:"first_cash",eyepatch:"badbeat"},
   hat:{cowboy:"hammer",captain:"final_table",top:"first_title",tyrolean:"daily7",tiara:"main_event",crown:"main_event",pirate:"bigpot",viking:"ladder_champ",wizard:"level20"},
   extra:{chain:"br50k",pearls:"quads",headset:"hands1000",medal:"first_title"}};
 var AVLABEL={look:"Features",lipColor:"Lip color",skin:"Skin",shape:"Face",hair:"Hair",hairColor:"Hair color",brows:"Brows",eyes:"Eyes",nose:"Nose",mouth:"Mouth",facial:"Facial hair",item:"In mouth",hat:"Hat",hatColor:"Hat color",extra:"Accessory",outfit:"Outfit",cloth:"Outfit color",bg:"Background"};
-var AVNAMES={masc:"Masculine",fem:"Feminine",pixie:"Pixie cut",wavy:"Long waves",sideswept:"Side-swept",highpony:"High ponytail",pigtails:"Pigtails",spacebuns:"Space buns",blouse:"Blouse",dress:"Sundress",cardigan:"Cardigan",hoops:"Hoop earrings",bow:"Hair bow",flower:"Flower",none:"None",buzz:"Buzz cut",short:"Short",sidepart:"Side part",slick:"Slicked back",pomp:"Pompadour",spiky:"Spiky",curly:"Curly",afro:"Afro",bob:"Bob",long:"Long",ponytail:"Ponytail",bun:"Top bun",braids:"Braids",mullet:"Mullet",receding:"Receding",mohawk:"Mohawk",flattop:"Flattop",bouffant:"Bouffant",
+var AVNAMES={cigarette:"Cigarette",cigar:"Cigar",hoodup:"Hoodie, hood up",masc:"Masculine",fem:"Feminine",pixie:"Pixie cut",wavy:"Long waves",sideswept:"Side-swept",highpony:"High ponytail",pigtails:"Pigtails",spacebuns:"Space buns",blouse:"Blouse",dress:"Sundress",cardigan:"Cardigan",hoops:"Hoop earrings",bow:"Hair bow",flower:"Flower",none:"None",buzz:"Buzz cut",short:"Short",sidepart:"Side part",slick:"Slicked back",pomp:"Pompadour",spiky:"Spiky",curly:"Curly",afro:"Afro",bob:"Bob",long:"Long",ponytail:"Ponytail",bun:"Top bun",braids:"Braids",mullet:"Mullet",receding:"Receding",mohawk:"Mohawk",flattop:"Flattop",bouffant:"Bouffant",
   bushy:"Bushy",thin:"Thin",sleepy:"Sleepy",glasses:"Round glasses",square:"Thick frames",cateye:"Cat-eye",shades:"Sunglasses",aviators:"Aviators",roundshades:"Round shades",goggles:"Goggles",starglasses:"Party stars",eyepatch:"Eyepatch",mirrored:"Mirrored shades",monocle:"Monocle",
   button:"Button",teeth:"Gritted teeth",tongue:"Tongue out",pencil:"Pencil",walrus:"Walrus",horseshoe:"Horseshoe",soulpatch:"Soul patch",chinstrap:"Chinstrap",
   ballcap:"Ball cap",backcap:"Backwards cap",trucker:"Trucker hat",visor:"Dealer visor",bucket:"Bucket hat",newsboy:"Newsboy cap",bowler:"Bowler",headband:"Sweatband",bandana:"Bandana",headphones:"Headphones",paper:"Diner hat",hardhat:"Hard hat",chef:"Chef hat",cowboy:"Cowboy hat",captain:"Captain's hat",top:"Top hat",tyrolean:"Alpine hat",pirate:"Pirate hat",viking:"Viking helmet",wizard:"Wizard hat",tiara:"Tiara",crown:"Crown",
