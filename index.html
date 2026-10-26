@@ -382,6 +382,27 @@ details{margin:8px 0}details summary{cursor:pointer;padding:4px 0}
 .pass-in{width:100%;max-width:420px;text-align:center;display:grid;gap:10px}
 .pass-in .actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px}
 .pass-in .presets{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.carousel{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;padding:4px 16px 14px;margin:0 -16px;scrollbar-width:none}
+.carousel::-webkit-scrollbar{display:none}
+.carousel>.panel{flex:0 0 84%;max-width:360px;scroll-snap-align:center;margin:0;display:flex;flex-direction:column}
+.carousel>.panel .row{margin-top:auto;padding-top:8px}
+.carhead{display:flex;justify-content:space-between;align-items:baseline;margin:14px 2px 6px}
+.carhead h3{margin:0;font-family:var(--display);font-size:1.05rem}
+.carhead span{font-size:.8rem;color:var(--muted)}
+.evart{position:relative;height:96px;margin:-16px -16px 12px;border-radius:22px 22px 0 0;overflow:hidden;display:flex;align-items:flex-end;justify-content:center}
+.evart svg{width:150px;height:88px;display:block}
+.evart span{position:absolute;left:12px;top:10px;font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.themehead{display:flex;align-items:center;gap:12px;border-radius:20px;padding:12px 16px;margin:8px 0 10px;color:#fff}
+.themehead svg{width:110px;height:64px;flex:none}
+.themehead h2{margin:0;color:#fff}.themehead .venue{color:rgba(255,255,255,.75)}
+.av{width:40px;height:40px}
+.felt.ring9 .av{width:34px;height:34px}
+.seat{width:112px}
+.felt.ring9 .seat{width:96px}
+.hav{width:44px;height:44px}
+.luav{width:76px;height:76px;border-radius:18px}
+.profav{width:84px;height:84px;border-radius:24px}
+.pav{width:128px;height:128px;border-radius:30px}
 [hidden]{display:none!important}
 @media (max-width:380px){.seat{width:96px;font-size:.68rem}.center{width:206px}.pc.sm,.slot{width:34px;height:47px}.board{height:47px}}
 @media (prefers-reduced-motion:reduce){.pc.deal{animation:none}#atm .fx1,#atm .fx2{animation:none!important}.dealer{transition:none}}
@@ -398,7 +419,7 @@ details{margin:8px 0}details summary{cursor:pointer;padding:4px 0}
       <h1>Hold'em Table</h1>
     </header>
     <div class="panel glass prof" id="l-prof"></div>
-    <div class="seg ltabs" id="l-tabs"><button data-v="circuit">Circuit</button><button data-v="cash">Cash</button><button data-v="train">Train</button><button data-v="real">Real game</button><button data-v="career">Career</button><button data-v="settings">Settings</button></div>
+    <div class="seg ltabs" id="l-tabs"><button data-v="circuit">Circuit</button><button data-v="cash">Cash</button><button data-v="challenge">Challenge</button><button data-v="home">Home game</button><button data-v="train">Train</button><button data-v="real">Real game</button><button data-v="career">Career</button><button data-v="settings">Settings</button></div>
     <div id="l-body"></div>
   </section>
 
@@ -2556,7 +2577,7 @@ function chalOver(){var C=chal();C.active=false;C.runs.push({start:C.start,end:t
   showModal("<h2>Challenge run over</h2><p>Your challenge bankroll dropped below one $1/$2 buy-in. This run peaked at <b>"+money(C.peak)+"</b> over "+C.hands+" hands, reaching "+C.top+".</p>",[["Back to lobby",function(){toLobby();},"brass"]]);}
 function chalNew(){var old=(S.chal&&S.chal.runs)||[];S.chal={bank:4000,peak:4000,hands:0,start:today(),runs:old,active:true,top:"$1/$2"};save();renderLobby();}
 function chalHTML(){var C=chal(),c=chalStake(C.bank),nx=CHAL[CHAL.indexOf(c)+1],inRun=S.cash&&S.cash.chal;
-  var h="<div class='panel glass'><div class='evtop'><div><div class='venue'>Real bankroll rules</div><h2>Bankroll challenge</h2></div><div class='tier'>"+money(C.bank)+"</div></div>"+
+  var h="<div class='panel glass'><div class='evtop'><div><div class='venue'>Real bankroll rules</div><h2>Your run</h2></div><div class='tier'>"+money(C.bank)+"</div></div>"+
    "<p class='muted' style='font-size:.85rem'>Start with $4,000. Each session you play the highest stakes you have 20 buy-ins for, so you move up when you win and down when you lose. Drop below $200 and the run is over. Separate from your main bankroll.</p>";
   if(C.active)h+="<table class='ptable'><tr><td>Bankroll</td><td><b>"+money(C.bank)+"</b> (peak "+money(C.peak)+")</td></tr><tr><td>Your stakes</td><td>"+c.n+" ("+Math.floor(C.bank/c.buy)+" buy-ins)</td></tr><tr><td>Next level</td><td>"+(nx?nx.n+" at "+money(nx.buy*20):"You're at the top")+"</td></tr><tr><td>Hands this run</td><td>"+C.hands+"</td></tr></table><div class='row'>"+(inRun?"<button class='btn primary' id='ch-res'>Resume session</button>":"<button class='btn primary' id='ch-go'>Play a "+c.n+" session</button>")+"<button class='btn ghost' id='ch-new'>Restart run</button></div>";
   else h+="<p>Your last run is over.</p><div class='row'><button class='btn primary' id='ch-new'>Start a new run</button></div>";
@@ -2566,7 +2587,7 @@ function wireChal(){if($("ch-go"))$("ch-go").onclick=chalSit;if($("ch-res"))$("c
   if($("ch-new"))$("ch-new").onclick=function(){if(S.chal&&S.chal.active){showModal("<h2>Restart the run?</h2><p>Your current challenge bankroll ("+money(S.chal.bank)+") is logged and you start over with $4,000.</p>",[["Restart",function(){var C=chal();if(S.cash&&S.cash.chal){S.cash=null;}C.runs.push({start:C.start,end:today(),peak:C.peak,hands:C.hands,top:C.top});C.runs.sort(function(a,b){return b.peak-a.peak;});C.runs=C.runs.slice(0,10);chalNew();},"brass"],["Cancel",function(){},"ghost"]]);}else chalNew();};}
 /* ===== pass-and-play home game ===== */
 var PASS_ST={n:3,names:["","","","","",""],seats:9,buy:200};
-function passSetupHTML(){return "<div class='panel glass' id='pp-setup'><div class='evtop'><div><div class='venue'>Real people, one phone</div><h2>Pass-and-play home game</h2></div></div>"+
+function passSetupHTML(){return "<div class='panel glass' id='pp-setup'><div class='evtop'><div><div class='venue'>Pass-and-play</div><h2>Set up the table</h2></div></div>"+
   "<p class='muted' style='font-size:.85rem'>Each player takes the phone on their turn. Bots fill the empty seats. Cards stay hidden until the right person taps in.</p>"+
   "<div class='lbl'>Players</div><div class='seg' id='pp-n'>"+[2,3,4,5,6].map(function(k){return "<button data-v='"+k+"'"+(PASS_ST.n===k?" aria-pressed='true'":"")+">"+k+"</button>";}).join("")+"</div>"+
   "<div style='display:grid;gap:6px;margin:8px 0'>"+Array.from({length:PASS_ST.n},function(_,k){return "<input data-pn='"+k+"' placeholder='Player "+(k+1)+"' value='"+(PASS_ST.names[k]||"").replace(/'/g,"&#39;")+"' aria-label='Player "+(k+1)+" name' maxlength='14'>";}).join("")+"</div>"+
@@ -2601,6 +2622,47 @@ function passShow(i){var p=T.players[i],s=H.s[i],L=legal(i),pot=potTotal(),ov=$(
   if($("ps-ok"))$("ps-ok").onclick=function(){done("raise",amt);};}
 function passSettle(){var hs=T.players.filter(function(p){return p.hero||p.human;});
   return "<table class='st'>"+hs.map(function(p){var inn=(p.buyins||1)*T.buy,net=p.stack-inn;return "<tr><td>"+escH(p.name)+"</td><td>in "+money(inn)+", has "+money(p.stack)+"</td><td style='color:"+(net>=0?"var(--good)":"var(--bad)")+"'><b>"+(net>=0?"+":"\u2212")+money(Math.abs(net))+"</b></td></tr>";}).join("")+"</table>";}
+
+/* ===== themed card art for the lobby ===== */
+var EMB={
+ sun:"<circle cx='60' cy='52' r='18' fill='#ffe08a'/><g stroke='#ffe08a' stroke-width='3' stroke-linecap='round'><path d='M60 24v-10M36 34l-7-7M84 34l7-7M28 52H16M92 52h12'/></g><rect x='0' y='52' width='120' height='18' fill='rgba(20,60,40,.85)'/><text x='60' y='66' text-anchor='middle' font-size='11' font-weight='800' fill='#ffe08a' font-family='sans-serif'>FREE</text>",
+ anchor:"<g fill='none' stroke='#e9d7b0' stroke-width='5' stroke-linecap='round'><circle cx='60' cy='14' r='6'/><path d='M60 20v40M44 30h32M34 46c4 12 14 16 26 16s22-4 26-16'/></g><path d='M30 44l4 6 6-4M90 44l-4 6-6-4' fill='none' stroke='#e9d7b0' stroke-width='4'/>",
+ wheel:"<g fill='none' stroke='#f2e6c8' stroke-width='3'><circle cx='60' cy='34' r='24'/><circle cx='60' cy='34' r='6'/></g><g stroke='#f2e6c8' stroke-width='3'>"+[0,30,60,90,120,150].map(function(a){var r=a*Math.PI/180;return "<line x1='"+(60+24*Math.cos(r)).toFixed(1)+"' y1='"+(34+24*Math.sin(r)).toFixed(1)+"' x2='"+(60-24*Math.cos(r)).toFixed(1)+"' y2='"+(34-24*Math.sin(r)).toFixed(1)+"'/>";}).join("")+"</g><path d='M0 60q15-8 30 0t30 0 30 0 30 0V70H0z' fill='rgba(140,210,230,.5)'/>",
+ skyline:"<g fill='#1a1430'><rect x='8' y='30' width='16' height='40'/><rect x='26' y='14' width='18' height='56'/><rect x='46' y='24' width='14' height='46'/><rect x='62' y='6' width='16' height='64'/><rect x='80' y='22' width='14' height='48'/><rect x='96' y='34' width='18' height='36'/></g><g fill='#ffd36a'>"+[[30,20],[36,28],[30,40],[66,12],[72,24],[66,36],[72,48],[50,30],[84,30],[100,42],[12,38]].map(function(q){return "<rect x='"+q[0]+"' y='"+q[1]+"' width='3' height='4'/>";}).join("")+"</g>",
+ desert:"<circle cx='78' cy='26' r='16' fill='#ffd36a'/><path d='M0 56q30-14 60-4t60-6V70H0z' fill='#8a3a1c'/><path d='M0 62q40-8 80 0t40 0V70H0z' fill='#5a240f'/><g fill='#2d5a2a'><rect x='30' y='26' width='7' height='34' rx='3'/><rect x='22' y='34' width='5' height='14' rx='2'/><rect x='22' y='44' width='12' height='5' rx='2'/><rect x='40' y='30' width='5' height='12' rx='2'/><rect x='34' y='38' width='11' height='5' rx='2'/></g>",
+ yacht:"<path d='M60 8v40L32 48z' fill='#fff'/><path d='M62 14v34l20 0z' fill='#f2f2f2'/><path d='M24 50h72l-10 10H34z' fill='#e9d7a6'/><path d='M0 62q10-4 20 0t20 0 20 0 20 0 20 0 20 0V70H0z' fill='rgba(255,255,255,.35)'/><g fill='#ffd36a'><circle cx='98' cy='14' r='2'/><circle cx='106' cy='22' r='1.5'/><circle cx='90' cy='24' r='1.5'/></g>",
+ crown:"<path d='M30 50l-6-30 18 14 18-22 18 22 18-14-6 30z' fill='#e8b923' stroke='#fff2b8' stroke-width='1.5'/><rect x='30' y='50' width='60' height='8' rx='2' fill='#c99a1a'/><circle cx='60' cy='38' r='4' fill='#ff3e8a'/><circle cx='44' cy='42' r='3' fill='#4cc3ff'/><circle cx='76' cy='42' r='3' fill='#4cc3ff'/><path d='M14 64h92' stroke='#ff3e8a' stroke-width='2' opacity='.8'/>",
+ ticket:"<path d='M26 18h68v10a6 6 0 0 0 0 12v10H26V40a6 6 0 0 0 0-12z' fill='#e8b923'/><path d='M44 18v32' stroke='#7a5a10' stroke-dasharray='3 3'/><text x='70' y='38' text-anchor='middle' font-size='10' font-weight='800' fill='#3a2a06' font-family='sans-serif'>SEAT</text>",
+ pumpkin:"<ellipse cx='60' cy='42' rx='26' ry='20' fill='#f08a24'/><path d='M60 22c0-6 4-10 8-10' stroke='#3a6a2a' stroke-width='4' fill='none'/><path d='M46 38l6 4-6 2zM74 38l-6 4 6 2zM48 50q12 8 24 0l-4 4-4-3-4 3-4-3-4 3z' fill='#2a1406'/>",
+ snow:"<g stroke='#fff' stroke-width='3' stroke-linecap='round'>"+[0,60,120].map(function(a){var r=a*Math.PI/180;return "<line x1='"+(60+24*Math.cos(r)).toFixed(1)+"' y1='"+(35+24*Math.sin(r)).toFixed(1)+"' x2='"+(60-24*Math.cos(r)).toFixed(1)+"' y2='"+(35-24*Math.sin(r)).toFixed(1)+"'/>";}).join("")+"</g>",
+ heart:"<path d='M60 58C30 40 34 16 50 16c6 0 10 4 10 8 0-4 4-8 10-8 16 0 20 24-10 42z' fill='#ff4a7a'/>",
+ clover:"<g fill='#3ac46a'><circle cx='50' cy='28' r='10'/><circle cx='70' cy='28' r='10'/><circle cx='50' cy='46' r='10'/><circle cx='70' cy='46' r='10'/></g><path d='M60 46q6 14 14 18' stroke='#2a8a4a' stroke-width='4' fill='none'/>",
+ star:"<path d='M60 12l8 18 20 2-15 13 5 20-18-11-18 11 5-20-15-13 20-2z' fill='#ffd36a'/>",
+ lamp:"<path d='M60 0v18' stroke='#2a1a0a' stroke-width='2'/><path d='M40 30q20-16 40 0z' fill='#2f5a3a'/><path d='M40 30h40' stroke='#1a3a24' stroke-width='2'/><path d='M44 30l-14 30h60l-14-30z' fill='rgba(255,230,150,.35)'/><ellipse cx='60' cy='62' rx='44' ry='7' fill='#1d5a3a' stroke='#6b4423' stroke-width='3'/>",
+ slots:"<rect x='30' y='12' width='60' height='46' rx='8' fill='#c8102e' stroke='#ffd36a' stroke-width='3'/><rect x='38' y='22' width='12' height='18' rx='2' fill='#fff'/><rect x='54' y='22' width='12' height='18' rx='2' fill='#fff'/><rect x='70' y='22' width='12' height='18' rx='2' fill='#fff'/><g font-family='sans-serif' font-weight='900' font-size='13' fill='#c8102e' text-anchor='middle'><text x='44' y='36'>7</text><text x='60' y='36'>7</text><text x='76' y='36'>7</text></g><path d='M96 20v20' stroke='#ffd36a' stroke-width='3'/><circle cx='96' cy='18' r='4' fill='#ffd36a'/>",
+ house:"<path d='M30 36L60 14l30 22v26H30z' fill='#f2e6c8'/><rect x='54' y='44' width='12' height='18' fill='#8a4a2a'/><rect x='38' y='40' width='10' height='9' fill='#ffd36a'/><rect x='72' y='40' width='10' height='9' fill='#ffd36a'/><path d='M26 38L60 12l34 26' stroke='#8a2a22' stroke-width='5' fill='none' stroke-linejoin='round'/>",
+ diamond:"<path d='M60 10l26 18-26 34-26-34z' fill='#9ee6ff' stroke='#fff' stroke-width='1.5'/><path d='M34 28h52M60 10l-10 18 10 34 10-34z' stroke='#fff' stroke-width='1' fill='none' opacity='.8'/>",
+ chips:"<g>"+[[40,"#c8102e"],[60,"#1a1a1a"],[80,"#2e8b57"]].map(function(q,k){var h="";for(var j=0;j<5-k;j++)h+="<ellipse cx='"+q[0]+"' cy='"+(56-j*6)+"' rx='12' ry='4' fill='"+q[1]+"' stroke='#fff' stroke-width='1.2'/>";return h;}).join("")+"</g><path d='M10 50l20-12 20 6 24-20 30-10' stroke='#7be3a6' stroke-width='3' fill='none' stroke-linecap='round'/>"
+};
+var ART={
+ daily:["linear-gradient(135deg,#f6a04d,#d9862a 45%,#2a6f4f)","sun"],
+ anchor:["linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.45)),repeating-linear-gradient(90deg,#4a2f1c 0 16px,#57381f 16px 32px)","anchor"],
+ river:["linear-gradient(180deg,#2a6b8a,#0e2c3c)","wheel"],low:["linear-gradient(180deg,#2a6b8a,#0e2c3c)","wheel"],
+ downtown:["linear-gradient(180deg,#5a3a9a,#1a1230)","skyline"],mid:["linear-gradient(180deg,#5a3a9a,#1a1230)","skyline"],
+ desert:["linear-gradient(180deg,#f2a25a,#c4502e 60%,#6b2a1a)","desert"],high:["linear-gradient(180deg,#2a1a0a,#6b4a1a 55%,#e8b923)","diamond"],
+ monte:["linear-gradient(180deg,#4aa3d8,#0f3f6a)","yacht"],
+ main:["radial-gradient(ellipse at 50% 20%,#5a3a0a,#0b0905 70%)","crown"],nose:["linear-gradient(135deg,#0b0b0b,#2a2410 50%,#0b0b0b)","crown"],
+ sat:["linear-gradient(135deg,#4a2060,#140818)","ticket"],
+ home:["radial-gradient(ellipse at 50% 0%,rgba(255,220,140,.45),transparent 60%),repeating-linear-gradient(90deg,#5a3a22 0 22px,#4a2f1c 22px 24px)","lamp"],
+ micro:["repeating-linear-gradient(0deg,rgba(255,255,255,.18) 0 10px,transparent 10px 20px),repeating-linear-gradient(90deg,rgba(255,255,255,.18) 0 10px,transparent 10px 20px),#b8322a","house"],
+ casino12:["radial-gradient(circle at 25% 25%,#e8b923 0 3px,transparent 4px) 0 0/20px 20px,radial-gradient(circle at 75% 75%,#3a8a5a 0 3px,transparent 4px) 0 0/20px 20px,#6a1424","slots"],
+ challenge:["linear-gradient(180deg,#1f4d33,#0b1f15)","chips"]
+};
+function specialArt(){var m=new Date().getMonth()+1;return m===10?["linear-gradient(180deg,#3a1a4a,#120818)","pumpkin"]:m===12||m===1?["linear-gradient(180deg,#2a5a9a,#0f2a4a)","snow"]:m===2?["linear-gradient(180deg,#7a1a3a,#2a0a14)","heart"]:m===3?["linear-gradient(180deg,#1f5a33,#0b2a15)","clover"]:m===7?["linear-gradient(180deg,#1a2a6a,#0a0a24)","star"]:["linear-gradient(180deg,#2a2a2a,#0b0b0b)","star"];}
+function evArt(id,label){var a=id==="special"?specialArt():ART[id];if(!a)return "";
+  return "<div class='evart' style=\"background:"+a[0]+"\" aria-hidden='true'><svg viewBox='0 0 120 70' preserveAspectRatio='xMidYMax meet'>"+EMB[a[1]]+"</svg>"+(label?"<span>"+label+"</span>":"")+"</div>";}
+function renderChallengeTab(){$("l-body").innerHTML="<div class='themehead' style=\"background:"+ART.challenge[0]+"\"><svg viewBox='0 0 120 70' aria-hidden='true'>"+EMB.chips+"</svg><div><div class='venue'>Can you run it up?</div><h2>Bankroll challenge</h2></div></div>"+chalHTML();wireChal();}
+function renderHomeTab(){$("l-body").innerHTML="<div class='themehead' style=\"background:"+ART.home[0]+"\"><svg viewBox='0 0 120 70' aria-hidden='true'>"+EMB.lamp+"</svg><div><div class='venue'>Friday night, one phone</div><h2>Home game</h2></div></div>"+passSetupHTML();wirePassSetup();}
 
 /* ===== world: events, stakes, career, achievements ===== */
 var EVENTS=[
@@ -2764,7 +2826,7 @@ function evCard(ev){
   else if(lock)btn="<div class='lock'>\ud83d\udd12 "+lock+"</div>";
   else if(busy)btn="<div class='lock'>Finish your current event first</div>";
   else btn="<button class='btn "+(ev.daily?"brass":"primary")+"' data-ev='"+ev.id+"'>"+(ev.buy?"Register "+money(ev.buy):"Play free")+"</button>";
-  return "<div class='panel glass ev"+(lock?" locked":"")+"'><div class='evtop'><div style='min-width:0'><div class='venue'>"+ev.venue+"</div><h2>"+ev.n+"</h2></div><div class='tier'>"+(ev.daily?"Daily":ev.castMix?"Special":"Tier "+ev.tier)+"</div></div>"+
+  return "<div class='panel glass ev"+(lock?" locked":"")+"'>"+evArt(ev.id,ev.daily?"Daily":ev.castMix?"Special":"Tier "+ev.tier)+"<div class='evtop'><div style='min-width:0'><div class='venue'>"+ev.venue+"</div><h2>"+ev.n+"</h2></div><div class='tier'>"+(ev.daily?"Daily":ev.castMix?"Special":"Tier "+ev.tier)+"</div></div>"+
     "<div class='chips'><span>"+(ev.buy?money(ev.buy)+" buy-in":"Free")+"</span><span>"+ev.field+" players</span><span>"+(st>1?st+" stages":"1 table")+"</span>"+(ev.ticket?"<span>1st wins a Main Event seat</span>":"<span>1st "+money(first)+"</span><span>"+ev.pay.length+" paid</span>")+"</div>"+(ev.tag?"<div class='theme'>"+ev.tag+"</div>":"")+
     "<div class='evmeta'>"+dots(ev.skill)+"</div>"+(ev.finalTheme?"<div class='theme'>Final table: <b>"+THEMES[ev.finalTheme].n+"</b></div>":"")+
     (r.entries?"<div class='evmeta muted'>Your record: "+r.entries+" played, "+r.cashes+" cashed, "+r.wins+" won, best "+ordinal(r.best||0)+(r.won?", "+money(r.won)+" won":"")+"</div>":"")+
@@ -2777,7 +2839,8 @@ function renderCircuit(){
   h+="<div class='panel glass ev'><div class='evtop'><div><div class='venue'>One on one, free entry</div><h2>Heads-up Ladder</h2></div><div class='tier'>"+Math.min(rg,LL.length)+"/"+LL.length+"</div></div>"+
     "<div class='ladder'><div class='luav'>"+avatarSVG(nx.av)+"</div><div style='min-width:0'><b>"+(rg>=LL.length?"Ladder complete. Rematch: ":"Next: ")+nx.name+"</b><div class='muted' style='font-size:.82rem'>"+SKILL_LABEL[nx.skill]+" \u00b7 "+styleText({name:nx.short,cid:nx.id,skill:nx.skill})+"</div><div class='muted' style='font-size:.82rem'>Win "+money(100*(Math.min(rg,LL.length-1)+1))+" and move up a rung.</div></div></div>"+
     "<div class='row'>"+(S.tour?"<div class='lock'>Finish your current event first</div>":"<button class='btn primary' id='b-ladder'>Challenge "+nx.short+"</button>")+"</div></div>";
-  EVENTS.forEach(function(ev){if(!ev.hidden)h+=evCard(ev);});
+  var evs="";EVENTS.forEach(function(ev){if(!ev.hidden)evs+=evCard(ev);});
+  h+="<div class='carhead'><h3>Tournaments</h3><span>Swipe for more \u2192</span></div><div class='carousel'>"+evs+"</div>";
   $("l-body").innerHTML=h;
   if($("b-ladder"))$("b-ladder").onclick=enterLadder;
   $("l-body").querySelectorAll("[data-tix]").forEach(function(b){b.onclick=function(){enterEvent(b.dataset.tix,false,true);};});
@@ -2792,10 +2855,10 @@ function renderCashTab(){
     else if(other)btn="<div class='lock'>You're seated at "+STK(S.cash.stake).n+"</div>";
     else if(lock)btn="<div class='lock'>\ud83d\udd12 "+lock+"</div>";
     else btn="<button class='btn primary' data-sit='"+st.id+"'>Sit down, buy in "+money(st.buy)+"</button>";
-    h+="<div class='panel glass ev"+(lock&&!here?" locked":"")+"'><div class='evtop'><div><div class='venue'>"+st.venue+"</div><h2>"+st.n+" No-Limit</h2></div><div class='tier'>"+(st.buy/st.bb)+" bb</div></div>"+
+    h+="<div class='panel glass ev"+(lock&&!here?" locked":"")+"'>"+evArt(st.id,st.n)+"<div class='evtop'><div><div class='venue'>"+st.venue+"</div><h2>"+st.n+" No-Limit</h2></div><div class='tier'>"+(st.buy/st.bb)+" bb</div></div>"+
       "<div class='evmeta'>"+(st.arch?"Players: "+ARCH_ORDER.filter(function(k){return st.arch.indexOf(k)>=0;}).map(function(k){var c=st.arch.filter(function(x){return x===k;}).length;return (c>1?c+" ":"")+ARCH[k].n.toLowerCase()+(c>1?"s":"");}).join(", "):st.skill==="user"?"Opponents set in Settings: "+dots(S.settings.skill):dots(st.skill))+"</div><div class='row'>"+btn+"</div></div>";
   });
-  $("l-body").innerHTML=chalHTML()+passSetupHTML()+h;wireChal();wirePassSetup();
+  $("l-body").innerHTML="<div class='carhead'><h3>Cash games</h3><span>Swipe for more \u2192</span></div><div class='carousel'>"+h+"</div>";
   $("l-body").querySelectorAll("[data-sit]").forEach(function(b){b.onclick=function(){sitCash(b.dataset.sit,false);};});
   $("l-body").querySelectorAll("[data-res]").forEach(function(b){b.onclick=function(){sitCash(b.dataset.res,true);};});
 }
@@ -2866,7 +2929,7 @@ function renderLobby(){
   car();if(S.settings.venueLooks===undefined)S.settings.venueLooks=true;if(S.settings.season===undefined)S.settings.season=true;if(S.settings.tilt3d===undefined)S.settings.tilt3d=false;applySeason();["sound","haptics","fx2","liveChips"].forEach(function(k){if(S.settings[k]===undefined)S.settings[k]=true;});if(S.settings.clock===undefined)S.settings.clock=0;if(S.settings.liveHelp===undefined)S.settings.liveHelp=false;
   renderProfile();
   $("l-tabs").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===LTAB?"true":"false");b.onclick=function(){LTAB=b.dataset.v;renderLobby();window.scrollTo({top:0});};});
-  if(LTAB==="circuit")renderCircuit();else if(LTAB==="cash")renderCashTab();else if(LTAB==="train")renderTrainTab();else if(LTAB==="real")renderRealTab();else if(LTAB==="career")renderCareer();else renderSettings();
+  if(LTAB==="circuit")renderCircuit();else if(LTAB==="cash")renderCashTab();else if(LTAB==="challenge")renderChallengeTab();else if(LTAB==="home")renderHomeTab();else if(LTAB==="train")renderTrainTab();else if(LTAB==="real")renderRealTab();else if(LTAB==="career")renderCareer();else renderSettings();
 }
 
 $("g-leave").onclick=leaveTable;
