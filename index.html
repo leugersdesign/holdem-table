@@ -374,6 +374,14 @@ details{margin:8px 0}details summary{cursor:pointer;padding:4px 0}
 .avscroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:10px 2px 6px}
 .qrow{display:flex;align-items:center;gap:8px;margin-top:4px;font-size:.78rem;color:var(--muted);min-height:14px}
 .qbar{flex:none;width:64px;height:7px;border-radius:4px;background:rgba(127,127,127,.25);overflow:hidden}.qbar i{display:block;height:100%;border-radius:4px;transition:width .4s ease}
+.coach{border-radius:16px;padding:10px 12px;margin:0 0 8px;border:1px solid rgba(201,154,59,.45)}
+.coach .ck{font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-right:4px}
+.coach{padding:8px 10px}
+.seat .hud{font-size:.62rem;color:#ffe08a;font-weight:700;line-height:1;margin-top:1px;font-variant-numeric:tabular-nums}
+#passSheet{position:fixed;inset:0;z-index:40;background:var(--solid);color:var(--text);display:flex;align-items:center;justify-content:center;padding:calc(20px + env(safe-area-inset-top,0px)) 18px calc(20px + env(safe-area-inset-bottom,0px))}
+.pass-in{width:100%;max-width:420px;text-align:center;display:grid;gap:10px}
+.pass-in .actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px}
+.pass-in .presets{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
 [hidden]{display:none!important}
 @media (max-width:380px){.seat{width:96px;font-size:.68rem}.center{width:206px}.pc.sm,.slot{width:34px;height:47px}.board{height:47px}}
 @media (prefers-reduced-motion:reduce){.pc.deal{animation:none}#atm .fx1,#atm .fx2{animation:none!important}.dealer{transition:none}}
@@ -443,6 +451,7 @@ details{margin:8px 0}details summary{cursor:pointer;padding:4px 0}
   <div class="sheethead"><h2 id="av-title">Your player</h2><button class="btn ghost pill" id="av-close">Done</button></div>
   <div id="av-body"></div>
 </div>
+<div id="passSheet" role="dialog" aria-modal="true" aria-label="Pass-and-play turn" hidden></div>
 <div class="modal" id="modal" role="dialog" aria-modal="true" hidden></div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <script>
@@ -563,8 +572,9 @@ function startHand(){
   $("g-controls").innerHTML="<div class='waiting'>Dealing...</div>";
   closeTools();
   if(T.mode==="cash"){
-    T.players.forEach(function(p,i){if(!p.hero&&p.stack<=0){var stA=STK(T.stake).arch,nb=stA?archBot(pick(stA),T.buy||200,namesAt()):newBot(T.skill,T.buy||200,namesAt());T.players[i]=nb;}});
-    if(T.players[0].stack<=0){heroBust();return;}
+    if(T.pass)T.players.forEach(function(p){if((p.hero||p.human)&&p.stack<=0){p.stack=T.buy;p.buyins=(p.buyins||1)+1;toast(p.name+" rebuys for "+money(T.buy)+".");}});
+    T.players.forEach(function(p,i){if(!p.hero&&!p.human&&p.stack<=0){var stA=STK(T.stake).arch,nb=stA?archBot(pick(stA),T.buy||200,namesAt()):newBot(T.skill,T.buy||200,namesAt());T.players[i]=nb;}});
+    if(!T.pass&&T.players[0].stack<=0){heroBust();return;}
   }else{
     var lv=Math.min(LEVELS.length-1,Math.floor(T.handNo/8));T.level=lv;T.sb=LEVELS[lv][0];T.bb=LEVELS[lv][1];if(!T.players[0].out)T.minBB=Math.min(T.minBB||999,T.players[0].stack/T.bb);
   }
@@ -608,6 +618,7 @@ function loop(){
   /* everyone else all-in and this player already matched: nothing to do */
   H.toAct=found;
   render();
+  if(T.pass&&(T.players[found].hero||T.players[found].human)){renderControls();passTurn(found);return;}
   if(T.players[found].hero){renderControls();sfx("turn");buzz(25);return;}
   var tok=H.id,delay={slow:1100,normal:650,fast:250}[S.settings.speed]||650;if(H.skip)delay=0;
   var dd=H.street===0?botPre(found):botPost(found),pp=T.players[found];if(dd[0]==="raise"){H.betCls=H.betCls||{};H.betCls[found]=pp._cls;}
@@ -691,7 +702,8 @@ function showdown(){
 }
 function endHand(sd){
   H.done=true;T.handNo++;
-  var hero=T.players[0],inHand=H.seats.indexOf(0)>=0;
+  var hero=T.players[0],inHand=H.seats.indexOf(0)>=0&&!T.pass;
+  hudHand();
   if(inHand){
     var st=T.mode==="cash"?S.stats.cash:S.stats.tour,net=hero.stack-H.heroStart;
     st.hands++;if(H.heroVpip)st.vpip++;if(H.heroPfr)st.pfr++;
@@ -699,7 +711,7 @@ function endHand(sd){
     if(sd&&!H.s[0].folded){st.sd++;if(H.winners[0])st.sdw++;}
     if(T.mode==="cash"){st.net+=net;st.bbNet=(st.bbNet||0)+net/T.bb;var k=T.skill;k=Array.isArray(k)?STK(T.stake).n+" stakes":k;S.bySkill[k]=S.bySkill[k]||{hands:0,net:0};S.bySkill[k].hands++;S.bySkill[k].net+=net;}
     handAch(net);
-    saveHandRecord(net);if(T.mode==="cash")sessHand(net);
+    saveHandRecord(net);if(T.mode==="cash")sessHand(net);H.coach=coachPick();if(T.chal)chal().hands++;
     mission("hand");
     if(H.winners[0]){if(H.pos[0]==="BTN")mission("btnwin");
       if(H.showdown){mission("sdwin");if(catOf(H.vals[0])>=2)mission("bigwin");if(live().some(function(i){return i!==0&&T.players[i].cid;}))mission("beatcast");if(catOf(H.vals[0])>=7)confetti(70);}
@@ -731,7 +743,7 @@ function endHand(sd){
   try{var w0=Object.keys(H.winners||{}).map(Number)[0];if(w0!==undefined){var tgt=w0===0?$("g-hero"):SEAT_EL[w0];var pe=$("g-pot");flyChips([pe,pe,pe],tgt);}}catch(e){}
   if(over){var tt=T,place=T.players[0].out?T.players[0].place:1;setTimeout(function(){if(T===tt)eventEnd(place);},1100);}
   else if(cleared){var t2=T;setTimeout(function(){if(T===t2)stageCleared();},1100);}
-  else if(H.skip){var hid=H.id;setTimeout(function(){if(H&&H.id===hid&&H.done)startHand();},500);}
+  else if(H.skip&&!coachOn()){var hid=H.id;setTimeout(function(){if(H&&H.id===hid&&H.done)startHand();},500);}
 }
 
 
@@ -883,7 +895,7 @@ function initFelt(){
   var POS=n>6?SEATPOS9:SEATPOS;
   for(var i=1;i<n;i++){
     var el=document.createElement("div");el.className="seat";el.setAttribute("style",css(POS[i]));
-    el.innerHTML="<div class='bw'></div><div class='scards'></div><div class='plate' role='button' tabindex='0' aria-label='Player profile'><div class='av'></div><div class='meta'><div class='nm'></div><div class='stk'></div></div></div><div class='tag'></div><div class='betw'></div>";
+    el.innerHTML="<div class='bw'></div><div class='scards'></div><div class='plate' role='button' tabindex='0' aria-label='Player profile'><div class='av'></div><div class='meta'><div class='nm'></div><div class='stk'></div><div class='hud'></div></div></div><div class='tag'></div><div class='betw'></div>";
     felt.appendChild(el);SEAT_EL[i]=el;
     (function(ix){var pl=el.querySelector(".plate");pl.onclick=function(){if(T&&!T.players[ix].out)openPlayer(ix);};pl.onkeydown=function(e){if(e.key==="Enter")pl.onclick();};})(i);
   }
@@ -918,7 +930,7 @@ function render(){
     }
     var mood=moodOf(i),av=el.querySelector(".av");setHTML(av,p.name+"|"+p.skill+"|"+(p.cid||"")+"|"+mood,avatarFor(p,mood));av.className="av "+p.skill;
     var tk=H&&H.talk&&H.talk[i]&&H.talk[i].until>Date.now()?H.talk[i].t:"";setHTML(el.querySelector(".bw"),tk,tk?"<div class='bubble'>"+tk+"</div>":"");
-    setText(el.querySelector(".nm"),p.name);
+    setText(el.querySelector(".nm"),p.name);setText(el.querySelector(".hud"),hudTxt(p));
     setHTML(el.querySelector(".stk"),"s"+p.out+p.stack+(H&&H.pos?H.pos[i]:""),p.out?"Out":"<i class='chipico'></i>"+chips(p.stack)+(H&&H.pos&&H.pos[i]?" \u00b7 "+H.pos[i]:""));
     var lab=p.out?"":(s?s.label:"");if(H&&H.done&&H.winners&&H.winners[i])lab="Wins "+chips(H.winners[i]);
     setText(el.querySelector(".tag"),lab);
@@ -938,13 +950,13 @@ function render(){
   setText($("g-status"),H?H.status:"");
   var bn=$("g-banner"),showB=H&&H.done&&H.banner&&Date.now()<H.bannerUntil;
   if(showB){if(bn.dataset.k!==H.banner){bn.dataset.k=H.banner;bn.innerHTML=H.banner;bn.hidden=false;bn.classList.remove("pop");void bn.offsetWidth;bn.classList.add("pop");}}else{bn.hidden=true;bn.dataset.k="";}
-  var hero=T.players[0],hs=H&&H.s[0],hc=$("g-hcards"),hk=hs?H.id+(W5?":"+W5.join(","):""):"none";
+  var hero=T.players[0],hs=H&&H.s[0],hc=$("g-hcards"),hide=T.pass&&H&&!(H.done&&H.showdown),hk=hs?H.id+(W5?":"+W5.join(","):"")+(hide?"h":""):"none";
   if(hc.dataset.k!==hk){var first=!hc.dataset.k||hc.dataset.k.split(":")[0]!==String(H&&H.id);hc.dataset.k=hk;
-    hc.innerHTML=hs?hs.cards.map(function(x,j){var w=W5&&W5.indexOf(x)>=0?"w5":"";return first&&anim?flipHTML(x,"lg",0.35+j*0.15,w):cardStatic(x,"lg",w);}).join(""):"";}
-  setHTML($("g-hav"),"h"+JSON.stringify(heroAv())+moodOf(0),avatarSVG(heroAv(),moodOf(0)));
+    hc.innerHTML=hs?(hide?"<div class='pc lg back'></div><div class='pc lg back'></div>":hs.cards.map(function(x,j){var w=W5&&W5.indexOf(x)>=0?"w5":"";return first&&anim?flipHTML(x,"lg",0.35+j*0.15,w):cardStatic(x,"lg",w);}).join("")):"";}
+  setHTML($("g-hav"),"h"+JSON.stringify(heroAv())+moodOf(0),avatarSVG(heroAv(),moodOf(0)));setText($("g-hname").lastChild,T.pass?hero.name:"You");
   setHTML($("g-hstack"),"hs"+hero.stack,"<i class='chipico big'></i>"+chips(hero.stack));
   var sub=[];if(H&&H.pos&&H.pos[0])sub.push(H.pos[0]);
-  if(hs&&H.board.length>=3)sub.push(handName(evaluate(hs.cards.concat(H.board))));else if(hs)sub.push(codeOf(hs.cards));
+  if(T.pass&&hs&&!(H.done&&H.showdown)){}else if(hs&&H.board.length>=3)sub.push(handName(evaluate(hs.cards.concat(H.board))));else if(hs)sub.push(codeOf(hs.cards));
   setText($("g-hsub"),sub.join(" \u00b7 "));
   var hl=hs?hs.label:"";if(H&&H.done&&H.winners&&H.winners[0])hl="You win "+chips(H.winners[0]);
   setText($("g-hact"),(hs&&hs.sb>0&&!H.done?"In: "+chips(hs.sb)+"   ":"")+hl);
@@ -952,7 +964,8 @@ function render(){
   setHTML($("g-q"),"q"+(ssq?ssq.good+"/"+ssq.dec:"-"),ssq?"<div class='qbar' role='img' aria-label='Play quality "+(qq===null?"not graded yet":qq+"%")+"'><i style='width:"+(qq===null?0:qq)+"%;background:"+qColor(qq)+"'></i></div><span>"+(qq===null?"Play quality: after your first decision":"Play "+qq+"% \u00b7 "+ssq.good+"/"+ssq.dec+" match the tools")+"</span>":"");
   var hcls="hero glass";if(H&&!H.done&&H.toAct===0&&hs&&canAct(0))hcls+=" turn";if(H&&H.done&&H.winners&&H.winners[0])hcls+=" win";
   if($("g-hero").className!==hcls)$("g-hero").className=hcls;
-  var info;if(T.mode==="cash"){var sk=STK(T.stake),ss=sess();info="<b>"+sk.n+"</b> \u00b7 Hand "+((ss?ss.hands:0)+(H&&!H.done?1:0))+"<br>Session "+(ss&&ss.net<0?"\u2212":"+")+chips(Math.abs(ss?ss.net:0));}
+  var info;if(T.pass){info="<b>Pass-and-play</b> \u00b7 Hand "+(T.handNo+(H&&!H.done?1:0))+"<br>$1/$2 \u00b7 "+T.players.filter(function(p){return p.hero||p.human;}).length+" players";}
+  else if(T.mode==="cash"){var sk=STK(T.stake),ss=sess();info="<b>"+sk.n+"</b> \u00b7 Hand "+((ss?ss.hands:0)+(H&&!H.done?1:0))+"<br>Session "+(ss&&ss.net<0?"\u2212":"+")+chips(Math.abs(ss?ss.net:0));}
   else{var ev=EV(T.ev),adv=ev.stages[T.stage];info="<b>"+(T.ladder!==undefined?"Ladder rung "+(T.ladder+1)+": vs "+T.players[1].name:ev.n)+"</b><br>"+(ev.stages.length>1?(adv===0?"Final table":"Stage "+(T.stage+1)+"/"+ev.stages.length+", top "+adv+" advance")+" \u00b7 ":"")+T.sb+"/"+T.bb+" \u00b7 up in "+(8-T.handNo%8);}
   if($("g-info").innerHTML!==info)$("g-info").innerHTML=info;
 }
@@ -960,10 +973,11 @@ function renderControls(){
   var c=$("g-controls");if(!T){c.innerHTML="";return;}
   if(T.over){c.innerHTML="<div class='waiting glass'>"+(T.players[0].out?"You're out.":"Table finished.")+"</div>";return;}
   if(!H||H.done){
-    if(H&&H.skip){c.innerHTML="<div class='waiting glass'>Dealing the next hand...</div>";return;}
-    c.innerHTML="<div class='actions one'><button class='btn brass' id='c-next'>Deal next hand</button></div>";
-    $("c-next").onclick=startHand;return;
+    if(H&&H.skip&&!coachOn()){c.innerHTML="<div class='waiting glass'>Dealing the next hand...</div>";return;}
+    c.innerHTML=coachHTML()+"<div class='actions one'><button class='btn brass' id='c-next'>Deal next hand</button></div>";
+    $("c-next").onclick=startHand;if($("ck-ok"))$("ck-ok").onclick=function(){H.coach=null;renderControls();};return;
   }
+  if(T.pass){c.innerHTML="<div class='waiting glass'>Pass-and-play: the phone goes to whoever's turn it is.</div>";return;}
   var hs=H.s[0];
   if(H.toAct!==0||!hs||!canAct(0)||H.seats.indexOf(0)<0){
     var canSkip=!hs||hs.folded;
@@ -1141,10 +1155,11 @@ function showModal(html,buttons){
 function hideModal(){$("modal").hidden=true;if($("tools").hidden&&$("lookSheet").hidden)$("scrim").hidden=true;}
 function leaveTable(){
   if(!T)return toLobby();
+  if(T.pass)return showModal("<h2>End the game?</h2><p>Here's where everyone stands:</p>"+passSettle(),[["End game",function(){T=null;toLobby();},"brass"],["Keep playing",function(){},"ghost"]]);
   var mid=H&&!H.done&&H.seats.indexOf(0)>=0&&!H.s[0].folded;
   if(T.mode==="cash"){
-    showModal("<h2>Leave the table?</h2><p>"+(mid?"You'll fold this hand. ":"")+"Your "+money(T.players[0].stack)+" goes back to your bankroll.</p>",
-      [["Cash out",function(){if(mid){H.s[0].folded=true;}var back=T.players[0].stack;S.bankroll+=back;sessFinish();S.cash=null;save();toLobby();},"brass"],["Stay",function(){},"ghost"]]);
+    showModal("<h2>Leave the table?</h2><p>"+(mid?"You'll fold this hand. ":"")+"Your "+money(T.players[0].stack)+" goes back to your "+(T.chal?"challenge ":"")+"bankroll.</p>",
+      [["Cash out",function(){if(mid){H.s[0].folded=true;}var back=T.players[0].stack;if(T.chal){var C=chal();C.bank+=back;C.peak=Math.max(C.peak,C.bank);var cs=chalStake(C.bank);if(CHAL.indexOf(cs)>CHAL.findIndex(function(x){return x.n===C.top;}))C.top=cs.n;}else S.bankroll+=back;sessFinish();S.cash=null;save();if(T.chal&&chal().bank<CHAL[0].buy)chalOver();else toLobby();},"brass"],["Stay",function(){},"ghost"]]);
   }else{
     showModal("<h2>Pause the tournament?</h2><p>It saves at the start of the current hand. Resume it from the lobby anytime.</p>",
       [["Pause",function(){toLobby();},"brass"],["Stay",function(){},"ghost"]]);
@@ -1517,7 +1532,7 @@ function openPlayer(i){
   var sk=SKILL_LABEL[p.skill]||p.skill;
   $("p-body").innerHTML="<div class='pcard'><div class='pav'>"+avatarSVG(pr.av)+"</div><div style='min-width:0'><div class='venue'>"+pr.job+"</div><h2>"+pr.name+"</h2><div class='muted' style='margin-top:4px'><span class='dot "+p.skill+"'></span> "+sk+" \u00b7 "+chips(p.stack)+"</div></div></div>"+
     "<p style='margin:12px 0'>"+pr.bio+"</p>"+(pr.lines?"<div class='formula'>Catchphrase: \u201c"+pr.lines.win[0]+"\u201d</div>":"")+
-    "<div class='tool'><div class='k'>How they play</div><div class='v' style='font-size:.92rem;display:grid;gap:4px'>"+styleLong(p)+(p.tilt>0?" <b>On tilt right now:</b> playing looser and bluffing more for a few hands.":"")+"</div></div>";
+    hudLong(p)+"<div class='tool'><div class='k'>How they play</div><div class='v' style='font-size:.92rem;display:grid;gap:4px'>"+styleLong(p)+(p.tilt>0?" <b>On tilt right now:</b> playing looser and bluffing more for a few hands.":"")+"</div></div>";
   closeTools();$("scrim").hidden=false;$("playerSheet").hidden=false;$("p-close").focus({preventScroll:true});
 }
 function closePlayer(){$("playerSheet").hidden=true;if($("modal").hidden&&$("tools").hidden&&$("lookSheet").hidden)$("scrim").hidden=true;}
@@ -1652,7 +1667,7 @@ function classify(d){
 function recordDecision(d){
   if(!H||!H.s[0])return;
   try{var A=adviseHero(false);
-    var rec={st:H.street,act:d[0],to:d[1]||0,toCall:A.L.toCall,pot:A.pot,need:A.need,eq:A.eq,advice:A.advice,why:A.why,raises:H.raises,pos:A.pos,nOpp:A.opp.length,canRaise:A.L.canRaise,board:H.board.slice()};
+    var rec={code:A.code,st:H.street,act:d[0],to:d[1]||0,toCall:A.L.toCall,pot:A.pot,need:A.need,eq:A.eq,advice:A.advice,why:A.why,raises:H.raises,pos:A.pos,nOpp:A.opp.length,canRaise:A.L.canRaise,board:H.board.slice()};
     rec.leak=classify(rec);H.dec=H.dec||[];H.dec.push(rec);if(rec.leak)addRedo(rec);sessDecision(rec);
     if(rec.act==="fold"&&rec.toCall>0&&rec.eq<rec.need)mission("goodfold");if(!rec.leak)mission("gooddec");if(rec.st===0&&rec.act==="raise"&&rec.raises>=1)mission("threebet");
     var LK=S.leaks=S.leaks||{n:0,agree:0,by:{}};LK.n++;if(!rec.leak)LK.agree++;else LK.by[rec.leak]=(LK.by[rec.leak]||0)+1;
@@ -1919,7 +1934,7 @@ var CAST_CHAT={frankie:["Anybody want a coney? I'm buying.","My chili's hotter t
   dino:["Drinks are on the house. Which is me.","I built this room, you know."],ruthie:["You two would make a lovely couple.","I've seen worse bluffs at a wedding."],tex:["Back home we call that a little bet.","Y'all ever seen a real oil well?"],stranger:["This next hand goes out to the lovely dealer.","Hold for applause."],lorraine:["Pulling the lever!","Feels like a jackpot kind of night."]};
 Object.keys(THEMES).forEach(function(k){THEMES[k].cast.forEach(function(c){c.lines.chat=CAST_CHAT[c.id]||[];if(["delphine","millie","margo","juniper","gilda","ruthie","lorraine"].indexOf(c.id)>=0&&c.av)c.av.look="fem";});});
 function sayText(i,t,ms){if(!H||!T||!t)return;H.talk=H.talk||{};H.talk[i]={t:t,until:Date.now()+(H.skip?900:(ms||2800))};render();setTimeout(render,H.skip?950:(ms||2800)+100);}
-function chatLine(p,kind){if(p.cid){var c=castById(p.cid);if(kind==="idle"&&c&&c.lines.chat&&c.lines.chat.length)return pick(c.lines.chat);}var pool=CHAT[p.skill]||CHAT.regular;return pool[kind]?pick(pool[kind]):"";}
+function chatLine(p,kind){if(p.human||p.hero)return "";if(p.cid){var c=castById(p.cid);if(kind==="idle"&&c&&c.lines.chat&&c.lines.chat.length)return pick(c.lines.chat);}var pool=CHAT[p.skill]||CHAT.regular;return pool[kind]?pick(pool[kind]):"";}
 function chatterStart(){if(!H||H.skip||Math.random()>0.12)return;var bots=H.seats.filter(function(i){return i!==0;});if(!bots.length)return;var i=pick(bots);setTimeout(function(){if(H&&!H.done)sayText(i,chatLine(T.players[i],"idle"),3000);},900);}
 function chatterEnd(){
   if(!H||H.skip||H.chatted)return;var ws=Object.keys(H.winners||{}).map(Number);if(!ws.length)return;var w=ws[0];
@@ -2175,8 +2190,8 @@ function mixBar(m){var bar=[["strong","Two pair or better","#c8102e"],["pair","O
 function drillPre(p,role,vpos){var Lz=p.st.loose,codes=Object.keys(EQ);
   if(role==="opener")return codes.filter(function(c){return (SETS[vpos][c]&&(Lz>-5||EQ[c]>=58))||EQ[c]>=64-Lz;});
   return codes.filter(function(c){return EQ[c]>=(p.skill==="beginner"?46:54)-Lz*0.6&&["AA","KK","QQ","AKs","AKo"].indexOf(c)<0;});}
-function mkSpot(kind){
-  for(var tries=0;tries<40;tries++){
+function mkSpot(kind,opt){opt=opt||{};
+  for(var tries=0;tries<150;tries++){
     var ak=pick(["station","limper","nit","tag","maniac","lag","whale"]),A=ARCH[ak],p={name:"Villain",skill:A.skill,st:A.st,arch:ak};
     var role=Math.random()<0.55?"opener":"caller",vpos=pick(["UTG","HJ","CO","BTN"]),hpos=role==="opener"?"BB":pick(["CO","BTN"]);
     if(role==="caller"){vpos="BB";}
@@ -2184,13 +2199,14 @@ function mkSpot(kind){
     var deck=shuffle(Array.from({length:52},function(_,i){return i;})),hero=null;
     for(var k=0;k<deck.length-1&&!hero;k++){var h2=[deck[k],deck[k+1]],cd=codeOf(h2);if(role==="opener"?EQ[cd]>=50:(SETS[hpos]&&SETS[hpos][cd])){hero=h2;}}
     if(!hero)continue;
-    var rest=deck.filter(function(c){return c!==hero[0]&&c!==hero[1];}),t=pick([1,2,2,3,3]),board=rest.slice(0,t===1?3:t===2?4:5);
+    var rest=deck.filter(function(c){return c!==hero[0]&&c!==hero[1];}),t=opt.river?3:pick([1,2,2,3,3]),board=rest.slice(0,t===1?3:t===2?4:5);
+    if(opt.catcher&&relCat(catOf(evaluate(hero.concat(board))),boardCat(board))!==1)continue;
     var bb=2,open=10,pot=open*2+1,hist=[],lines=[],st=["","Flop","Turn","River"];
     lines.push("Preflop: "+(role==="opener"?"They raise to $"+open+" from "+vpos+". You call in the big blind.":"You raise to $"+open+" from "+hpos+". They call in the big blind."));
     var final=null;
     for(var s=1;s<=t;s++){
       var brd=board.slice(0,s===1?3:s===2?4:5),bt=Math.round(pot*pick([0.33,0.5,0.5,0.66,0.75])),last=s===t,pat;
-      if(!last)pat=pick(["xx","vb","vb","hb"]);else pat=kind==="call"?(Math.random()<0.25?"hbr":"vb"):(Math.random()<0.3?"hbr":"vb");
+      if(!last)pat=pick(["xx","vb","vb","hb"]);else pat=opt.river?"vb":kind==="call"?(Math.random()<0.25?"hbr":"vb"):(Math.random()<0.3?"hbr":"vb");
       if(last&&pat==="vb")bt=Math.round(pot*pick([0.33,0.5,0.66,0.75,1,1.25]));
       var txt=st[s]+" "+brd.slice(s===1?0:brd.length-1).map(cardTxtC).join(" ")+" (pot $"+pot+"): ";
       if(pat==="xx"){hist.push({a:"check",st:s,toCall:0,pot:pot,nOpp:1,raises:0});txt+="Both check.";}
@@ -2230,16 +2246,17 @@ function readWhy(sp){var a=sp.A.st,last=sp.final.raised?"raise":"bet";
   if(a.agg<=0.7)return "This player rarely bets without a real hand, so each bet cuts out most of their weak hands.";
   if(a.bluff>=1.4)return "This player bets and raises with draws and bluffs too, so their range stays wide even after a "+last+".";
   return "A solid player's "+last+" leans toward good hands and strong draws, with a few bluffs mixed in.";}
-function callDrill(){var sp=mkSpot("call");if(!sp)return toast("Couldn't build a spot. Try again.");
+function callDrill(opt){opt=opt&&opt.river?opt:{};var sp=mkSpot("call",opt);if(!sp)return toast("Couldn't build a spot. Try again.");
   var f=sp.final;
-  drillOpen("<h2>Call or fold?</h2>"+spotHead(sp)+"<div class='dq'>Call $"+f.toCall+" to win $"+(f.pot+f.toCall)+". What do you do?</div><div id='dq'>"+["Fold","Call","Raise"].map(function(o){return "<button class='btn ghost dopt' data-o='"+o+"'>"+o+"</button>";}).join("")+"</div>",function(el){
-    el.querySelectorAll("[data-o]").forEach(function(b){b.onclick=function(){var o=b.dataset.o,ok=o===sp.best||(sp.best==="Raise"&&o==="Call");dstat("call",ok);
+  drillOpen("<h2>"+(opt.catcher?"Bluff catcher":"Call or fold?")+"</h2>"+spotHead(sp)+"<div class='dq'>Call $"+f.toCall+" to win $"+(f.pot+f.toCall)+". What do you do?</div><div id='dq'>"+["Fold","Call","Raise"].map(function(o){return "<button class='btn ghost dopt' data-o='"+o+"'>"+o+"</button>";}).join("")+"</div>",function(el){
+    el.querySelectorAll("[data-o]").forEach(function(b){b.onclick=function(){var o=b.dataset.o,ok=o===sp.best||(sp.best==="Raise"&&o==="Call");dstat(opt.catcher?"catch":"call",ok);
       el.querySelector("#dq").innerHTML="<div class='dres "+(ok?"ok":"no")+"'>"+(o===sp.best?"Right.":ok?"Fine. Raising wins a bit more.":"Best play: "+sp.best+".")+"</div>"+
         "<div style='font-size:.92rem'>Their likely hands:</div>"+mixBar(sp.mix)+
         "<p style='font-size:.92rem'>Price: <b>"+p1(sp.need)+"</b>"+(sp.cush?" plus "+Math.round(sp.cush*100)+" points cushion (more bets can come"+(sp.oop?", and you're out of position":"")+")":"")+". Your equity against those hands: <b>"+p1(sp.eq)+"</b>.</p>"+
         "<p class='muted' style='font-size:.85rem'>"+readWhy(sp)+" "+(sp.best==="Fold"?"Your equity is short of the price, so folding saves money over time.":sp.best==="Call"?"Your equity covers the price, so calling makes money over time.":"You're ahead of most of their hands, so raise to get more money in.")+"</p>"+
         "<div class='row'><button class='btn primary' id='dn'>Next spot</button><button class='btn ghost' id='dx'>Done</button></div>";
-      el.querySelector("#dn").onclick=callDrill;el.querySelector("#dx").onclick=drillClose;};});});}
+      if(opt.catcher)el.querySelector("#dq").insertAdjacentHTML("afterbegin","");
+      el.querySelector("#dn").onclick=function(){callDrill(opt);};el.querySelector("#dx").onclick=drillClose;};});});}
 /* raising over limpers */
 function isoDecide(code,pos,n){var thrB={UTG:64,MP:63,HJ:62,CO:60,BTN:59,SB:62,BB:62}[pos],thr=thrB+n*0.7,e=EQ[code],pair=code.length===2,hi=code[0],s=code[2]==="s";
   var gap=pair?0:Math.abs(R.indexOf(code[0])-R.indexOf(code[1])),late=["CO","BTN","SB"].indexOf(pos)>=0;
@@ -2320,10 +2337,13 @@ function drillHubHTML(){var nd=redoDue().length,nq=(S.redo||[]).length;
     [["redo","Redo your mistakes",nd?nd+" due now, "+nq+" in the queue":nq?"Nothing due. "+nq+" in the queue":"Flagged decisions from your games land here","b-redo"],
      ["read","What do they have?","Read a range from the betting. "+dpct("read"),"b-read"],
      ["call","Call or fold?","Price versus their range. "+dpct("call"),"b-call"],
+     ["raise","Facing a raise","Reraise, call, or fold before the flop. "+dpct("raise"),"b-raise"],
+     ["cbet","Bet the flop?","After you raised and got called. "+dpct("cbet"),"b-cbet"],
+     ["catch","Bluff catcher","River bets when you only beat a bluff. "+dpct("catch"),"b-catch"],
      ["limp","Raise over limpers","The most common live spot. "+dpct("limp"),"b-limp"],
      ["math","Table math","Count chips and the price on a clock. "+dpct("math"),"b-math"],
      ["push","Push or fold","Short stacks in tournaments. "+dpct("push"),"b-push"]].map(function(d){return "<button class='dbtn' id='"+d[3]+"'><b>"+d[1]+"</b><span>"+d[2]+"</span></button>";}).join("")+"</div></div>";}
-function wireDrillHub(){[["b-redo",redoDrill],["b-read",readDrill],["b-call",callDrill],["b-limp",limpDrill],["b-math",mathDrill],["b-push",pushDrill]].forEach(function(x){var b=$(x[0]);if(b)b.onclick=x[1];});}
+function wireDrillHub(){[["b-redo",redoDrill],["b-read",readDrill],["b-call",function(){callDrill();}],["b-raise",raiseDrill],["b-cbet",cbetDrill],["b-catch",function(){callDrill({river:true,catcher:true});}],["b-limp",limpDrill],["b-math",mathDrill],["b-push",pushDrill]].forEach(function(x){var b=$(x[0]);if(b)b.onclick=x[1];});}
 /* ===== real games: hand analyzer, people, live session, rules ===== */
 var SEATS9=["UTG","MP","HJ","CO","BTN","SB","BB"],POSTORD=["SB","BB","UTG","MP","HJ","CO","BTN"];
 var RA={cards:[],board:[],tgt:0,bb:2,hpos:"BB",vpos:"CO",arch:"tag",pre:"theyraise",size:10,st:[{who:"none",size:0,res:"call"},{who:"none",size:0,res:"call"},{who:"none",size:0,res:"call"}]};
@@ -2433,7 +2453,7 @@ function rulesHTML(){var sec=function(t,items){return "<details><summary><b>"+t+
 
 /* ===== cash sessions: hand counter, play-quality bar, table image, history ===== */
 function sessNew(){return {start:Date.now(),hands:0,dec:0,good:0,net:0,bbNet:0,buyin:T.players[0].stack,rebuys:0,vpip:0,pfr:0,leaks:{},img:{hands:0,vpip:0,pfr:0,agg:0,call:0,sd:0,bluff:0,cbF:0,cbFold:0}};}
-function sess(){if(!T||T.mode!=="cash")return null;return T.sess=T.sess||sessNew();}
+function sess(){if(!T||T.mode!=="cash"||T.pass)return null;return T.sess=T.sess||sessNew();}
 function sessDecision(rec){var s=sess();if(!s)return;s.dec++;if(!rec.leak)s.good++;else s.leaks[rec.leak]=(s.leaks[rec.leak]||0)+1;}
 function sessHand(net){var s=sess();if(!s)return;s.hands++;s.net+=net;s.bbNet+=net/T.bb;if(H.heroVpip)s.vpip++;if(H.heroPfr)s.pfr++;
   var I=s.img;I.hands++;if(H.heroVpip)I.vpip++;if(H.heroPfr)I.pfr++;
@@ -2479,6 +2499,109 @@ function openSess(k){var r=(S.simSess||[])[k];if(!r)return;
   showModal("<h2>"+r.where+", "+r.d+"</h2><table class='st'><tr><td>Hands</td><td>"+r.hands+" in "+r.mins+" min</td></tr><tr><td>Result</td><td>"+(r.net>=0?"+":"\u2212")+money(Math.abs(r.net))+" ("+r.bb100+" bb/100)"+(r.rebuys?", "+r.rebuys+" rebuy"+(r.rebuys>1?"s":""):"")+"</td></tr><tr><td>Play quality</td><td>"+(r.q===null?"Not graded":r.q+"% of "+r.dec+" decisions")+"</td></tr><tr><td>Hands played</td><td>"+r.vp+"% (raised "+r.pf+"%)</td></tr><tr><td>Table saw you as</td><td>"+r.img+"</td></tr></table>"+
     (r.leaks.length?"<p style='font-size:.92rem'><b>Biggest leaks:</b> "+r.leaks.map(function(l){return (LEAKS[l]||[l])[0];}).join("; ")+".</p>":"<p style='font-size:.92rem'>No repeated leaks this session.</p>"),[["Close",function(){},"ghost"],["Delete session",function(){S.simSess.splice(k,1);save();renderLobby();},"ghost"]]);}
 
+/* ===== after-hand coach ===== */
+function decCost(d){var bb=T.bb,c=0;
+  if(d.toCall>0){var ev=d.eq*(d.pot+d.toCall)-d.toCall;if(d.act==="call"&&ev<0)c=-ev;else if(d.act==="fold"&&ev>0)c=ev;else if(d.act==="raise"&&ev<0)c=-ev;}
+  else if(d.leak==="missed_value")c=Math.max(0,d.eq-0.5)*d.pot*0.6;else if(d.leak==="bluff_multi")c=(d.to||d.pot*0.5)*0.4;else if(d.leak==="open_loose"||d.leak==="limp")c=bb*Math.max(0.3,(62-(EQ[d.code]||55))/10);else c=bb*0.5;
+  if(d.leak==="fold_chart")c=bb*Math.max(0.5,((EQ[d.code]||60)-55)/8);
+  if(d.leak==="missed_raise")c=Math.max(c,Math.max(0,d.eq-0.6)*d.pot*0.5);
+  return Math.max(c,bb*0.2)/bb;}
+function coachPick(){var ds=(H.dec||[]).filter(function(d){return d.leak;});if(!ds.length)return null;var best=null,bc=-1;ds.forEach(function(d){var c=decCost(d);if(c>bc){bc=c;best=d;}});return {d:best,cost:bc};}
+function coachOn(){return S.settings.coach!==false&&H&&H.coach;}
+function coachHTML(){if(!coachOn())return "";var C=H.coach,d=C.d,st=["before the flop","on the flop","on the turn","on the river"][d.st]||"",act=d.act==="raise"?(d.toCall>0?"raised":"bet"):d.act==="call"?"called":d.act==="check"?"checked":"folded",cost=C.cost<1?C.cost.toFixed(1):String(Math.round(C.cost));
+  return "<div class='coach glass'><div style='display:flex;gap:8px;align-items:flex-start'><div style='flex:1;font-size:.9rem'><span class='ck'>Coach</span> You "+act+(d.code&&d.st===0?" "+d.code:"")+" "+st+". Better: <b>"+d.advice+"</b>, worth about "+cost+" big blind"+(C.cost>=1.5?"s":"")+".</div><button class='btn ghost pill' id='ck-ok' aria-label='Dismiss coach'>Got it</button></div><details style='margin:4px 0 0'><summary class='muted' style='font-size:.8rem'>Why</summary><div class='muted' style='font-size:.85rem'>"+d.why+" Saved to Redo your mistakes.</div></details></div>";}
+/* ===== opponent stats on the seats ===== */
+function hudRec(name){T.hud=T.hud||{};return T.hud[name]=T.hud[name]||{h:0,vp:0,pr:0,cbO:0,cb:0,agg:0,call:0};}
+function hudHand(){if(!H||!H.hist)return;H.seats.forEach(function(i){if(i===0)return;var p=T.players[i];if(!p||p.human)return;var r=hudRec(p.name);r.h++;
+  var pre=H.hist.filter(function(e){return e.i===i&&e.st===0;});if(pre.some(function(e){return e.a==="call"||e.a==="raise"||e.a==="bet";}))r.vp++;if(pre.some(function(e){return e.a==="raise"||e.a==="bet";}))r.pr++;
+  H.hist.forEach(function(e){if(e.i!==i||e.st===0)return;if(e.a==="bet"||e.a==="raise")r.agg++;else if(e.a==="call")r.call++;});
+  if(H.preAgg===i&&H.board.length>=3){var fl=H.hist.filter(function(e){return e.st===1;}),k=fl.findIndex(function(e){return e.i===i;});if(k>=0&&!fl.slice(0,k).some(function(e){return e.a==="bet"||e.a==="raise";})){r.cbO++;if(fl[k].a==="bet")r.cb++;}}});}
+function hudTxt(p){if(S.settings.hud===false||!T||!T.hud||!p)return "";var r=T.hud[p.name];if(!r||r.h<5)return "";return Math.round(r.vp/r.h*100)+"/"+Math.round(r.pr/r.h*100)+" \u00b7 "+r.h+"h";}
+function hudLong(p){var r=T&&T.hud&&T.hud[p.name];if(!r||!r.h)return "";var pc=function(a){return Math.round(a/r.h*100);};
+  return "<div class='tool'><div class='k'>Stats this session, "+r.h+" hand"+(r.h>1?"s":"")+"</div><div class='v' style='font-size:.9rem'>Plays "+pc(r.vp)+"% of hands and raises "+pc(r.pr)+"% before the flop. "+(r.cbO?"Bets the flop after raising "+Math.round(r.cb/r.cbO*100)+"% of the time ("+r.cbO+" chance"+(r.cbO>1?"s":"")+"). ":"")+(r.agg+r.call?"After the flop: "+r.agg+" bets or raises to "+r.call+" calls.":"")+
+    "<br><span class='muted'>Under 20% played is tight, over 35% is loose. A raise number close to the played number means aggressive; far below means passive. Small samples lie, so trust it more after 30 or more hands.</span></div></div>";}
+/* ===== drills: facing a raise, betting the flop, bluff catching ===== */
+function raiseDrill(){var order=["UTG","HJ","CO","BTN","SB","BB"],op=pick(["UTG","HJ","CO","BTN","SB"]),after=order.slice(order.indexOf(op)+1),me=pick(after),deck=shuffle(Array.from({length:52},function(_,i){return i;})),h=[deck[0],deck[1]],code=codeOf(h);
+  var ev=VSOPEN[op][code],bb=me==="BB",thr=bb?38:45,prem=["AA","KK","QQ","AKs","AKo"].indexOf(code)>=0,ans=prem||ev>=57?"3-bet":ev>=thr?"Call":"Fold";
+  drillOpen("<h2>Facing a raise</h2><div class='muted' style='font-size:.85rem'>Six-handed. <b>"+op+"</b> raises to 2.5 big blinds and it folds to you in <b>"+me+"</b>.</div><div style='margin:8px 0'>"+cardsRow(h,"lg")+"</div><div id='dq'><div class='dq'>What do you do?</div>"+["Fold","Call","3-bet"].map(function(o){return "<button class='btn ghost dopt' data-o='"+o+"'>"+o+"</button>";}).join("")+"</div>",function(el){
+    el.querySelectorAll("[data-o]").forEach(function(b){b.onclick=function(){var ok=b.dataset.o===ans;dstat("raise",ok);
+      el.querySelector("#dq").innerHTML="<div class='dres "+(ok?"ok":"no")+"'>"+(ok?"Right.":"Best play: "+ans+".")+"</div><p style='font-size:.92rem'>Against a "+op+" opening range, "+code+" has about <b>"+ev+"%</b> equity. "+(ans==="3-bet"?"That's strong enough to reraise to about 3 times their raise. Hands this strong want a bigger pot.":ans==="Call"?"You need about "+thr+"% to call "+(bb?"from the big blind, where you get a discount but play out of position":"from a later seat, where players behind can still raise")+", so calling is right.":"You need about "+thr+"% "+(bb?"from the big blind":"from a later seat")+", so this is a fold.")+"</p><p class='muted' style='font-size:.85rem'>Earlier raisers have stronger ranges, so the same hand can be a call against the button and a fold against UTG.</p><div class='row'><button class='btn primary' id='dn'>Next hand</button><button class='btn ghost' id='dx'>Done</button></div>";
+      el.querySelector("#dn").onclick=raiseDrill;el.querySelector("#dx").onclick=drillClose;};});});}
+function texture(f){var rs=f.map(function(c){return c>>2;}).sort(function(a,b){return b-a;}),su={};f.forEach(function(c){su[c&3]=(su[c&3]||0)+1;});var mx=Math.max.apply(null,Object.keys(su).map(function(k){return su[k];})),paired=rs[0]===rs[1]||rs[1]===rs[2],conn=!paired&&rs[0]-rs[2]<=4;
+  return {flush:mx>=2,mono:mx===3,paired:paired,conn:conn,high:rs[0],dry:mx<2&&!conn};}
+function texWords(tx){var hi="23456789TJQKA"[tx.high];return (tx.paired?"paired, ":"")+(tx.mono?"one suit, ":tx.flush?"two of a suit, ":"rainbow, ")+(tx.conn?"connected, ":"spread out, ")+hi+"-high";}
+function cbetDrill(){
+  for(var tries=0;tries<30;tries++){
+    var hpos=pick(["CO","BTN"]),deck=shuffle(Array.from({length:52},function(_,i){return i;})),hero=null;
+    for(var k=0;k<50&&!hero;k++){var h2=[deck[2*k],deck[2*k+1]];if(SETS[hpos][codeOf(h2)])hero=h2;}if(!hero)continue;
+    var rest=deck.filter(function(c){return hero.indexOf(c)<0;}),flop=rest.slice(0,3),dead={};hero.concat(flop).forEach(function(c){dead[c]=1;});
+    var list=[],ws=[];Object.keys(VSOPEN[hpos]).forEach(function(cd){var v=VSOPEN[hpos][cd];if(v>=38&&v<57)combosOfCode(cd).forEach(function(x){if(!dead[x[0]]&&!dead[x[1]]){list.push(x);ws.push(1);}});});
+    var R={combos:list,w:ws,tot:list.length},eq=eqVsRangesD(hero,flop,[R],1200).eq,tx=texture(flop),outs=drawOuts(hero,flop,dead);
+    var raiserB=tx.high>=10&&tx.dry,callerB=tx.high<=7&&(tx.conn||tx.flush),best=eq>=0.6?"Bet":raiserB?"Bet":outs>=8?"Bet":callerB?"Check":eq>=0.5?"Bet":"Check";
+    var why=eq>=0.6?"You have a strong hand against their range ("+p1(eq)+"), so bet for value.":raiserB?"High, dry boards hit your raising range much harder than their calling range. A small bet with almost everything works here.":outs>=8?"You have a big draw ("+outs+" outs). Betting wins the pot now or builds it for when you hit.":callerB?"Low, connected or suited boards hit the big blind's calling range. Without a strong hand or big draw, check.":eq>=0.5?"You're slightly ahead of their range, so a bet gets value and protection.":"You're behind their range on this board, so check and keep the pot small.";
+    var size=tx.dry?"about a third of the pot":"about two thirds of the pot";
+    var sp={hero:hero,flop:flop,eq:eq,best:best,why:why,size:size,tx:tx,hpos:hpos};
+    drillOpen("<h2>Bet the flop?</h2><div class='muted' style='font-size:.85rem'>You raised from <b>"+hpos+"</b> and the big blind called. They check to you. Pot is about 5.5 big blinds.</div><div style='margin:8px 0'><div class='lbl'>Your hand</div>"+cardsRow(hero,"sm")+"<div class='lbl'>Flop: "+texWords(tx)+"</div>"+cardsRow(flop,"sm")+"</div><div id='dq'><div class='dq'>Bet or check?</div>"+["Bet","Check"].map(function(o){return "<button class='btn ghost dopt' data-o='"+o+"'>"+o+"</button>";}).join("")+"</div>",function(el){
+      el.querySelectorAll("[data-o]").forEach(function(b){b.onclick=function(){var ok=b.dataset.o===sp.best;dstat("cbet",ok);
+        el.querySelector("#dq").innerHTML="<div class='dres "+(ok?"ok":"no")+"'>"+(ok?"Right.":"Best play: "+sp.best+".")+"</div><p style='font-size:.92rem'>"+sp.why+(sp.best==="Bet"?" Size: "+sp.size+".":"")+"</p><p class='muted' style='font-size:.85rem'>Your equity against the big blind's calling range here: "+p1(sp.eq)+".</p><div class='row'><button class='btn primary' id='dn'>Next flop</button><button class='btn ghost' id='dx'>Done</button></div>";
+        el.querySelector("#dn").onclick=cbetDrill;el.querySelector("#dx").onclick=drillClose;};});});
+    return;}
+  toast("Couldn't build a spot. Try again.");}
+/* ===== bankroll challenge ===== */
+var CHAL=[{id:"ch1",n:"$1/$2",sb:1,bb:2,buy:200},{id:"ch2",n:"$2/$5",sb:2,bb:5,buy:500},{id:"ch3",n:"$5/$10",sb:5,bb:10,buy:1000},{id:"ch4",n:"$10/$20",sb:10,bb:20,buy:2000},{id:"ch5",n:"$25/$50",sb:25,bb:50,buy:5000},{id:"ch6",n:"$50/$100",sb:50,bb:100,buy:10000}];
+function chal(){if(!S.chal)S.chal={bank:4000,peak:4000,hands:0,start:today(),runs:[],active:true,top:"$1/$2"};return S.chal;}
+function chalStake(bank){var best=CHAL[0];CHAL.forEach(function(c){if(bank>=c.buy*20)best=c;});return best;}
+function chalSit(){var C=chal();if(!C.active)return;var c=chalStake(C.bank),st=STK(c.id);if(C.bank<st.buy)return chalOver();C.bank-=st.buy;S.cash=makeCash(st);S.cash.chal=true;save();T=S.cash;enterTable();}
+function chalOver(){var C=chal();C.active=false;C.runs.push({start:C.start,end:today(),peak:C.peak,hands:C.hands,top:C.top});C.runs.sort(function(a,b){return b.peak-a.peak;});C.runs=C.runs.slice(0,10);save();
+  showModal("<h2>Challenge run over</h2><p>Your challenge bankroll dropped below one $1/$2 buy-in. This run peaked at <b>"+money(C.peak)+"</b> over "+C.hands+" hands, reaching "+C.top+".</p>",[["Back to lobby",function(){toLobby();},"brass"]]);}
+function chalNew(){var old=(S.chal&&S.chal.runs)||[];S.chal={bank:4000,peak:4000,hands:0,start:today(),runs:old,active:true,top:"$1/$2"};save();renderLobby();}
+function chalHTML(){var C=chal(),c=chalStake(C.bank),nx=CHAL[CHAL.indexOf(c)+1],inRun=S.cash&&S.cash.chal;
+  var h="<div class='panel glass'><div class='evtop'><div><div class='venue'>Real bankroll rules</div><h2>Bankroll challenge</h2></div><div class='tier'>"+money(C.bank)+"</div></div>"+
+   "<p class='muted' style='font-size:.85rem'>Start with $4,000. Each session you play the highest stakes you have 20 buy-ins for, so you move up when you win and down when you lose. Drop below $200 and the run is over. Separate from your main bankroll.</p>";
+  if(C.active)h+="<table class='ptable'><tr><td>Bankroll</td><td><b>"+money(C.bank)+"</b> (peak "+money(C.peak)+")</td></tr><tr><td>Your stakes</td><td>"+c.n+" ("+Math.floor(C.bank/c.buy)+" buy-ins)</td></tr><tr><td>Next level</td><td>"+(nx?nx.n+" at "+money(nx.buy*20):"You're at the top")+"</td></tr><tr><td>Hands this run</td><td>"+C.hands+"</td></tr></table><div class='row'>"+(inRun?"<button class='btn primary' id='ch-res'>Resume session</button>":"<button class='btn primary' id='ch-go'>Play a "+c.n+" session</button>")+"<button class='btn ghost' id='ch-new'>Restart run</button></div>";
+  else h+="<p>Your last run is over.</p><div class='row'><button class='btn primary' id='ch-new'>Start a new run</button></div>";
+  if(C.runs.length)h+="<div class='lbl' style='margin-top:10px'>Best runs</div>"+C.runs.slice(0,5).map(function(r,k){return "<div style='display:flex;justify-content:space-between;font-size:.88rem;padding:3px 0'><span>"+(k+1)+". "+r.start+" to "+r.end+", reached "+r.top+"</span><b>"+money(r.peak)+"</b></div>";}).join("");
+  return h+"</div>";}
+function wireChal(){if($("ch-go"))$("ch-go").onclick=chalSit;if($("ch-res"))$("ch-res").onclick=function(){T=S.cash;enterTable();};
+  if($("ch-new"))$("ch-new").onclick=function(){if(S.chal&&S.chal.active){showModal("<h2>Restart the run?</h2><p>Your current challenge bankroll ("+money(S.chal.bank)+") is logged and you start over with $4,000.</p>",[["Restart",function(){var C=chal();if(S.cash&&S.cash.chal){S.cash=null;}C.runs.push({start:C.start,end:today(),peak:C.peak,hands:C.hands,top:C.top});C.runs.sort(function(a,b){return b.peak-a.peak;});C.runs=C.runs.slice(0,10);chalNew();},"brass"],["Cancel",function(){},"ghost"]]);}else chalNew();};}
+/* ===== pass-and-play home game ===== */
+var PASS_ST={n:3,names:["","","","","",""],seats:9,buy:200};
+function passSetupHTML(){return "<div class='panel glass' id='pp-setup'><div class='evtop'><div><div class='venue'>Real people, one phone</div><h2>Pass-and-play home game</h2></div></div>"+
+  "<p class='muted' style='font-size:.85rem'>Each player takes the phone on their turn. Bots fill the empty seats. Cards stay hidden until the right person taps in.</p>"+
+  "<div class='lbl'>Players</div><div class='seg' id='pp-n'>"+[2,3,4,5,6].map(function(k){return "<button data-v='"+k+"'"+(PASS_ST.n===k?" aria-pressed='true'":"")+">"+k+"</button>";}).join("")+"</div>"+
+  "<div style='display:grid;gap:6px;margin:8px 0'>"+Array.from({length:PASS_ST.n},function(_,k){return "<input data-pn='"+k+"' placeholder='Player "+(k+1)+"' value='"+(PASS_ST.names[k]||"").replace(/'/g,"&#39;")+"' aria-label='Player "+(k+1)+" name' maxlength='14'>";}).join("")+"</div>"+
+  "<div class='lbl'>Seats at the table</div><div class='seg' id='pp-s'>"+[6,9].map(function(k){return "<button data-v='"+k+"'"+(PASS_ST.seats===k?" aria-pressed='true'":"")+">"+k+"</button>";}).join("")+"</div>"+
+  "<div class='lbl'>Buy-in ($1/$2 blinds)</div><div class='seg' id='pp-b'>"+[100,200,500].map(function(k){return "<button data-v='"+k+"'"+(PASS_ST.buy===k?" aria-pressed='true'":"")+">$"+k+"</button>";}).join("")+"</div>"+
+  "<div class='row'><button class='btn primary' id='pp-start'>Start the game</button></div></div>";}
+function wirePassSetup(){var root=$("pp-setup");if(!root)return;var rer=function(){root.outerHTML=passSetupHTML();wirePassSetup();};
+  root.querySelectorAll("[data-pn]").forEach(function(i){i.oninput=function(){PASS_ST.names[+i.dataset.pn]=i.value;};});
+  [["pp-n","n"],["pp-s","seats"],["pp-b","buy"]].forEach(function(x){root.querySelector("#"+x[0]).querySelectorAll("button").forEach(function(b){b.onclick=function(){PASS_ST[x[1]]=+b.dataset.v;rer();};});});
+  $("pp-start").onclick=passStart;}
+function passStart(){var n=PASS_ST.n,names=Array.from({length:n},function(_,k){return (PASS_ST.names[k]||"").trim()||"Player "+(k+1);}),buy=PASS_ST.buy,ps=[],taken=names.slice();
+  names.forEach(function(nm,k){ps.push(k===0?{name:nm,hero:true,stack:buy,buyins:1,skill:"hero",out:false}:{name:nm,human:true,stack:buy,buyins:1,skill:"regular",out:false,st:{loose:0,agg:1,bluff:1,sticky:0,trap:0,sizing:"std",tilt:0}});});
+  var arch=["limper","station","tag","nit","maniac","whale","limper","station"];while(ps.length<PASS_ST.seats){var b=archBot(arch[ps.length%arch.length],buy,taken);taken.push(b.name);ps.push(b);}
+  T={mode:"cash",pass:true,stake:"home",skill:HOME_SKILL,players:ps,button:rnd(ps.length),sb:1,bb:2,buy:buy,level:0,handNo:0,home:true,casino:false,live:true};
+  enterTable();}
+function passTurn(i){var p=T.players[i],ov=$("passSheet");ov.hidden=false;sfx("turn");
+  ov.innerHTML="<div class='pass-in'><div class='muted'>Pass-and-play</div><h2>Pass the phone to "+escH(p.name)+"</h2><p class='muted'>Everyone else, look away.</p><button class='btn brass' id='ps-go'>I'm "+escH(p.name)+", show my cards</button></div>";
+  $("ps-go").onclick=function(){passShow(i);};}
+function escH(t){return String(t).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
+function passShow(i){var p=T.players[i],s=H.s[i],L=legal(i),pot=potTotal(),ov=$("passSheet"),amt=L.minTo;
+  var pre=[["Min",L.minTo],["Half pot",H.cur+0.5*(pot+L.toCall)],["Pot",H.cur+(pot+L.toCall)],["All in",L.maxTo]];
+  ov.innerHTML="<div class='pass-in'><h2>"+escH(p.name)+"</h2><div class='drow' style='justify-content:center'>"+s.cards.map(function(c){return cardStatic(c,"lg");}).join("")+"</div>"+
+    "<div class='lbl'>Board</div>"+(H.board.length?cardsRow(H.board,"sm"):"<div class='muted'>No cards yet</div>")+
+    "<p style='font-size:.95rem'>Pot "+chips(pot)+" \u00b7 Your stack "+chips(p.stack)+(L.toCall>0?" \u00b7 To call <b>"+chips(Math.min(L.toCall,p.stack))+"</b>":"")+"<br><span class='muted'>"+(H.pos[i]||"")+" \u00b7 "+(H.board.length>=3?handName(evaluate(s.cards.concat(H.board))):codeOf(s.cards))+"</span></p>"+
+    "<div class='actions'><button class='btn ghost' id='ps-f'>"+(L.toCall>0?"Fold":"Check")+"</button>"+(L.toCall>0?"<button class='btn primary' id='ps-c'>Call "+chips(Math.min(L.toCall,p.stack))+"</button>":"")+(L.canRaise?"<button class='btn brass' id='ps-r'>"+(H.cur>0?"Raise":"Bet")+"</button>":"")+"</div>"+
+    "<div id='ps-rz' hidden><div class='presets'>"+pre.map(function(x){return "<button class='mini' data-pv='"+Math.round(Math.max(L.minTo,Math.min(L.maxTo,x[1])))+"'>"+x[0]+"</button>";}).join("")+"</div><div style='text-align:center;font-weight:800;margin:6px 0' id='ps-amt'></div><div class='actions one'><button class='btn brass' id='ps-ok'>Confirm</button></div></div></div>";
+  var done=function(a,to){ov.hidden=true;ov.innerHTML="";act(i,a,to);};
+  $("ps-f").onclick=function(){done(L.toCall>0?"fold":"check");};if($("ps-c"))$("ps-c").onclick=function(){done("call");};
+  var upd=function(){$("ps-amt").textContent=(H.cur>0?"Raise to ":"Bet ")+chips(amt)+(amt>=L.maxTo?" (all in)":"");};
+  if($("ps-r"))$("ps-r").onclick=function(){$("ps-rz").hidden=false;upd();};
+  ov.querySelectorAll("[data-pv]").forEach(function(b){b.onclick=function(){amt=b.textContent==="All in"?L.maxTo:+b.dataset.pv;upd();};});
+  if($("ps-ok"))$("ps-ok").onclick=function(){done("raise",amt);};}
+function passSettle(){var hs=T.players.filter(function(p){return p.hero||p.human;});
+  return "<table class='st'>"+hs.map(function(p){var inn=(p.buyins||1)*T.buy,net=p.stack-inn;return "<tr><td>"+escH(p.name)+"</td><td>in "+money(inn)+", has "+money(p.stack)+"</td><td style='color:"+(net>=0?"var(--good)":"var(--bad)")+"'><b>"+(net>=0?"+":"\u2212")+money(Math.abs(net))+"</b></td></tr>";}).join("")+"</table>";}
+
 /* ===== world: events, stakes, career, achievements ===== */
 var EVENTS=[
  {id:"daily",tier:0,n:"Daily Freeroll",venue:"Online lobby",buy:0,field:6,stages:[0],pay:[100,50],skill:["beginner","regular"],look:{table:"teal",atm:"clean"},req:1,xp:30,daily:true},
@@ -2494,6 +2617,12 @@ var EVENTS=[
 ];
 var STAKES=[
  {id:"home",n:"Home Game Night",sb:1,bb:2,buy:200,req:1,skill:HOME_SKILL,arch:["limper","limper","station","station","whale","tag","nit","maniac"],seats:9,home:true,venue:"Nine-handed in somebody's basement",look:{table:"classic",atm:"library"}},
+ {id:"ch1",hidden:true,n:"$1/$2",sb:1,bb:2,buy:200,req:1,skill:["beginner","regular"],arch:["station","limper","station","nit","tag"],seats:6,venue:"Bankroll challenge, $1/$2",look:{table:"classic",atm:"backroom"}},
+ {id:"ch2",hidden:true,n:"$2/$5",sb:2,bb:5,buy:500,req:1,skill:["beginner","regular"],arch:["station","limper","tag","nit","maniac"],seats:6,venue:"Bankroll challenge, $2/$5",look:{table:"walnut",atm:"backroom"}},
+ {id:"ch3",hidden:true,n:"$5/$10",sb:5,bb:10,buy:1000,req:1,skill:["regular","tough"],arch:["tag","nit","limper","maniac","lag"],seats:6,venue:"Bankroll challenge, $5/$10",look:{table:"vegas",atm:"vegas"}},
+ {id:"ch4",hidden:true,n:"$10/$20",sb:10,bb:20,buy:2000,req:1,skill:["regular","tough"],arch:["tag","lag","nit","maniac","tag"],seats:6,venue:"Bankroll challenge, $10/$20",look:{table:"onyx",atm:"monte"}},
+ {id:"ch5",hidden:true,n:"$25/$50",sb:25,bb:50,buy:5000,req:1,skill:["tough"],arch:["lag","tag","tag","maniac","nit"],seats:6,venue:"Bankroll challenge, $25/$50",look:{table:"onyx",atm:"penthouse"}},
+ {id:"ch6",hidden:true,n:"$50/$100",sb:50,bb:100,buy:10000,req:1,skill:["tough"],arch:["lag","lag","tag","tag","maniac"],seats:6,venue:"Bankroll challenge, $50/$100",look:{table:"onyx",atm:"penthouse"}},
  {id:"casino12",n:"Casino $1/$2",sb:1,bb:2,buy:300,req:1,skill:["beginner","regular","tough"],arch:["station","station","limper","limper","nit","tag","maniac","lag"],seats:9,casino:true,venue:"Live casino poker room: big raises, lots of limpers",look:{table:"vegas",atm:"vegas"}},
  {id:"micro",n:"$1/$2",sb:1,bb:2,buy:200,req:1,skill:"user",venue:"Neighborhood home game",look:{table:"classic",atm:"library"}},
  {id:"low",n:"$2/$5",sb:2,bb:5,buy:500,req:3,skill:["beginner","regular","regular"],venue:"Riverboat card room",look:{table:"vegas",atm:"rain"}},
@@ -2563,7 +2692,7 @@ function makeTour(ev,stage,heroStack,handNo,minBB){
 }
 function venueLook(){if(!T||!S.settings.venueLooks)return null;if(T.theme)return THEMES[T.theme].look;if(T.ladder!==undefined)return {table:"onyx",atm:"backroom"};return T.mode==="cash"?STK(T.stake).look:EV(T.ev).look;}
 function enterTable(){
-  if(T)T._g=false;
+  if(T)T._g=false;$("g-tools").hidden=!!(T&&T.pass);
   $("lobby").hidden=true;$("game").hidden=false;window.scrollTo({top:0});
   applyLook(venueLook());
   H=null;render();renderControls();startHand();
@@ -2610,6 +2739,8 @@ function eventEnd(tablePlace){
 }
 function heroBust(){
   var b=T.buy||200;
+  if(T.chal){var C=chal();if(C.bank<b){sessFinish();S.cash=null;save();return chalOver();}
+    return showModal("<h2>You're out of chips</h2><p>Rebuy for "+money(b)+" from your challenge bankroll ("+money(C.bank)+"), or end the session.</p>",[["Rebuy "+money(b),function(){C.bank-=b;T.players[0].stack=b;var ss=sess();if(ss)ss.rebuys++;save();render();startHand();},"brass"],["End session",function(){sessFinish();S.cash=null;save();if(C.bank<CHAL[0].buy)chalOver();else toLobby();},"ghost"]]);}
   showModal("<h2>You're out of chips</h2><p>Rebuy for "+money(b)+" from your bankroll ("+money(S.bankroll)+"), or head back to the lobby.</p>",
     [["Rebuy "+money(b),function(){S.bankroll-=b;T.players[0].stack=b;var ss=sess();if(ss){ss.rebuys++;}save();render();startHand();},"brass"],["Lobby",function(){sessFinish();S.cash=null;save();toLobby();},"ghost"]]);
 }
@@ -2655,7 +2786,7 @@ function renderCircuit(){
 }
 function renderCashTab(){
   var h="";
-  STAKES.forEach(function(st){
+  STAKES.forEach(function(st){if(st.hidden)return;
     var lock=lockReason(st.req,st.buy),here=S.cash&&S.cash.stake===st.id,other=S.cash&&!here,btn;
     if(here)btn="<button class='btn brass' data-res='"+st.id+"'>Resume, "+money(S.cash.players[0].stack)+" in chips</button>";
     else if(other)btn="<div class='lock'>You're seated at "+STK(S.cash.stake).n+"</div>";
@@ -2664,7 +2795,7 @@ function renderCashTab(){
     h+="<div class='panel glass ev"+(lock&&!here?" locked":"")+"'><div class='evtop'><div><div class='venue'>"+st.venue+"</div><h2>"+st.n+" No-Limit</h2></div><div class='tier'>"+(st.buy/st.bb)+" bb</div></div>"+
       "<div class='evmeta'>"+(st.arch?"Players: "+ARCH_ORDER.filter(function(k){return st.arch.indexOf(k)>=0;}).map(function(k){var c=st.arch.filter(function(x){return x===k;}).length;return (c>1?c+" ":"")+ARCH[k].n.toLowerCase()+(c>1?"s":"");}).join(", "):st.skill==="user"?"Opponents set in Settings: "+dots(S.settings.skill):dots(st.skill))+"</div><div class='row'>"+btn+"</div></div>";
   });
-  $("l-body").innerHTML=h;
+  $("l-body").innerHTML=chalHTML()+passSetupHTML()+h;wireChal();wirePassSetup();
   $("l-body").querySelectorAll("[data-sit]").forEach(function(b){b.onclick=function(){sitCash(b.dataset.sit,false);};});
   $("l-body").querySelectorAll("[data-res]").forEach(function(b){b.onclick=function(){sitCash(b.dataset.res,true);};});
 }
@@ -2701,7 +2832,7 @@ function renderSettings(){
     "<div class='panel glass'><div class='lbl' style='margin-top:0'>Home game opponents ($1/$2)</div><div class='seg' id='l-skill'><button data-v='beginner'>Beginner</button><button data-v='regular'>Regular</button><button data-v='tough'>Tough</button><button data-v='mixed'>Mixed</button></div><p class='muted' id='l-skill-desc' style='font-size:.88rem;margin:8px 0 0'></p>"+
     "<div class='lbl'>Bot speed</div><div class='seg' id='l-speed'><button data-v='slow'>Slow</button><button data-v='normal'>Normal</button><button data-v='fast'>Fast</button></div></div>"+
     "<div class='panel glass'><h2>Table feel</h2>"+
-    [["tilt3d","3D table","Tilts the felt like you're sitting at it."],["season","Seasonal decorations","Holiday touches during the right weeks of the year."],["sound","Sounds","Card, chip, and win sounds."],["haptics","Vibration","Buzz on your turn and when you win, on phones that support it."],["fx2","Chip animations","Bets slide into the pot."]].map(function(x){return "<div class='toggle' style='border-top:0;margin-top:0'><div><b>"+x[1]+"</b><div class='muted' style='font-size:.85rem'>"+x[2]+"</div></div><button class='switch' role='switch' data-sw='"+x[0]+"' aria-checked='"+(!!S.settings[x[0]])+"' aria-label='"+x[1]+"'></button></div>";}).join("")+
+    [["coach","After-hand coach","Shows your biggest mistake when a hand ends."],["hud","Opponent stats on seats","How often each player plays and raises, shown under their name."],["tilt3d","3D table","Tilts the felt like you're sitting at it."],["season","Seasonal decorations","Holiday touches during the right weeks of the year."],["sound","Sounds","Card, chip, and win sounds."],["haptics","Vibration","Buzz on your turn and when you win, on phones that support it."],["fx2","Chip animations","Bets slide into the pot."]].map(function(x){return "<div class='toggle' style='border-top:0;margin-top:0'><div><b>"+x[1]+"</b><div class='muted' style='font-size:.85rem'>"+x[2]+"</div></div><button class='switch' role='switch' data-sw='"+x[0]+"' aria-checked='"+(!!S.settings[x[0]])+"' aria-label='"+x[1]+"'></button></div>";}).join("")+
     "<div class='lbl'>Shot clock (all tables)</div><div class='seg' id='l-clock'><button data-v='0'>Off</button><button data-v='30'>30 sec</button><button data-v='15'>15 sec</button></div></div>"+
     "<div class='panel glass'><h2>Live mode</h2><p class='muted' style='font-size:.85rem'>Applies to Home Game Night on the Cash tab: nine-handed, loose, with straddles and big raises.</p>"+
     [["liveChips","Pot as chips","Show the pot as chip stacks so you count it yourself. Tap the pot to check your count."],["liveHelp","Allow helpers","Lets the Tools panel give advice in live mode. Off is closer to a real game."]].map(function(x){return "<div class='toggle' style='border-top:0;margin-top:0'><div><b>"+x[1]+"</b><div class='muted' style='font-size:.85rem'>"+x[2]+"</div></div><button class='switch' role='switch' data-sw='"+x[0]+"' aria-checked='"+(!!S.settings[x[0]])+"' aria-label='"+x[1]+"'></button></div>";}).join("")+(S.liveStats&&S.liveStats.peeks?"<p class='muted' style='font-size:.82rem'>Pot checks so far: "+S.liveStats.peeks+"</p>":"")+"</div>"+
