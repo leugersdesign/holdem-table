@@ -417,6 +417,39 @@ details{margin:8px 0}details summary{cursor:pointer;padding:4px 0}
 .dwtip #dw-hinttxt{flex-basis:100%}
 .dwstreet{text-align:center;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--felt-muted,rgba(238,245,240,.72));margin-bottom:4px}
 #dw-hero .hinfo{display:flex;align-items:center;gap:10px;justify-content:center;text-align:left}
+.bjfelt{height:400px;border-radius:0 0 48% 48% / 0 0 42% 42%;margin-top:14px}
+.bjrules{position:absolute;left:50%;top:44%;transform:translateX(-50%);font-size:.62rem;letter-spacing:.12em;color:rgba(255,224,138,.75);font-weight:800;white-space:nowrap}
+.bjdealer{position:absolute;left:50%;top:8%;transform:translateX(-50%);display:flex;gap:4px;align-items:center}
+.bjdtot{margin-left:6px;background:rgba(0,0,0,.45);color:#fff;font-weight:800;border-radius:999px;padding:2px 9px;font-size:.85rem}
+.bjside{position:absolute;top:6%;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.6rem;color:rgba(255,255,255,.7);letter-spacing:.06em;text-transform:uppercase}
+#bj-shoe{right:5%}#bj-tray{left:5%}
+.bjshoebar,.bjtray{position:relative;width:16px;height:52px;border-radius:4px;background:rgba(0,0,0,.35);overflow:hidden;border:1px solid rgba(255,255,255,.25)}
+.bjshoebar i,.bjtray i{position:absolute;left:0;right:0;bottom:0;background:var(--back-bg,#b8322a)}
+.bjshoebar b{position:absolute;left:-2px;right:-2px;height:2px;background:#ffd54a}
+.bjcount{position:absolute;left:50%;top:30%;transform:translateX(-50%);display:flex;gap:10px;font-size:.75rem;color:#fff;background:rgba(0,0,0,.45);border-radius:10px;padding:4px 10px;white-space:nowrap}
+.bjcount b{font-size:.95rem;margin-left:2px}
+.bjspot{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:2px;width:76px;text-align:center}
+.bjspot.empty .bjcircle{width:42px;height:42px;border-radius:50%;border:2px dashed rgba(255,255,255,.25)}
+.bjmini{display:flex;flex-direction:column;align-items:center;font-size:.68rem;color:#fff}
+.bjmini.act .bjcards{outline:2px solid #ffd54a;outline-offset:2px;border-radius:4px}
+.bjcards{display:flex}.bjcards .pc{margin-left:-14px}.bjcards .pc:first-child{margin-left:0}
+.bjcards.xs .pc{margin-left:-12px}
+.bjchip{background:var(--chip,#e9b949);color:var(--chip-text,#1b1408);border-radius:999px;font-size:.66rem;font-weight:800;padding:1px 7px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.5)}
+.bjwho{display:flex;align-items:center;gap:4px;font-size:.66rem;color:#fff;font-weight:700}
+.bjav{display:inline-block;width:26px;height:26px;border-radius:50%;overflow:hidden;border:1.5px solid rgba(255,255,255,.4)}.bjav svg{width:100%;height:100%;display:block}
+.bjspot.me .bjwho{color:#ffe08a}
+.bjhero{border-radius:20px;padding:10px 12px;margin:8px 0}
+#bj-hands{display:flex;gap:10px;overflow-x:auto;padding:6px 2px}
+.bjh{flex:none;border-radius:14px;padding:6px 8px;border:2px solid transparent}
+.bjh.act{border-color:var(--accent)}
+.bjh .bjcards .pc{margin-left:-18px}.bjh .bjcards .pc:first-child{margin-left:0}
+.bjtot{font-weight:800;margin-top:4px}.bjbet{font-size:.8rem;color:var(--muted)}
+.bjbetbar{border-radius:14px;padding:10px 12px;margin-bottom:8px;display:grid;gap:8px}
+.bjchips{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.bjc{width:46px;height:46px;border-radius:50%;border:3px dashed rgba(255,255,255,.75);font-weight:900;color:#fff;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.bjc.c5{background:#c8102e}.bjc.c25{background:#2e8b57}.bjc.c100{background:#1a1a1a}.bjc.c500{background:#6a2a8a}
+.bjact{grid-template-columns:repeat(auto-fit,minmax(70px,1fr))}
+.bjchart td,.bjchart th{padding:3px 4px;font-size:.72rem;border:1px solid var(--line)}
 [hidden]{display:none!important}
 @media (max-width:380px){.seat{width:96px;font-size:.68rem}.center{width:206px}.pc.sm,.slot{width:34px;height:47px}.board{height:47px}}
 @media (prefers-reduced-motion:reduce){.pc.deal{animation:none}#atm .fx1,#atm .fx2{animation:none!important}.dealer{transition:none}}
@@ -433,10 +466,28 @@ details{margin:8px 0}details summary{cursor:pointer;padding:4px 0}
       <h1>Hold'em Table</h1>
     </header>
     <div class="panel glass prof" id="l-prof"></div>
-    <div class="seg ltabs" id="l-tabs"><button data-v="circuit">Circuit</button><button data-v="cash">Cash</button><button data-v="draw">Draw</button><button data-v="challenge">Challenge</button><button data-v="home">Home game</button><button data-v="train">Train</button><button data-v="real">Real game</button><button data-v="career">Career</button><button data-v="settings">Settings</button></div>
+    <div class="seg ltabs" id="l-tabs"><button data-v="circuit">Circuit</button><button data-v="cash">Cash</button><button data-v="draw">Draw</button><button data-v="bj">Blackjack</button><button data-v="challenge">Challenge</button><button data-v="home">Home game</button><button data-v="train">Train</button><button data-v="real">Real game</button><button data-v="career">Career</button><button data-v="settings">Settings</button></div>
     <div id="l-body"></div>
   </section>
 
+  <section id="bj" hidden>
+    <div class="topbar glass">
+      <button class="btn ghost pill" id="bj-leave">Lobby</button>
+      <div class="info" id="bj-info"></div>
+      <button class="btn brass pill" id="bj-chart">Chart</button>
+    </div>
+    <div class="felt bjfelt" id="bj-felt">
+      <div class="feltbg" id="bj-feltbg" style="position:absolute;inset:0;border-radius:inherit;z-index:-1"></div>
+      <div class="bjside" id="bj-tray"></div><div class="bjside" id="bj-shoe"></div>
+      <div class="bjdealer" id="bj-dealer"></div>
+      <div class="bjcount" id="bj-count"></div>
+      <div class="status" id="bj-msg" aria-live="polite" style="position:absolute;left:50%;top:37%;transform:translateX(-50%);width:84%;text-align:center"></div>
+      <div class="bjrules" id="bj-rules"></div>
+      <div id="bj-spots"></div>
+    </div>
+    <div class="glass bjhero"><div class="row" style="justify-content:space-between;margin:0;align-items:center"><b>Your hands</b><span class="muted">Bankroll <b id="bj-bank" style="color:var(--text)"></b></span></div><div id="bj-hands"></div></div>
+    <div class="controls" id="bj-controls"></div>
+  </section>
   <section id="draw" hidden>
     <div class="topbar glass">
       <button class="btn ghost pill" id="dw-leave">Lobby</button>
@@ -2738,13 +2789,14 @@ function dwEnter(){$("lobby").hidden=true;$("game").hidden=true;$("draw").hidden
   dwSeats();DWH=null;dwStart();}
 function dwSeats(){DW_SEATS.forEach(function(el){if(el)el.remove();});DW_SEATS=[];var felt=$("dw-felt");
   for(var i=1;i<6;i++){var el=document.createElement("div");el.className="seat";el.setAttribute("style",css(SEATPOS[i]));
-    el.innerHTML="<div class='bw'></div><div class='scards dws'></div><div class='plate'><div class='av'></div><div class='meta'><div class='nm'></div><div class='stk'></div></div></div><div class='tag'></div><div class='betw'></div>";felt.appendChild(el);DW_SEATS[i]=el;}}
+    el.innerHTML="<div class='bw'></div><div class='scards dws'></div><div class='plate' role='button' tabindex='0' aria-label='Player profile'><div class='av'></div><div class='meta'><div class='nm'></div><div class='stk'></div><div class='hud'></div></div></div><div class='tag'></div><div class='betw'></div>";felt.appendChild(el);DW_SEATS[i]=el;
+    (function(ix){el.querySelector(".plate").onclick=function(){dwPlayer(ix);};})(i);}}
 function dwLive(){return DWH.seats.filter(function(i){return !DWH.s[i].folded;});}
 function dwCanAct(i){var s=DWH.s[i];return !s.folded&&!s.allin;}
 function dwNext(from,list){var n=6;for(var k=1;k<=n;k++){var j=(from+k)%n;if(list.indexOf(j)>=0)return j;}return from;}
 function dwLog(t){DWH.log.push(t);DWH.status=t;}
 function dwPut(i,amt){var p=DW.players[i],s=DWH.s[i];amt=Math.min(amt,p.stack);p.stack-=amt;s.sb+=amt;s.tot+=amt;if(p.stack<=0)s.allin=true;}
-function dwPot(){return DWH.seats.reduce(function(a,i){return a+DWH.s[i].tot;},0);}
+function dwPot(){return DWH.seats.reduce(function(a,i){return a+DWH.s[i].tot;},0)+(DWH.carry||0);}
 function dwStart(){if(DWH&&!DWH.done)return;DW_TOK++;clearTimeout(DW_T);clearTimeout(DW_BT);
   DW.players.forEach(function(p,i){if(!p.hero&&p.stack<=0){var st=dwStake(DW.stake),nb=archBot(pick(st.arch),DW.buy,DW.players.map(function(q){return q.name;}));DW.players[i]=nb;}});
   if(DW.players[0].stack<=0){return showModal("<h2>You're out of chips</h2><p>Rebuy for "+money(DW.buy)+" from your bankroll ("+money(S.bankroll)+"), or head back to the lobby.</p>",[["Rebuy "+money(DW.buy),function(){if(S.bankroll<DW.buy){toast("Not enough in your bankroll.");return dwExit();}S.bankroll-=DW.buy;DW.players[0].stack=DW.buy;save();dwStart();},"brass"],["Lobby",function(){dwExit();},"ghost"]]);}
@@ -2752,9 +2804,11 @@ function dwStart(){if(DWH&&!DWH.done)return;DW_TOK++;clearTimeout(DW_T);clearTim
   var deck=shuffle(Array.from({length:52},function(_,k){return k;})),sbI=dwNext(DW.button,seats),bbI=dwNext(sbI,seats);
   DWH={id:DW_TOK,seats:seats,s:{},deck:deck,street:0,cur:0,minR:DW.bb,toAct:0,done:false,log:[],status:"",sbI:sbI,bbI:bbI,heroStart:DW.players[0].stack,raises:0,lastAgg:-1,winners:{},showdown:false};
   seats.forEach(function(i){DWH.s[i]={cards:deck.splice(0,5),folded:false,allin:false,sb:0,tot:0,acted:false,drew:null,label:""};});
-  dwPut(sbI,DW.sb);dwPut(bbI,DW.bb);DWH.cur=DW.bb;DWH.s[sbI].label="SB";DWH.s[bbI].label="BB";DWH.toAct=dwNext(bbI,seats);DW_SEL={};
+  DWH.jacks=dwOpt("dwJacks");DWH.carry=DW.carry||0;DW.carry=0;DWH.dec=[];DWH.acts=[];DWH.opened=false;DW.sess=DW.sess||{start:Date.now(),hands:0,net:0,dec:0,good:0};if(DWH.jacks)DW.jacksSess=true;
+  if(DWH.jacks){seats.forEach(function(i){dwPut(i,DW.sb);DWH.s[i].sb=0;DWH.s[i].label="Ante";});DWH.cur=0;DWH.toAct=dwNext(DW.button,seats);}
+  else{dwPut(sbI,DW.sb);dwPut(bbI,DW.bb);DWH.cur=DW.bb;DWH.s[sbI].label="SB";DWH.s[bbI].label="BB";DWH.toAct=dwNext(bbI,seats);}DW_SEL={};
   dwLog("Hand "+(DW.handNo+1)+". "+DW.players[DW.button].name+" has the button.");sfx("deal");dwRender();dwControls();dwSched(350);}
-function dwLegal(i){var p=DW.players[i],s=DWH.s[i],toCall=Math.max(0,DWH.cur-s.sb),maxTo=s.sb+p.stack,minTo=Math.min(maxTo,DWH.cur+DWH.minR);return {toCall:toCall,minTo:minTo,maxTo:maxTo,canRaise:p.stack>toCall};}
+function dwLegal(i){var p=DW.players[i],s=DWH.s[i],toCall=Math.max(0,DWH.cur-s.sb),maxTo=s.sb+p.stack,minTo=Math.min(maxTo,DWH.cur+DWH.minR),can=p.stack>toCall,noOpen=DWH.jacks&&DWH.street===0&&DWH.cur===0&&!dwQual(s.cards);return {toCall:toCall,minTo:minTo,maxTo:maxTo,canRaise:can&&!noOpen,noOpen:noOpen};}
 function dwLoop(){if(!DWH||DWH.done)return;if(dwLive().length===1)return dwWin();
   if(DWH.street===1)return dwDrawNext();
   var found=-1;for(var k=0;k<6;k++){var j=(DWH.toAct+k)%6;if(DWH.seats.indexOf(j)<0)continue;var s=DWH.s[j];if(dwCanAct(j)&&(!s.acted||s.sb<DWH.cur)){found=j;break;}}
@@ -2764,14 +2818,15 @@ function dwLoop(){if(!DWH||DWH.done)return;if(dwLive().length===1)return dwWin()
   if(found===0){dwControls();sfx("turn");buzz(25);return;}
   var tok=DWH.id,delay={slow:1100,normal:650,fast:250}[S.settings.speed]||650,d=dwBot(found);
   clearTimeout(DW_BT);DW_BT=setTimeout(function(){if(!DWH||DWH.id!==tok||DWH.done||DWH.toAct!==found)return;dwAct(found,d[0],d[1]);},delay);}
-function dwAct(i,a,to){var s=DWH.s[i],p=DW.players[i],L=dwLegal(i),nm=p.hero?"You":p.name;
+function dwAct(i,a,to){var s=DWH.s[i],p=DW.players[i],L=dwLegal(i),nm=p.hero?"You":p.name;if(i===0)dwGrade(0,a,to);DWH.acts.push({i:i,st:DWH.street,a:a});if(a==="raise"&&DWH.street===0)DWH.opened=true;
   if(a==="fold"){s.folded=true;s.label="Fold";dwLog(nm+(p.hero?" fold.":" folds."));sfx("fold");}
   else if(a==="check"){s.label="Check";dwLog(nm+(p.hero?" check.":" checks."));sfx("check");}
   else if(a==="call"){dwPut(i,L.toCall);s.label=s.allin?"All in":"Call";dwLog(nm+(p.hero?" call ":" calls ")+money(s.sb)+(s.allin?", all in.":"."));sfx("chip");}
   else{to=Math.max(L.minTo,Math.min(to,L.maxTo));var was=DWH.cur===0;dwPut(i,to-s.sb);if(s.sb>DWH.cur){var inc=s.sb-DWH.cur;if(inc>=DWH.minR){DWH.minR=inc;DWH.seats.forEach(function(j){if(j!==i)DWH.s[j].acted=false;});}DWH.cur=s.sb;DWH.raises++;DWH.lastAgg=i;}
     s.label=s.allin?"All in":(was?"Bet":"Raise");dwLog(nm+(p.hero?(was?" bet ":" raise to "):(was?" bets ":" raises to "))+money(s.sb)+(s.allin?", all in.":"."));sfx("chip");}
   s.acted=true;DWH.toAct=(i+1)%6;dwRender();dwControls();dwSched(120);}
-function dwEndStreet(){DWH.seats.forEach(function(i){var s=DWH.s[i];s.sb=0;s.acted=false;if(!s.folded&&!s.allin)s.label="";});DWH.cur=0;DWH.minR=DW.bb;DWH.raises=0;
+function dwEndStreet(){if(DWH.street===0&&DWH.jacks&&!DWH.opened){DW.carry=dwPot();DWH.noOpen=true;dwLog("Nobody opened. "+money(DW.carry)+" carries to the next hand.");return dwEnd();}
+  DWH.seats.forEach(function(i){var s=DWH.s[i];s.sb=0;s.acted=false;if(!s.folded&&!s.allin)s.label="";});DWH.cur=0;DWH.minR=DW.bb;DWH.raises=0;
   if(DWH.street===0){DWH.street=1;DWH.drawOrder=[];var j=DW.button;for(var k=0;k<6;k++){j=(j+1)%6;if(DWH.seats.indexOf(j)>=0&&!DWH.s[j].folded)DWH.drawOrder.push(j);}DWH.drawIdx=0;dwLog("The draw.");dwRender();dwSched(300);}
   else if(DWH.street===1){DWH.street=2;var f=-1,b=DW.button;for(var q=0;q<6;q++){b=(b+1)%6;if(DWH.seats.indexOf(b)>=0&&!DWH.s[b].folded){f=b;break;}}DWH.toAct=f;dwLog("Betting after the draw.");dwRender();dwSched(300);}
   else dwShowdown();}
@@ -2779,10 +2834,11 @@ function dwDrawNext(){if(DWH.drawIdx>=DWH.drawOrder.length)return dwEndStreet();
   if(i===0){DW_SEL={};dwControls();sfx("turn");return;}
   var tok=DWH.id,delay={slow:1000,normal:600,fast:220}[S.settings.speed]||600;
   clearTimeout(DW_BT);DW_BT=setTimeout(function(){if(!DWH||DWH.id!==tok||DWH.done||DWH.street!==1||DWH.drawOrder[DWH.drawIdx]!==i)return;dwDoDraw(i,dwBestDiscard(DWH.s[i].cards,DW.players[i]).d);},delay);}
-function dwDoDraw(i,idxs){var s=DWH.s[i],p=DW.players[i];if(s.drew!==null)return;idxs=idxs.slice().sort(function(a,b){return b-a;});idxs.forEach(function(k){s.cards[k]=DWH.deck.pop();});s.drew=idxs.length;s.label=idxs.length?"Drew "+idxs.length:"Stood pat";
+function dwDoDraw(i,idxs){var s=DWH.s[i],p=DW.players[i];if(s.drew!==null)return;if(i===0)dwGradeDraw(idxs);idxs=idxs.slice().sort(function(a,b){return b-a;});idxs.forEach(function(k){s.cards[k]=DWH.deck.pop();});s.drew=idxs.length;s.label=idxs.length?"Drew "+idxs.length:"Stood pat";
   dwLog((p.hero?"You ":p.name+" ")+(idxs.length?(p.hero?"draw ":"draws ")+idxs.length+".":(p.hero?"stand pat.":"stands pat.")));sfx("deal");DWH.drawIdx++;DW_SEL={};dwRender();dwControls();dwSched(200);}
 /* bots */
 function dwBot(i){var p=DW.players[i],s=DWH.s[i],E=eff(p),L=dwLegal(i),pot=dwPot(),bb=DW.bb,r=Math.random();
+  if(DWH.street===0&&DWH.jacks&&DWH.cur===0){if(!dwQual(s.cards))return ["check"];return dwStrength(s.cards)>=0.5||r<0.5*E.agg?dwRaise(i,Math.max(bb,pot*0.6)):["check"];}
   if(DWH.street===0){var st=dwStrength(s.cards),di=dwDrawInfo(s.cards),drawy=di.flush||di.oe;if(drawy&&st<0.4)st=Math.max(st,di.flush?0.44:0.4);
     var lsk=-E.loose*0.012,thr=0.5+lsk,pos=(i-DW.button+6)%6;thr-=pos===0?0.06:pos===5?0.03:0;
     if(DWH.raises===0){if(st>=thr+0.1||(st>=thr&&r<0.35*E.agg))return dwRaise(i,bb*(3+(p.skill==="beginner"?0.5:0)));if(st>=thr-0.08&&(E.agg<0.8||r<0.5))return L.toCall?["call"]:["check"];return L.toCall?["fold"]:["check"];}
@@ -2796,13 +2852,14 @@ function dwRaise(i,to){var L=dwLegal(i);if(!L.canRaise)return L.toCall?["call"]:
 function dwWin(){var w=dwLive()[0],pot=dwPot();DW.players[w].stack+=pot;DWH.winners={};DWH.winners[w]=pot;dwLog((w===0?"You win ":DW.players[w].name+" wins ")+money(pot)+".");dwEnd();}
 function dwShowdown(){DWH.showdown=true;var live=dwLive(),vals={};live.forEach(function(i){vals[i]=evaluate(DWH.s[i].cards);});DWH.vals=vals;
   var levels=[];DWH.seats.forEach(function(i){var t=DWH.s[i].tot;if(t>0&&levels.indexOf(t)<0)levels.push(t);});levels.sort(function(a,b){return a-b;});var prev=0;DWH.winners={};
-  levels.forEach(function(lv){var amt=0;DWH.seats.forEach(function(i){amt+=Math.max(0,Math.min(DWH.s[i].tot,lv)-prev);});var el=live.filter(function(i){return DWH.s[i].tot>=lv;});
+  var extra=DWH.carry||0;levels.forEach(function(lv){var amt=extra;extra=0;DWH.seats.forEach(function(i){amt+=Math.max(0,Math.min(DWH.s[i].tot,lv)-prev);});var el=live.filter(function(i){return DWH.s[i].tot>=lv;});
     if(!el.length){el=live;}var best=Math.max.apply(null,el.map(function(i){return vals[i];})),ws=el.filter(function(i){return vals[i]===best;});ws.forEach(function(i,k){var share=Math.floor(amt/ws.length)+(k===0?amt-Math.floor(amt/ws.length)*ws.length:0);DW.players[i].stack+=share;DWH.winners[i]=(DWH.winners[i]||0)+share;});prev=lv;});
   var top=Object.keys(DWH.winners).map(Number).sort(function(a,b){return vals[b]-vals[a];})[0];dwLog((top===0?"You win":DW.players[top].name+" wins")+" with "+handName(vals[top])+".");dwEnd();}
-function dwEnd(){DWH.done=true;DW.handNo++;var st=dwStats(),inH=DWH.seats.indexOf(0)>=0;
+function dwEnd(){DWH.done=true;DW.handNo++;var st=dwStats(),inH=DWH.seats.indexOf(0)>=0;dwHudHand();DWH.coach=dwCoachPick();
+  if(inH&&DW.sess){DW.sess.hands++;DW.sess.net+=DW.players[0].stack-DWH.heroStart;(DWH.dec||[]).forEach(function(d){DW.sess.dec++;if(!d.leak)DW.sess.good++;});}
   if(inH){var net=DW.players[0].stack-DWH.heroStart;st.hands++;st.net+=net;if(DWH.winners[0])st.won++;if(DWH.showdown&&!DWH.s[0].folded){st.sd++;if(DWH.winners[0])st.sdw++;}if(DWH.winners[0]){sfx("win");buzz([30,40,30]);}}
   save();dwRender();dwControls();try{var w0=Object.keys(DWH.winners).map(Number)[0];if(w0!==undefined)flyChips([$("dw-pot"),$("dw-pot")],w0===0?$("dw-hero"):DW_SEATS[w0]);}catch(e){}}
-function dwExit(){if(DW&&DW.players[0].stack>0){S.bankroll+=DW.players[0].stack;}S.draw=null;DW=null;DWH=null;save();$("draw").hidden=true;toLobby();}
+function dwExit(){if(DW)dwSessFinish();if(DW&&DW.players[0].stack>0){S.bankroll+=DW.players[0].stack;}S.draw=null;DW=null;DWH=null;save();$("draw").hidden=true;toLobby();}
 function dwLeave(){if(!DW)return dwExit();var mid=DWH&&!DWH.done&&!DWH.s[0].folded&&DWH.seats.indexOf(0)>=0;
   showModal("<h2>Leave the table?</h2><p>"+(mid?"You'll fold this hand. ":"")+"Your "+money(DW.players[0].stack)+" goes back to your bankroll.</p>",[["Cash out",function(){if(mid)DWH.s[0].folded=true;dwExit();},"brass"],["Stay",function(){},"ghost"]]);}
 /* rendering */
@@ -2812,7 +2869,7 @@ function dwRender(){if(!DW||!DWH)return;
     var show=s&&!s.folded,face=show&&DWH.done&&DWH.showdown,sc=el.querySelector(".scards"),key=DWH.id+"|"+(show?(face?"f":"b"+(s.drew===null?"":s.drew)):"n");
     if(sc.dataset.k!==key){sc.dataset.k=key;sc.innerHTML=show?(face?s.cards.map(function(c){return cardStatic(c,"xs",DWH.vals&&DWH.winners[i]?"w5":"");}).join(""):"<div class='pc xs back'></div><div class='pc xs back'></div><div class='pc xs back'></div><div class='pc xs back'></div><div class='pc xs back'></div>"):"";}
     var mood=DWH.done&&DWH.winners[i]?"win":DWH.done&&DWH.showdown&&s&&!s.folded?"sad":"";setHTML(el.querySelector(".av"),p.name+"|"+mood,avatarFor(p,mood));el.querySelector(".av").className="av "+p.skill;
-    setText(el.querySelector(".nm"),p.name);setText(el.querySelector(".stk"),money(p.stack));
+    setText(el.querySelector(".nm"),p.name);setText(el.querySelector(".stk"),money(p.stack));setText(el.querySelector(".hud"),dwHudTxt(p));
     setText(el.querySelector(".tag"),DWH.done&&DWH.winners[i]?"Wins "+money(DWH.winners[i]):s?s.label:"");
     var bet=s&&s.sb>0&&!DWH.done?s.sb:0;setHTML(el.querySelector(".betw"),"b"+bet,bet?"<span class='bet'>"+chipPile(bet)+"<b>"+money(bet)+"</b></span>":"");}
   var dp=DEALERPOS[DW.button],de=$("dw-dealer");de.style.left=dp.left;de.style.top=dp.top;
@@ -2825,9 +2882,9 @@ function dwRender(){if(!DW||!DWH)return;
   setText($("dw-hsub"),hs?handName(evaluate(hs.cards))+(hs.drew!==null&&hs.drew!==undefined?" \u00b7 "+(hs.drew?"drew "+hs.drew:"stood pat"):""):"");
   setText($("dw-hact"),hs?(DWH.done&&DWH.winners[0]?"You win "+money(DWH.winners[0]):hs.label):"");
   var hcls="hero glass";if(!DWH.done&&DWH.toAct===0&&hs&&!hs.folded)hcls+=" turn";if(DWH.done&&DWH.winners[0])hcls+=" win";$("dw-hero").className=hcls;
-  var st=dwStake(DW.stake);$("dw-info").innerHTML="<b>"+st.title+"</b> \u00b7 Hand "+(DW.handNo+(DWH.done?0:1))+"<br>"+st.n+" \u00b7 one draw";}
+  var st=dwStake(DW.stake);$("dw-info").innerHTML="<b>"+st.title+"</b> \u00b7 Hand "+(DW.handNo+(DWH.done?0:1))+"<br>"+st.n+(DWH.jacks?" \u00b7 jacks to open":" \u00b7 one draw");}
 function dwControls(){var c=$("dw-controls");if(!DWH)return c.innerHTML="";
-  if(DWH.done){c.innerHTML="<div class='actions one'><button class='btn brass' id='dw-next'>Deal next hand</button></div>";$("dw-next").onclick=dwStart;return;}
+  if(DWH.done){c.innerHTML=dwCoachHTML()+"<div class='actions one'><button class='btn brass' id='dw-next'>Deal next hand</button></div>";$("dw-next").onclick=dwStart;if($("dwck-ok"))$("dwck-ok").onclick=function(){DWH.coach=null;dwControls();};return;}
   var hs=DWH.s[0];if(!hs||hs.folded||DWH.toAct!==0||(DWH.street===1&&hs.drew!==null)){c.innerHTML="<div class='waiting glass'>"+(hs&&hs.folded?"You folded. <button class='btn ghost pill' id='dw-skip'>Next hand</button>":"Waiting on "+(DW.players[DWH.toAct]?DW.players[DWH.toAct].name:"the table")+"...")+"</div>";
     if($("dw-skip"))$("dw-skip").onclick=function(){dwFastFinish();};return;}
   if(DWH.street===1){var n=Object.keys(DW_SEL).length,best=dwBestDiscard(hs.cards);
@@ -2835,7 +2892,7 @@ function dwControls(){var c=$("dw-controls");if(!DWH)return c.innerHTML="";
     $("dw-hint").onclick=function(){DW_SEL={};best.d.forEach(function(k){DW_SEL[k]=1;});dwRender();dwControls();var t=$("dw-hinttxt");if(t)t.hidden=false;};
     $("dw-go").onclick=function(){dwDoDraw(0,Object.keys(DW_SEL).map(Number));};return;}
   var L=dwLegal(0),pot=dwPot();
-  c.innerHTML="<div class='actions'><button class='btn ghost' id='dw-f'>"+(L.toCall?"Fold":"Check")+"</button>"+(L.toCall?"<button class='btn primary' id='dw-c'>Call "+money(Math.min(L.toCall,DW.players[0].stack))+"</button>":"<button class='btn primary' id='dw-c2'>Check</button>")+(L.canRaise?"<button class='btn b-raise' id='dw-r'>"+(DWH.cur>0?"Raise":"Bet")+"</button>":"")+"</div><div id='dw-rz' hidden></div>"+(L.toCall?"<div class='muted' style='font-size:.8rem;text-align:center;margin-top:4px'>Pot odds: you need to win "+p1(L.toCall/(pot+L.toCall))+" to call.</div>":"");
+  c.innerHTML="<div class='actions'><button class='btn ghost' id='dw-f'>"+(L.toCall?"Fold":"Check")+"</button>"+(L.toCall?"<button class='btn primary' id='dw-c'>Call "+money(Math.min(L.toCall,DW.players[0].stack))+"</button>":"<button class='btn primary' id='dw-c2'>Check</button>")+(L.canRaise?"<button class='btn b-raise' id='dw-r'>"+(DWH.cur>0?"Raise":"Bet")+"</button>":"")+"</div><div id='dw-rz' hidden></div>"+(L.noOpen?"<div class='muted' style='font-size:.8rem;text-align:center;margin-top:4px'>You need jacks or better to open the betting.</div>":"")+(L.toCall?"<div class='muted' style='font-size:.8rem;text-align:center;margin-top:4px'>Pot odds: you need to win "+p1(L.toCall/(pot+L.toCall))+" to call.</div>":"");
   $("dw-f").onclick=function(){dwAct(0,L.toCall?"fold":"check");};if($("dw-c"))$("dw-c").onclick=function(){dwAct(0,"call");};if($("dw-c2"))$("dw-c2").onclick=function(){dwAct(0,"check");};
   if($("dw-r"))$("dw-r").onclick=function(){var rz=$("dw-rz"),amt=L.minTo,pre=[["Min",L.minTo],["Half pot",DWH.cur+0.5*(pot+L.toCall)],["Pot",DWH.cur+(pot+L.toCall)],["All in",L.maxTo]];
     rz.hidden=false;rz.innerHTML="<div class='presets'>"+pre.map(function(x){return "<button class='mini' data-pv='"+Math.round(Math.max(L.minTo,Math.min(L.maxTo,x[1])))+"'>"+x[0]+"</button>";}).join("")+"</div><div style='text-align:center;font-weight:800;margin:6px 0' id='dw-amt'></div><div class='actions one'><button class='btn brass' id='dw-ok'>Confirm</button></div>";
@@ -2848,17 +2905,264 @@ function renderDrawTab(){var st=dwStats(),here=S.draw;
     return "<div class='panel glass ev"+(lock?" locked":"")+"'>"+evArt(s.art,s.n)+"<div class='evtop'><div style='min-width:0'><div class='venue'>"+s.venue+"</div><h2>"+s.title+"</h2></div><div class='tier'>"+s.buy/s.bb+" bb</div></div>"+
       "<div class='evmeta'>Players: "+s.arch.map(function(k){return ARCH[k].n.toLowerCase();}).join(", ")+"</div><div class='row'>"+(cur?"<button class='btn brass' data-dwr='"+s.id+"'>Resume, "+money(here.players[0].stack)+" in chips</button>":other?"<div class='lock'>You're seated at "+dwStake(here.stake).title+"</div>":lock?"<div class='lock'>Need "+money(s.buy)+" in your bankroll</div>":"<button class='btn primary' data-dws='"+s.id+"'>Sit down, buy in "+money(s.buy)+"</button>")+"</div></div>";}).join("");
   $("l-body").innerHTML="<div class='themehead' style=\"background:"+ART.anchor[0]+"\"><svg viewBox='0 0 120 70' aria-hidden='true'><g transform='translate(10 8)'>"+[0,1,2,3,4].map(function(k){return "<rect x='"+(k*18)+"' y='"+(Math.abs(2-k)*3)+"' width='24' height='34' rx='3' fill='#f4f1ea' stroke='#333' stroke-width='.8' transform='rotate("+((k-2)*8)+" "+(k*18+12)+" 40)'/>";}).join("")+"</g><text x='60' y='66' text-anchor='middle' font-size='9' font-weight='800' fill='#e9d7b0' font-family='sans-serif'>ONE DRAW</text></svg><div><div class='venue'>The old-school game</div><h2>5-card draw</h2></div></div>"+
-    "<div class='carhead'><h3>Tables</h3><span>Swipe for more \u2192</span></div><div class='carousel'>"+cards+"</div>"+
+    "<div class='carhead'><h3>Tables</h3><span>Swipe for more \u2192</span></div><div class='carousel'>"+cards+"</div>"+dwDrillsHTML()+dwOptsHTML()+dwSessHTML()+
     (st.hands?"<div class='panel glass'><h2>Your draw results</h2><p style='font-size:.92rem'>"+st.hands+" hands, "+(st.net>=0?"+":"\u2212")+money(Math.abs(st.net))+". Won "+Math.round(st.won/st.hands*100)+"% of hands"+(st.sd?", "+Math.round(st.sdw/st.sd*100)+"% at showdown":"")+".</p></div>":"")+
     dwGuideHTML();
   $("l-body").querySelectorAll("[data-dws]").forEach(function(b){b.onclick=function(){dwSit(b.dataset.dws,false);};});
+  $("l-body").querySelectorAll("[data-dwo]").forEach(function(b){b.onclick=function(){var k=b.dataset.dwo;S.settings[k]=!dwOpt(k);save();renderDrawTab();};});
+  if($("dwd-1"))$("dwd-1").onclick=dwDrillDraw;if($("dwd-2"))$("dwd-2").onclick=dwDrillRead;
   $("l-body").querySelectorAll("[data-dwr]").forEach(function(b){b.onclick=function(){dwSit(b.dataset.dwr,true);};});}
+
+/* ===== draw options: jacks or better, coach, stats, sessions, drills ===== */
+function dwOpt(k){var d={dwJacks:false,dwCoach:true,dwHud:true,dwSess:true,dwDrills:true};return S.settings[k]===undefined?d[k]:!!S.settings[k];}
+function dwQual(cs){var v=evaluate(cs),c=catOf(v);if(c>=2)return true;if(c!==1)return false;var cnt={};cs.forEach(function(x){cnt[x>>2]=(cnt[x>>2]||0)+1;});return +Object.keys(cnt).find(function(k){return cnt[k]===2;})>=9;}
+function dwThreat(i){var t=0;dwLive().forEach(function(j){if(j===i)return;var d=DWH.s[j].drew;t=Math.max(t,d===0?0.18:d===1?0.06:d===2?0.1:-0.04);});return t;}
+function dwAdvice(i){var s=DWH.s[i],L=dwLegal(i),pot=dwPot(),pos=(i-DW.button+6)%6;
+  if(DWH.street===0){var st=dwStrength(s.cards),di=dwDrawInfo(s.cards),drawy=di.flush||di.oe;if(drawy&&st<0.4)st=Math.max(st,di.flush?0.44:0.4);
+    if(DWH.jacks&&DWH.cur===0)return dwQual(s.cards)?(st>=0.5?{a:"raise",e:st,why:"You have openers (jacks or better). Open with a bet."}:{a:"check",e:st,why:"You can open, but a small pair of jacks plays better as a check from early seats."}):{a:"check",e:st,why:"You need jacks or better to open, so check."};
+    var thr=0.5-(pos===0?0.06:pos===5?0.03:0);
+    if(DWH.raises===0){if(st>=thr)return {a:"raise",e:st,why:"Strong enough to open: about a pair of 9s or better"+(pos===0?" (the button can open a bit lighter)":"")+". Raise to about 3 big blinds."};
+      if(L.toCall===0)return {a:"check",e:st,why:"Not strong enough to raise. Take the free draw."};
+      if(drawy&&L.toCall<=DW.bb)return {a:"call",e:st,why:"A four-card flush or straight draw can see a cheap draw."};
+      return {a:"fold",e:st,why:"Too weak to play: small pairs and high cards lose to the hands that open."};}
+    var cThr=0.6+(DWH.raises>1?0.1:0);if(st>=0.8)return {a:"raise",e:st,why:"Two pair or better before the draw. Reraise."};
+    if(st>=cThr||(drawy&&L.toCall<=pot*0.2))return {a:"call",e:st,why:st>=cThr?"Good enough to call a raise: about a pair of queens or better.":"A cheap price for a flush or straight draw."};
+    return {a:"fold",e:st,why:"A raise before the draw usually means jacks or better, often two pair. This hand is behind."};}
+  var mine=dwStrength(s.cards),th=dwThreat(i),e2=mine-th*0.6,need=L.toCall?L.toCall/(pot+L.toCall):0,pat=dwLive().some(function(j){return j!==i&&DWH.s[j].drew===0;});
+  var ctx=pat?" Someone stood pat, which usually means a straight or better.":"";
+  if(L.toCall===0)return e2>=0.55?{a:"raise",e:e2,why:"Your hand is likely best. Bet for value."+ctx}:{a:"check",e:e2,why:"Not strong enough to bet into what they drew."+ctx};
+  if(e2>=0.85)return {a:"raise",e:e2,why:"Very strong. Raise."};
+  if(e2>=need+0.12)return {a:"call",e:e2,why:"You're getting a good enough price for how often you're ahead."+ctx};
+  return {a:"fold",e:e2,why:"Against what they drew and bet, you're behind too often for this price."+ctx};}
+function dwGrade(i,a,to){if(i!==0||!DWH)return;var A=dwAdvice(0),L=dwLegal(0),pot=dwPot(),bb=DW.bb,mine=a==="raise"?"raise":a,leak=null,cost=0;
+  var want=A.a;
+  if(want==="fold"&&(mine==="call"||mine==="raise")){leak=DWH.street===0?"Played a weak hand before the draw":"Called or raised behind";cost=DWH.street===0?bb:Math.max(0.3*bb,(0.12-(A.e-(L.toCall/(pot+L.toCall||1))))*(pot+L.toCall));}
+  else if((want==="call"||want==="raise")&&mine==="fold"){leak="Folded a hand worth playing";cost=Math.max(0.5*bb,(A.e-(L.toCall/(pot+L.toCall||1)))*(pot+L.toCall)*0.8);}
+  else if(want==="raise"&&mine==="check"&&DWH.street===0&&!(DWH.jacks&&!dwQual(DWH.s[0].cards))){leak="Didn't open a strong hand";cost=bb;}
+  else if(want==="raise"&&mine==="check"&&DWH.street===2){leak="Missed a value bet";cost=0.5*pot*0.4;}
+  else if(want==="check"&&mine==="raise"&&DWH.street===2&&A.e<0.35&&dwLive().some(function(j){return j!==0&&DWH.s[j].drew<=1;})){leak="Bluffed into a strong draw";cost=(to||pot*0.5)*0.5;}
+  else if(want==="check"&&mine==="raise"&&DWH.street===0&&A.e<0.42){leak="Opened too light";cost=bb;}
+  DWH.dec=DWH.dec||[];DWH.dec.push({st:DWH.street,act:a,advice:want,why:A.why,leak:leak,cost:cost/bb});}
+function dwGradeDraw(idxs){var hs=DWH.s[0],best=dwBestDiscard(hs.cards),leak=null;if(best.d.length!==idxs.length)leak=idxs.length>best.d.length?"Drew too many cards":"Kept cards that don't help";
+  DWH.dec=DWH.dec||[];DWH.dec.push({st:1,act:idxs.length?"drew "+idxs.length:"stood pat",advice:best.d.length?"Draw "+best.d.length:"Stand pat",why:best.why,leak:leak,cost:leak?0.8:0,cards:hs.cards.slice()});}
+function dwCoachPick(){var ds=(DWH.dec||[]).filter(function(d){return d.leak;});if(!ds.length)return null;return ds.sort(function(a,b){return b.cost-a.cost;})[0];}
+function dwCoachHTML(){var d=DWH&&DWH.coach;if(!d||!dwOpt("dwCoach"))return "";var st=["before the draw","at the draw","after the draw"][d.st]||"";
+  return "<div class='coach glass'><div style='display:flex;gap:8px;align-items:flex-start'><div style='flex:1;font-size:.9rem'><span class='ck'>Coach</span> "+d.leak+" "+st+". Better: <b>"+(d.advice==="raise"?(d.st===0?"Raise":"Bet"):d.advice.charAt(0).toUpperCase()+d.advice.slice(1))+"</b>, worth about "+(d.cost<1?d.cost.toFixed(1):Math.round(d.cost))+" big blind"+(d.cost>=1.5?"s":"")+".</div><button class='btn ghost pill' id='dwck-ok'>Got it</button></div><details style='margin:4px 0 0'><summary class='muted' style='font-size:.8rem'>Why</summary><div class='muted' style='font-size:.85rem'>"+d.why+"</div></details></div>";}
+/* opponent stats */
+function dwHudRec(n){DW.hud=DW.hud||{};return DW.hud[n]=DW.hud[n]||{h:0,vp:0,pr:0,dr:0,pat:0,tot:0};}
+function dwHudHand(){(DWH.seats||[]).forEach(function(i){if(i===0)return;var p=DW.players[i],r=dwHudRec(p.name),acts=(DWH.acts||[]).filter(function(e){return e.i===i&&e.st===0;}),s=DWH.s[i];r.h++;
+  if(acts.some(function(e){return e.a==="call"||e.a==="raise";}))r.vp++;if(acts.some(function(e){return e.a==="raise";}))r.pr++;if(s.drew!==null&&s.drew!==undefined){r.dr++;r.tot+=s.drew;if(s.drew===0)r.pat++;}});}
+function dwHudTxt(p){if(!dwOpt("dwHud")||!DW.hud)return "";var r=DW.hud[p.name];if(!r||r.h<5)return "";return Math.round(r.vp/r.h*100)+"/"+Math.round(r.pr/r.h*100)+(r.dr?" \u00b7 pat "+Math.round(r.pat/r.dr*100)+"%":"")+" \u00b7 "+r.h+"h";}
+function dwPlayer(i){var p=DW.players[i];if(!p||p.hero)return;var r=DW.hud&&DW.hud[p.name];
+  showModal("<div style='display:flex;gap:12px;align-items:center'><div class='pav'>"+avatarFor(p,"")+"</div><div><h2 style='margin:0'>"+p.name+"</h2><div class='muted'>"+(p.arch?ARCH[p.arch].n:SKILL_LABEL[p.skill])+" \u00b7 "+money(p.stack)+"</div></div></div>"+
+    (r&&r.h&&dwOpt("dwHud")?"<div class='tool'><div class='k'>Draw stats, "+r.h+" hands</div><div class='v' style='font-size:.9rem'>Plays "+Math.round(r.vp/r.h*100)+"% of hands and raises "+Math.round(r.pr/r.h*100)+"% before the draw."+(r.dr?" Stands pat "+Math.round(r.pat/r.dr*100)+"% of the time and draws "+(r.tot/r.dr).toFixed(1)+" cards on average.":"")+"</div></div>":"")+
+    "<div class='tool'><div class='k'>How they play</div><div class='v' style='font-size:.92rem;display:grid;gap:4px'>"+styleLong(p)+"</div></div>",[["Close",function(){},"ghost"]]);}
+/* sessions */
+function dwSessFinish(){var x=DW&&DW.sess;if(!x||x.hands<5||!dwOpt("dwSess"))return;S.dwSess=S.dwSess||[];
+  S.dwSess.unshift({d:today(),where:dwStake(DW.stake).title+(DW.jacksSess?", jacks or better":""),hands:x.hands,net:Math.round(x.net),bb100:+(x.net/DW.bb/x.hands*100).toFixed(1),q:x.dec?Math.round(x.good/x.dec*100):null,dec:x.dec,mins:Math.round((Date.now()-x.start)/60000)});if(S.dwSess.length>50)S.dwSess.length=50;save();}
+function dwSessHTML(){var L=S.dwSess||[];if(!dwOpt("dwSess"))return "";
+  return "<div class='panel glass'><div class='evtop'><div><div class='venue'>Every draw session</div><h2>Draw session history</h2></div></div>"+(L.length?L.slice(0,12).map(function(r){return "<div style='display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:.88rem'><span><b>"+r.d+"</b> \u00b7 "+r.where+" \u00b7 "+r.hands+" hands<br><span class='muted'>"+r.mins+" min"+(r.q===null?"":" \u00b7 play "+r.q+"%")+"</span></span><span style='text-align:right'><b style='color:"+(r.net>=0?"var(--good)":"var(--bad)")+"'>"+(r.net>=0?"+":"\u2212")+money(Math.abs(r.net))+"</b><br><span class='muted'>"+r.bb100+" bb/100</span></span></div>";}).join(""):"<p class='muted' style='font-size:.85rem'>Play at least 5 hands and cash out. Each session lands here with your results and play quality.</p>")+"</div>";}
+/* drills */
+function dwDealDrillHand(){for(var t=0;t<60;t++){var d=shuffle(Array.from({length:52},function(_,k){return k;})),h=d.slice(0,5),c=catOf(evaluate(h)),di=dwDrawInfo(h);if(c>=1||di.flush||di.oe||Math.random()<0.25)return h;}return d.slice(0,5);}
+function dwDrillDraw(){var h=dwDealDrillHand(),sel={},best=dwBestDiscard(h);
+  function view(el,done){el.querySelector("#ddh").innerHTML=h.map(function(c,k){return "<button class='dwc"+(sel[k]?" sel":"")+"' data-k='"+k+"'"+(done?" disabled":"")+">"+cardStatic(c,"lg",done&&best.d.indexOf(k)>=0?"":"")+(sel[k]?"<em class='dtag'>Discard</em>":"")+"</button>";}).join("");
+    if(!done)el.querySelectorAll("#ddh .dwc").forEach(function(b){b.onclick=function(){var k=+b.dataset.k;if(sel[k])delete sel[k];else{var ace=h.some(function(c,j){return (c>>2)===12&&!sel[j]&&j!==k;});if(Object.keys(sel).length>=(ace?4:3))return toast("Up to 3 cards, or 4 if you keep an ace.");sel[k]=1;}view(el,false);};});}
+  drillOpen("<h2>What to draw</h2><div class='muted' style='font-size:.85rem'>Tap the cards you'd throw away, then submit.</div><div id='ddh' style='display:flex;gap:4px;justify-content:center;margin:14px 0'></div><div id='dq'><button class='btn primary dopt' id='dd-go'>Submit</button></div>",function(el){view(el,false);
+    el.querySelector("#dd-go").onclick=function(){var mine=Object.keys(sel).map(Number),ok=mine.length===best.d.length;dstat("dwdraw",ok);view(el,true);
+      el.querySelector("#dq").innerHTML="<div class='dres "+(ok?"ok":"no")+"'>"+(ok?"Right.":"Best: "+(best.d.length?"draw "+best.d.length:"stand pat")+".")+"</div><p style='font-size:.92rem'>"+best.why+"</p><div class='row'><button class='btn primary' id='dn'>Next hand</button><button class='btn ghost' id='dx'>Done</button></div>";
+      el.querySelector("#dn").onclick=dwDrillDraw;el.querySelector("#dx").onclick=drillClose;};});}
+function dwDrillRead(){var ak=pick(["station","limper","nit","tag","maniac","lag"]),A=ARCH[ak],drew=pick([0,1,1,2,3,3]),h=null;
+  for(var t=0;t<80&&!h;t++){var d=shuffle(Array.from({length:52},function(_,k){return k;})),x=d.slice(0,5),c=catOf(evaluate(x));if(c>=1&&c<=4)h=x;}
+  var pot=pick([30,40,60,80]),bet=Math.round(pot*pick([0.5,0.66,1])),mine=dwStrength(h),th=drew===0?0.18:drew===1?0.06:drew===2?0.1:-0.04,adj=A.st.agg>=1.4?-0.06:A.st.agg<=0.7?0.06:0,e2=mine-(th+adj)*0.6,need=bet/(pot+2*bet),ans=e2>=need+0.12?"Call":"Fold";
+  var desc=drew===0?"stood pat":drew===1?"drew one card":drew===2?"drew two cards":"drew three cards";
+  drillOpen("<h2>Read the draw</h2><div class='muted' style='font-size:.85rem'>After the draw. Your opponent is a <b>"+A.n.toLowerCase()+"</b>. They "+desc+", then bet $"+bet+" into a $"+pot+" pot.</div><div style='display:flex;gap:4px;justify-content:center;margin:12px 0'>"+h.map(function(c){return cardStatic(c,"sm");}).join("")+"</div><div class='muted' style='text-align:center'>You have "+handName(evaluate(h))+".</div><div id='dq'>"+["Fold","Call"].map(function(o){return "<button class='btn ghost dopt' data-o='"+o+"'>"+o+"</button>";}).join("")+"</div>",function(el){
+    el.querySelectorAll("[data-o]").forEach(function(b){b.onclick=function(){var ok=b.dataset.o===ans;dstat("dwread",ok);
+      el.querySelector("#dq").innerHTML="<div class='dres "+(ok?"ok":"no")+"'>"+(ok?"Right.":"Best play: "+ans+".")+"</div><p style='font-size:.92rem'>"+(drew===0?"Standing pat usually means a straight or better.":drew===1?"Drawing one is two pair or a flush or straight draw. If they bet big, the draw likely hit or they have two pair.":drew===2?"Drawing two usually means three of a kind.":"Drawing three means one pair, so two pair or better is usually ahead.")+" "+(A.st.agg>=1.4?"This player bluffs a lot, so call a little lighter.":A.st.agg<=0.7?"This player rarely bets without it.":"")+" You need to win "+Math.round(need*100)+"% to call.</p><div class='row'><button class='btn primary' id='dn'>Next spot</button><button class='btn ghost' id='dx'>Done</button></div>";
+      el.querySelector("#dn").onclick=dwDrillRead;el.querySelector("#dx").onclick=drillClose;};});});}
+function dwOptsHTML(){var row=function(k,t,d){return "<div class='toggle' style='border-top:0;margin-top:0'><div><b>"+t+"</b><div class='muted' style='font-size:.85rem'>"+d+"</div></div><button class='switch' role='switch' aria-checked='"+dwOpt(k)+"' data-dwo='"+k+"' aria-label='"+t+"'></button></div>";};
+  return "<div class='panel glass'><div class='evtop'><div><div class='venue'>Turn these on or off</div><h2>Draw options</h2></div></div>"+
+    row("dwJacks","Jacks or better to open","Classic home rule: everyone antes, and you need a pair of jacks or better to bet first. If nobody opens, the pot carries to the next hand.")+
+    row("dwCoach","After-hand coach","Shows your biggest mistake when a hand ends.")+
+    row("dwHud","Opponent stats on seats","How often each player plays, raises, and stands pat.")+
+    row("dwSess","Track sessions","Saves each draw session with results and play quality.")+
+    row("dwDrills","Draw drills","What to draw, and reading what opponents drew.")+"</div>";}
+function dwDrillsHTML(){if(!dwOpt("dwDrills"))return "";return "<div class='panel glass'><div class='evtop'><div><div class='venue'>Practice</div><h2>Draw drills</h2></div></div><div class='dhub'><button class='dbtn' id='dwd-1'><b>What to draw</b><span>Pick your discards. "+dpct("dwdraw")+"</span></button><button class='dbtn' id='dwd-2'><b>Read the draw</b><span>Call or fold from what they drew. "+dpct("dwread")+"</span></button></div></div>";}
 
 function dwGuideHTML(){return "<div class='panel glass'><div class='evtop'><div><div class='venue'>Quick guide</div><h2>How draw works</h2></div></div><ol style='font-size:.9rem;padding-left:1.2em'><li>Everyone gets five cards face down. Blinds are posted like hold\u2019em.</li><li>A round of betting.</li><li>The draw: discard up to 3 cards (4 if you keep an ace) and get new ones.</li><li>A second round of betting, then the best five-card hand wins.</li></ol>"+
     "<details><summary><b>What to draw</b></summary><table class='gt'><tr><th>You have</th><th>Draw</th><th>Chance to improve</th></tr><tr><td>One pair</td><td>3</td><td>29%</td></tr><tr><td>Two pair</td><td>1</td><td>8.5% (full house)</td></tr><tr><td>Three of a kind</td><td>2</td><td>10%</td></tr><tr><td>Four to a flush</td><td>1</td><td>19%</td></tr><tr><td>Open-ended straight draw</td><td>1</td><td>17%</td></tr><tr><td>Inside straight draw</td><td>1</td><td>8.5%</td></tr></table></details>"+
     "<details><summary><b>Reading the draw</b></summary><ul style='font-size:.9rem;padding-left:1.1em'><li><b>Stood pat:</b> a straight or better, or a bluff. Respect it from careful players.</li><li><b>Drew 1:</b> two pair, or a flush or straight draw that may have missed.</li><li><b>Drew 2:</b> usually three of a kind.</li><li><b>Drew 3:</b> one pair. Two pair beats most of these.</li><li><b>Drew 4:</b> an ace and hope.</li></ul></details>"+
     "<details><summary><b>Before the draw</b></summary><p style='font-size:.9rem'>Open with jacks or better from early seats, and a pair of 8s or better from the button. Small pairs and draws are calls, not raises. A raise before the draw usually means two pair or better.</p></details></div>";}
 function dwHelp(){showModal(dwGuideHTML().replace("panel glass","")+"",[["Back to the table",function(){},"brass"]]);}
+
+/* ===== blackjack ===== */
+var BJT=[
+ {id:"bj1",n:"Riverboat 21",min:10,max:500,decks:6,h17:false,bjPay:1.5,surr:true,das:true,pen:0.75,venue:"Paddlewheel casino, main floor",art:"river",look:{table:"vegas",atm:"riverboat"}},
+ {id:"bj2",n:"Strip Shoe",min:25,max:1000,decks:6,h17:true,bjPay:1.5,surr:false,das:true,pen:0.72,venue:"Neon pit off the Strip",art:"downtown",look:{table:"neon",atm:"vegas"}},
+ {id:"bj3",n:"Double Deck Pit",min:50,max:2000,decks:2,h17:true,bjPay:1.5,surr:false,das:true,pen:0.65,venue:"Hand-pitched double deck, desert casino",art:"desert",look:{table:"desert",atm:"desert"}},
+ {id:"bj4",n:"High Limit Salon",min:100,max:5000,decks:6,h17:false,bjPay:1.5,surr:true,das:true,pen:0.8,venue:"Velvet ropes, quiet room",art:"main",look:{table:"onyx",atm:"penthouse"}},
+ {id:"bj5",n:"Tourist Trap 6:5",min:5,max:200,decks:8,h17:true,bjPay:1.2,surr:false,das:true,pen:0.7,venue:"Bright lights, bad rules",art:"casino12",look:{table:"vegas",atm:"casino"}}];
+function bjEdge(t){var e=0.42+(t.h17?0.2:0)+(t.surr?0:0.08)+(t.bjPay<1.5?1.39:0)+(t.decks===2?-0.19:t.decks===8?0.02:0)+(t.das?0:0.14);return e;}
+function bjOpt(k){var d={bjCount:true,bjQuiz:true,bjCoach:true,bjDev:false,bjSess:true,bjDrills:true};return S.settings[k]===undefined?d[k]:!!S.settings[k];}
+function bjStats(){return S.bjStats=S.bjStats||{hands:0,net:0,wag:0,bs:0,bsOk:0,cq:0,cqOk:0,bjs:0};}
+var BJ=null,BR=null,BJ_Q=[],BJ_QT=null;
+function bjV(c){var r=c>>2;return r===12?11:r>=8?10:r+2;}
+function bjHL(c){var r=c>>2;return r<=4?1:r<=7?0:-1;}
+function bjTot(cs){var t=0,a=0;cs.forEach(function(c){var v=bjV(c);t+=v;if(v===11)a++;});while(t>21&&a){t-=10;a--;}return {t:t,soft:a>0};}
+function bjIsBJ(h){return h.cards.length===2&&bjTot(h.cards).t===21&&!h.fromSplit;}
+function bjTC(){var left=BJ.shoe.length/52;return left>0.25?BJ.rc/left:BJ.rc/0.25;}
+function bjNewShoe(){var t=bjT(),sh=[];for(var d=0;d<t.decks;d++)for(var k=0;k<52;k++)sh.push(k);BJ.shoe=shuffle(sh);BJ.cut=Math.round(sh.length*(1-t.pen));BJ.rc=0;BJ.discards=0;BJ.shuffles=(BJ.shuffles||0)+1;}
+function bjT(){return BJT.find(function(x){return x.id===BJ.table;})||BJT[0];}
+function bjDraw(face){if(!BJ.shoe.length)bjNewShoe();var c=BJ.shoe.pop();if(face)BJ.rc+=bjHL(c);return c;}
+/* basic strategy, multi-deck, double after split */
+function bjBS(cs,up,can,t,tc){var u=bjV(up)===11?11:bjV(up),T=bjTot(cs),n=cs.length,pair=n===2&&bjV(cs[0])===bjV(cs[1]),dev=tc!==undefined&&tc!==null;
+  var D=function(){return can.dbl?"double":"hit";},Ds=function(){return can.dbl?"double":"stand";};
+  if(can.surr&&n===2&&!T.soft&&!pair){if(T.t===16&&(u>=9)&&!(dev&&u===9&&tc>=5)&&!(dev&&u===10&&tc>=0&&false))return "surrender";if(T.t===15&&u===10)return "surrender";if(t.h17&&(T.t===15||T.t===17)&&u===11)return "surrender";}
+  if(pair&&can.split){var r=bjV(cs[0]);
+    if(r===11||r===8)return "split";if(r===10){if(dev&&((u===5&&tc>=5)||(u===6&&tc>=4)))return "split";return "stand";}
+    if(r===9)return (u<=9&&u!==7)?"split":"stand";if(r===7&&u<=7)return "split";if(r===6&&u<=6)return "split";if(r===4&&(u===5||u===6))return "split";if((r===3||r===2)&&u<=7)return "split";}
+  if(T.soft&&T.t<=21){var s=T.t;if(s>=20)return "stand";if(s===19)return (t.h17&&u===6)?Ds():"stand";if(s===18)return u<=6&&u>=(t.h17?2:3)?Ds():u<=8?"stand":"hit";
+    if(s===17)return u>=3&&u<=6?D():"hit";if(s===16||s===15)return u>=4&&u<=6?D():"hit";return u>=5&&u<=6?D():"hit";}
+  var h=T.t;
+  if(dev){if(h===16&&u===10&&tc>=0)return "stand";if(h===15&&u===10&&tc>=4)return "stand";if(h===16&&u===9&&tc>=5)return "stand";if(h===12&&u===3&&tc>=2)return "stand";if(h===12&&u===2&&tc>=3)return "stand";
+    if(h===13&&u===2&&tc<=-1)return "hit";if(h===12&&u===4&&tc<=0)return "hit";if(h===12&&u===5&&tc<=-2)return "hit";if(h===12&&u===6&&tc<=-1)return "hit";if(h===13&&u===3&&tc<=-2)return "hit";
+    if(h===10&&(u===10||u===11)&&tc>=4)return D();if(h===11&&u===11&&tc>=1)return D();if(h===9&&u===2&&tc>=1)return D();if(h===9&&u===7&&tc>=3)return D();}
+  if(h>=17)return "stand";if(h>=13)return u<=6?"stand":"hit";if(h===12)return u>=4&&u<=6?"stand":"hit";
+  if(h===11)return (u===11&&!t.h17)?"hit":D();if(h===10)return u<=9?D():"hit";if(h===9)return u>=3&&u<=6?D():"hit";return "hit";}
+function bjWhy(cs,up,a){var T=bjTot(cs),u=bjV(up)===11?"an ace":bjV(up)===10?"a 10":bjV(up),pair=cs.length===2&&bjV(cs[0])===bjV(cs[1]);
+  var hand=pair?"a pair of "+(bjV(cs[0])===11?"aces":bjV(cs[0])+"s"):(T.soft?"soft ":"hard ")+T.t;return "With "+hand+" against "+u+", basic strategy says "+a+".";}
+/* table */
+function bjSit(id){var t=BJT.find(function(x){return x.id===id;});if(S.bankroll<t.min*5)return toast("You need at least "+money(t.min*5)+" to play this table.");
+  var names=[],seats=[];for(var k=0;k<5;k++){if(k===2){seats.push("hero");continue;}if(Math.random()<0.55){var nm;do{nm=pick(NAMES);}while(names.indexOf(nm)>=0);names.push(nm);seats.push({name:nm,skill:pick(["beginner","regular"]),bet:t.min*pick([1,1,2,3])});}else seats.push(null);}
+  BJ={table:id,seats:seats,handNo:0,bet:t.min,two:false,sess:{start:Date.now(),hands:0,net:0,bs:0,bsOk:0}};bjNewShoe();BR=null;bjEnter();}
+function bjEnter(){$("lobby").hidden=true;$("game").hidden=true;$("draw").hidden=true;$("bj").hidden=false;window.scrollTo({top:0});var t=bjT(),T=byId(TABLES,t.look.table)||TABLES[0],a=byId(ATMOS,t.look.atm)||ATMOS[0];if(!okItem(T))T=TABLES[0];if(!okItem(a))a=ATMOS[0];
+  var atm=$("atm");atm.style.background=a.bg;atm.className=a.fx?"fx-"+a.fx:"";$("bj-feltbg").style.background=T.bg;$("bj-feltbg").style.boxShadow=T.sh;$("bj-felt").style.setProperty("--felt-text",T.text||"#EEF5F0");
+  $("bj-rules").textContent="PAYS "+(t.bjPay===1.5?"3 TO 2":"6 TO 5")+" \u00b7 "+(t.h17?"HITS":"STANDS")+" SOFT 17";bjRender();bjControls();}
+function bjQ(fn,ms){BJ_Q.push([fn,ms]);if(!BJ_QT)bjRunQ();}
+function bjRunQ(){if(!BJ_Q.length){BJ_QT=null;return;}var x=BJ_Q.shift(),sp={slow:1.4,normal:1,fast:0.45}[S.settings.speed]||1;BJ_QT=setTimeout(function(){x[0]();bjRunQ();},Math.round(x[1]*sp));}
+function bjDeal(){if(BR&&BR.phase!=="done")return;var t=bjT(),n=BJ.two?2:1,need=BJ.bet*n;if(BJ.bet<t.min||BJ.bet>t.max)return toast("Bet between "+money(t.min)+" and "+money(t.max)+".");if(S.bankroll<need)return toast("Not enough in your bankroll.");
+  if(bjOpt("bjQuiz")&&BJ.handNo>0&&BJ.handNo%5===0&&!BJ.quizzed){BJ.quizzed=true;return bjQuiz();}BJ.quizzed=false;
+  if(BJ.shoe.length<=BJ.cut){bjNewShoe();toast("Cut card reached. New shoe, count resets to 0.");}
+  S.bankroll-=need;var spots=[];BJ.seats.forEach(function(s,k){if(s==="hero"){for(var j=0;j<n;j++)spots.push({k:k,hero:true,hands:[{cards:[],bet:BJ.bet}]});}else if(s)spots.push({k:k,bot:s,hands:[{cards:[],bet:s.bet}]});});
+  BR={phase:"deal",spots:spots,dealer:[],holeUp:false,cur:0,hi:0,ins:0,msg:""};save();
+  for(var r=0;r<2;r++){spots.forEach(function(sp){bjQ(function(){sp.hands[0].cards.push(bjDraw(true));sfx("deal");bjRender();},220);});bjQ(function(){BR.dealer.push(bjDraw(BR.dealer.length===0));sfx("deal");bjRender();},220);}
+  bjQ(function(){bjAfterDeal();},250);bjRender();bjControls();}
+function bjAfterDeal(){var up=BR.dealer[0];
+  if(bjV(up)===11&&BR.spots.some(function(s){return s.hero;})){BR.phase="insurance";BR.msg="Dealer shows an ace. Insurance?";bjRender();bjControls();return;}
+  bjPeek();}
+function bjPeek(){var up=BR.dealer[0],dv=bjV(up);if((dv===11||dv===10)&&bjTot(BR.dealer).t===21){BR.holeUp=true;BJ.rc+=bjHL(BR.dealer[1]);BR.msg="Dealer has blackjack.";return bjSettle();}
+  if(dv===11||dv===10)BR.msg="Dealer checks for blackjack. No blackjack.";BR.phase="play";BR.cur=-1;bjNextHand();}
+function bjCurHand(){var sp=BR.spots[BR.cur];return sp?sp.hands[BR.hi]:null;}
+function bjNextHand(){var sp=BR.spots[BR.cur];if(sp){var nh=BR.hi+1;if(nh<sp.hands.length){BR.hi=nh;return bjBeginHand();}}BR.cur++;BR.hi=0;if(BR.cur>=BR.spots.length)return bjDealerPlay();bjBeginHand();}
+function bjBeginHand(){var sp=BR.spots[BR.cur],h=sp.hands[BR.hi],t=bjT();if(h.cards.length<2){h.cards.push(bjDraw(true));sfx("deal");}
+  if(bjIsBJ(h)||bjTot(h.cards).t>=21||(h.aceSplit&&!t.rsa)){h.done=true;bjRender();return bjQ(bjNextHand,300);}
+  bjRender();if(sp.hero){BR.phase="play";bjControls();sfx("turn");return;}
+  bjQ(function(){bjBotStep();},450);}
+function bjCan(sp,h){var t=bjT(),two=h.cards.length===2,pairOK=two&&bjV(h.cards[0])===bjV(h.cards[1])&&sp.hands.length<4,bank=sp.hero?S.bankroll>=h.bet:true;
+  return {dbl:two&&bank&&(!h.fromSplit||t.das),split:pairOK&&bank,surr:t.surr&&two&&!h.fromSplit&&sp.hands.length===1};}
+function bjBotStep(){var sp=BR&&BR.spots[BR.cur],h=sp&&sp.hands[BR.hi];if(!h||sp.hero||BR.phase!=="play")return;bjDo(bjBS(h.cards,BR.dealer[0],bjCan(sp,h),bjT()));}
+function bjDo(a){if(!BR||BR.phase!=="play")return;var sp=BR.spots[BR.cur],h=sp&&sp.hands[BR.hi],t=bjT();if(!h||h.done)return;
+  if(sp.hero){var can=bjCan(sp,h),best=bjBS(h.cards,BR.dealer[0],can,t,bjOpt("bjDev")?bjTC():null),st=bjStats();st.bs++;BJ.sess.bs++;if(a===best){st.bsOk++;BJ.sess.bsOk++;}else if(bjOpt("bjCoach")){BR.coach={you:a,best:best,why:bjWhy(h.cards,BR.dealer[0],best)};}}
+  if(a==="hit"){h.cards.push(bjDraw(true));sfx("deal");if(bjTot(h.cards).t>=21){h.done=true;bjRender();return bjQ(bjNextHand,350);}bjRender();if(sp.hero){bjControls();return;}return bjQ(bjBotStep,450);}
+  if(a==="stand"){h.done=true;bjRender();return bjQ(bjNextHand,200);}
+  if(a==="double"){if(sp.hero)S.bankroll-=h.bet;h.bet*=2;h.doubled=true;h.cards.push(bjDraw(true));sfx("chip");h.done=true;bjRender();return bjQ(bjNextHand,400);}
+  if(a==="surrender"){h.surr=true;h.done=true;bjRender();return bjQ(bjNextHand,250);}
+  if(a==="split"){if(sp.hero)S.bankroll-=h.bet;var c2=h.cards.pop(),ace=bjV(c2)===11,nh={cards:[c2],bet:h.bet,fromSplit:true,aceSplit:ace};h.fromSplit=true;h.aceSplit=ace;sp.hands.splice(BR.hi+1,0,nh);h.cards.push(bjDraw(true));sfx("deal");
+    if(ace&&!t.rsa){h.done=true;bjRender();return bjQ(bjNextHand,350);}if(bjTot(h.cards).t>=21){h.done=true;bjRender();return bjQ(bjNextHand,350);}bjRender();if(sp.hero){bjControls();return;}return bjQ(bjBotStep,450);}}
+function bjDealerPlay(){BR.phase="dealer";BR.holeUp=true;BJ.rc+=bjHL(BR.dealer[1]);bjRender();bjControls();var t=bjT();
+  var live=BR.spots.some(function(sp){return sp.hands.some(function(h){return !h.surr&&bjTot(h.cards).t<=21&&!bjIsBJ(h);});});
+  function step(){var T=bjTot(BR.dealer);if(live&&(T.t<17||(t.h17&&T.t===17&&T.soft))){BR.dealer.push(bjDraw(true));sfx("deal");bjRender();bjQ(step,500);}else bjQ(bjSettle,400);}
+  bjQ(step,450);}
+function bjSettle(){var t=bjT(),D=bjTot(BR.dealer).t,dbj=BR.dealer.length===2&&D===21,net=0,st=bjStats();BR.holeUp=true;
+  BR.spots.forEach(function(sp){sp.hands.forEach(function(h){var P=bjTot(h.cards).t,pay=0,res;
+    if(h.surr){pay=h.bet/2;res="Surrender";}
+    else if(bjIsBJ(h)&&!dbj){pay=h.bet+h.bet*t.bjPay;res="Blackjack";}
+    else if(dbj){pay=bjIsBJ(h)?h.bet:0;res=bjIsBJ(h)?"Push":"Lose";}
+    else if(P>21){pay=0;res="Bust";}else if(D>21||P>D){pay=h.bet*2;res="Win";}else if(P===D){pay=h.bet;res="Push";}else{pay=0;res="Lose";}
+    h.res=res;h.pay=pay;if(sp.hero){S.bankroll+=pay;net+=pay-h.bet;st.wag+=h.bet;if(res==="Blackjack")st.bjs++;}});});
+  if(BR.ins){if(dbj){S.bankroll+=BR.ins*3;net+=BR.ins*2;}else net-=BR.ins;}
+  if(BR.spots.some(function(s){return s.hero;})){st.hands++;st.net+=net;BJ.sess.hands++;BJ.sess.net+=net;}
+  BR.net=net;BR.phase="done";BJ.handNo++;BR.msg=(dbj?"Dealer blackjack. ":D>21?"Dealer busts with "+D+". ":"Dealer has "+D+". ")+(net>0?"You win "+money(net)+".":net<0?"You lose "+money(-net)+".":"Push.");
+  if(net>0){sfx("win");buzz([30,40,30]);}save();bjRender();bjControls();
+  bjQ(function(){if(!BR||BR.phase!=="done")return;var cnt=BR.dealer.length;BR.spots.forEach(function(sp){sp.hands.forEach(function(h){cnt+=h.cards.length;});});BJ.discards+=cnt;},10);}
+function bjInsurance(take){if(!BR||BR.phase!=="insurance")return;BR.phase="peek";bjControls();if(take){var cost=Math.floor(BJ.bet/2);if(S.bankroll>=cost){S.bankroll-=cost;BR.ins=cost;}}var st=bjStats(),tc=bjTC(),right=bjOpt("bjDev")?(tc>=3):false;st.bs++;BJ.sess.bs++;if(take===right){st.bsOk++;BJ.sess.bsOk++;}else if(bjOpt("bjCoach"))BR.coach={you:take?"insurance":"no insurance",best:right?"insurance":"no insurance",why:right?"The true count is +3 or higher, so more than a third of the cards left are tens. Insurance is worth taking.":"Insurance pays 2 to 1 but the dealer has a ten underneath less than a third of the time. Skip it"+(bjOpt("bjDev")?" unless the true count is +3 or higher.":".")};
+  bjPeek();}
+function bjQuiz(){var rc=BJ.rc,val=0;
+  showModal("<h2>Count check</h2><p>What's the running count right now?</p><div style='display:flex;align-items:center;justify-content:center;gap:14px;margin:10px 0'><button class='btn ghost' id='bq-m' style='width:52px'>\u2212</button><b id='bq-v' style='font-size:2rem;min-width:60px;text-align:center'>0</b><button class='btn ghost' id='bq-p' style='width:52px'>+</button></div>",[["Check",function(){var st=bjStats(),ok=val===rc;st.cq++;if(ok)st.cqOk++;save();toast(ok?"Right, the count is "+(rc>0?"+":"")+rc+".":"The count is "+(rc>0?"+":"")+rc+". You said "+(val>0?"+":"")+val+".");bjDeal();},"brass"]]);
+  setTimeout(function(){var v=$("bq-v");$("bq-m").onclick=function(){val--;v.textContent=(val>0?"+":"")+val;};$("bq-p").onclick=function(){val++;v.textContent=(val>0?"+":"")+val;};},0);}
+function bjSuggest(){var t=bjT(),tc=Math.floor(bjTC()),u=tc<=1?1:tc===2?2:tc===3?4:tc===4?6:8;return Math.min(t.max,t.min*u);}
+function bjLeave(){var mid=BR&&BR.phase!=="done";if(mid)return toast("Finish this hand first.");bjSessFinish();BJ=null;BR=null;BJ_Q=[];clearTimeout(BJ_QT);BJ_QT=null;$("bj").hidden=true;save();toLobby();}
+function bjSessFinish(){var x=BJ&&BJ.sess;if(!x||x.hands<5||!bjOpt("bjSess"))return;S.bjSess=S.bjSess||[];S.bjSess.unshift({d:today(),where:bjT().n,hands:x.hands,net:Math.round(x.net),acc:x.bs?Math.round(x.bsOk/x.bs*100):null,mins:Math.round((Date.now()-x.start)/60000)});if(S.bjSess.length>50)S.bjSess.length=50;}
+/* rendering */
+var BJPOS=[[11,52],[29,64],[50,68],[71,64],[89,52]];
+function bjHandHTML(h,size,active){var T=bjTot(h.cards);return "<div class='bjh"+(active?" act":"")+"'><div class='bjcards'>"+h.cards.map(function(c){return cardStatic(c,size);}).join("")+"</div><div class='bjtot'>"+(h.cards.length?(T.soft&&T.t<21?"Soft ":"")+T.t:"")+(h.res?" \u00b7 "+h.res:"")+"</div><div class='bjbet'>"+money(h.bet)+(h.doubled?" (doubled)":"")+"</div></div>";}
+function bjRender(){if(!BJ)return;var t=bjT();
+  $("bj-info").innerHTML="<b>"+t.n+"</b> \u00b7 "+money(t.min)+" to "+money(t.max)+"<br>"+t.decks+" decks \u00b7 house edge "+bjEdge(t).toFixed(2)+"%";
+  var dl=BR?BR.dealer:[];$("bj-dealer").innerHTML=dl.map(function(c,k){return k===1&&!BR.holeUp?"<div class='pc sm back'></div>":cardStatic(c,"sm");}).join("")+(dl.length?"<div class='bjdtot'>"+(BR.holeUp?bjTot(dl).t:bjV(dl[0])===11?"A":bjV(dl[0]))+"</div>":"");
+  var left=BJ.shoe.length,total=t.decks*52;$("bj-shoe").innerHTML="<div class='bjshoebar'><i style='height:"+Math.round(left/total*100)+"%'></i><b style='bottom:"+Math.round(BJ.cut/total*100)+"%'></b></div><span>Shoe</span>";
+  $("bj-tray").innerHTML="<div class='bjtray'><i style='height:"+Math.min(100,Math.round((total-left)/total*100))+"%'></i></div><span>Discards</span>";
+  var cp=$("bj-count");cp.hidden=!bjOpt("bjCount");if(bjOpt("bjCount")){var tc=bjTC();cp.innerHTML="<div>Running <b>"+(BJ.rc>0?"+":"")+BJ.rc+"</b></div><div>True <b>"+(tc>0?"+":"")+tc.toFixed(1)+"</b></div><div>Decks left <b>"+(left/52).toFixed(1)+"</b></div>";}
+  var sp=$("bj-spots");sp.innerHTML=BJ.seats.map(function(s,k){var pos=BJPOS[k],mine=BR?BR.spots.filter(function(x){return x.k===k;}):[],html="";
+    if(!s)return "<div class='bjspot empty' style='left:"+pos[0]+"%;top:"+pos[1]+"%'><div class='bjcircle'></div></div>";
+    var who=s==="hero"?"You":s.name,av=s==="hero"?avatarSVG(heroAv()):avatarFor({name:s.name,skill:s.skill},"");
+    mine.forEach(function(x){x.hands.forEach(function(h,hi){var on=BR.phase==="play"&&BR.spots[BR.cur]===x&&BR.hi===hi;html+="<div class='bjmini"+(on?" act":"")+"'><div class='bjcards xs'>"+h.cards.map(function(c){return cardStatic(c,"xs");}).join("")+"</div><b>"+(h.cards.length?bjTot(h.cards).t:"")+(h.res?" "+h.res:"")+"</b></div>";});});
+    var bet=s==="hero"?(BR&&mine.length?mine.reduce(function(a,x){return a+x.hands.reduce(function(b,h){return b+h.bet;},0);},0):BJ.bet*(BJ.two?2:1)):s.bet;
+    return "<div class='bjspot"+(s==="hero"?" me":"")+"' style='left:"+pos[0]+"%;top:"+pos[1]+"%'>"+html+"<div class='bjchip'>"+money(bet)+"</div><div class='bjwho'><span class='bjav'>"+av+"</span>"+who+"</div></div>";}).join("");
+  setText($("bj-msg"),BR?BR.msg:"Place your bet.");
+  var hh=$("bj-hands"),me=BR?BR.spots.filter(function(x){return x.hero;}):[];hh.innerHTML=me.length?me.map(function(x){return x.hands.map(function(h,hi){return bjHandHTML(h,"sm",BR.phase==="play"&&BR.spots[BR.cur]===x&&BR.hi===hi);}).join("");}).join(""):"<div class='muted' style='padding:10px'>No cards yet.</div>";
+  setText($("bj-bank"),money(S.bankroll));}
+function bjControls(){var c=$("bj-controls");if(!BJ)return;var t=bjT();
+  var coach=BR&&BR.coach&&bjOpt("bjCoach")?"<div class='coach glass'><div style='display:flex;gap:8px;align-items:flex-start'><div style='flex:1;font-size:.9rem'><span class='ck'>Coach</span> You chose <b>"+BR.coach.you+"</b>. Basic strategy: <b>"+BR.coach.best+"</b>. "+BR.coach.why+"</div><button class='btn ghost pill' id='bjck'>Got it</button></div></div>":"";
+  if(!BR||BR.phase==="done"){var sug=bjOpt("bjCount")?bjSuggest():null;
+    c.innerHTML=coach+"<div class='bjbetbar glass'><div class='row' style='justify-content:space-between;align-items:center;margin:0'><div>Bet <b style='font-size:1.3rem'>"+money(BJ.bet)+"</b>"+(BJ.two?" \u00d7 2 hands":"")+"</div><button class='btn ghost pill' id='bj-two' aria-pressed='"+BJ.two+"'>"+(BJ.two?"Two hands":"One hand")+"</button></div>"+
+      "<div class='bjchips'>"+[5,25,100,500].filter(function(v){return v<=t.max;}).map(function(v){return "<button class='bjc c"+v+"' data-cv='"+v+"'>"+v+"</button>";}).join("")+"<button class='btn ghost pill' id='bj-clr'>Min</button></div>"+
+      (sug?"<div class='muted' style='font-size:.82rem'>Count-based bet: <b>"+money(sug)+"</b> (true count "+(bjTC()>0?"+":"")+bjTC().toFixed(1)+"). <button class='btn ghost pill' id='bj-sug'>Use it</button></div>":"")+"</div><div class='actions one'><button class='btn brass' id='bj-deal'>Deal</button></div>";
+    c.querySelectorAll("[data-cv]").forEach(function(b){b.onclick=function(){var v=+b.dataset.cv;BJ.bet=Math.min(t.max,(BR&&BR.phase==="done"&&!BJ._fresh?(BJ._fresh=true,v):BJ.bet+v));if(BJ.bet<t.min)BJ.bet=t.min;bjRender();bjControls();};});
+    $("bj-clr").onclick=function(){BJ.bet=t.min;BJ._fresh=false;bjRender();bjControls();};$("bj-two").onclick=function(){BJ.two=!BJ.two;bjRender();bjControls();};if($("bj-sug"))$("bj-sug").onclick=function(){BJ.bet=sug;bjRender();bjControls();};
+    $("bj-deal").onclick=function(){BJ._fresh=false;BR&&(BR.coach=null);bjDeal();};if($("bjck"))$("bjck").onclick=function(){BR.coach=null;bjControls();};return;}
+  if(BR.phase==="insurance"){c.innerHTML="<div class='bjbetbar glass'>Insurance costs "+money(Math.floor(BJ.bet/2))+" and pays 2 to 1 if the dealer has blackjack.</div><div class='actions'><button class='btn ghost' id='bj-ni'>No insurance</button><button class='btn primary' id='bj-yi'>Take insurance</button></div>";$("bj-ni").onclick=function(){bjInsurance(false);};$("bj-yi").onclick=function(){bjInsurance(true);};return;}
+  var sp=BR.spots[BR.cur],h=sp&&sp.hands[BR.hi];if(BR.phase!=="play"||!sp||!sp.hero||!h||h.done){c.innerHTML=coach+"<div class='waiting glass'>"+(BR.phase==="dealer"?"Dealer's turn...":"Dealing...")+"</div>";if($("bjck"))$("bjck").onclick=function(){BR.coach=null;bjControls();};return;}
+  var can=bjCan(sp,h),best=bjBS(h.cards,BR.dealer[0],can,t,bjOpt("bjDev")?bjTC():null);
+  c.innerHTML=coach+"<div class='actions bjact'><button class='btn primary' data-ba='hit'>Hit</button><button class='btn ghost' data-ba='stand'>Stand</button>"+(can.dbl?"<button class='btn brass' data-ba='double'>Double</button>":"")+(can.split?"<button class='btn brass' data-ba='split'>Split</button>":"")+(can.surr?"<button class='btn ghost' data-ba='surrender'>Surrender</button>":"")+"</div><div style='text-align:center;margin-top:6px'><button class='btn ghost pill' id='bj-hint'>Hint</button> <span id='bj-hinttxt' class='muted' style='font-size:.85rem'></span></div>";
+  c.querySelectorAll("[data-ba]").forEach(function(b){b.onclick=function(){BR.coach=null;bjDo(b.dataset.ba);bjControls();};});
+  $("bj-hint").onclick=function(){$("bj-hinttxt").textContent=bjWhy(h.cards,BR.dealer[0],best)+(bjOpt("bjDev")?" (with count adjustments)":"");};if($("bjck"))$("bjck").onclick=function(){BR.coach=null;bjControls();};}
+/* drills */
+function bjDrillBS(){var t={h17:false,surr:true,das:true},d=shuffle(Array.from({length:52},function(_,k){return k;})),cs=[d[0],d[1]],up=d[2],can={dbl:true,split:bjV(cs[0])===bjV(cs[1]),surr:true},best=bjBS(cs,up,can,t);
+  var opts=["hit","stand","double"].concat(can.split?["split"]:[]).concat(["surrender"]);
+  drillOpen("<h2>Basic strategy</h2><div class='muted' style='font-size:.85rem'>Six decks, dealer stands on soft 17, double after split, surrender allowed.</div><div class='lbl'>Dealer shows</div><div class='drow'>"+cardStatic(up,"sm")+"</div><div class='lbl'>You have</div><div class='drow'>"+cs.map(function(c){return cardStatic(c,"lg");}).join("")+"</div><div id='dq'>"+opts.map(function(o){return "<button class='btn ghost dopt' data-o='"+o+"'>"+o.charAt(0).toUpperCase()+o.slice(1)+"</button>";}).join("")+"</div>",function(el){
+    el.querySelectorAll("[data-o]").forEach(function(b){b.onclick=function(){var ok=b.dataset.o===best;dstat("bjbs",ok);el.querySelector("#dq").innerHTML="<div class='dres "+(ok?"ok":"no")+"'>"+(ok?"Right.":"Best play: "+best+".")+"</div><p style='font-size:.92rem'>"+bjWhy(cs,up,best)+"</p><div class='row'><button class='btn primary' id='dn'>Next hand</button><button class='btn ghost' id='dx'>Done</button></div>";el.querySelector("#dn").onclick=bjDrillBS;el.querySelector("#dx").onclick=drillClose;};});});}
+function bjDrillCount(){var d=shuffle(Array.from({length:52},function(_,k){return k;})).slice(0,pick([12,16,20,26])),i=0,rc=d.reduce(function(a,c){return a+bjHL(c);},0),iv=null,ms={slow:1100,normal:750,fast:450}[S.settings.speed]||750,val=0;
+  drillOpen("<h2>Count down</h2><div class='muted' style='font-size:.85rem'>Keep the Hi-Lo count: 2 to 6 is +1, 7 to 9 is 0, 10 to ace is \u22121. "+d.length+" cards.</div><div id='bcd' style='display:flex;justify-content:center;margin:16px 0;min-height:92px'></div><div id='dq'></div>",function(el){
+    iv=setInterval(function(){if(!document.getElementById("bcd")){clearInterval(iv);return;}if(i<d.length){el.querySelector("#bcd").innerHTML=cardStatic(d[i],"lg");i++;return;}clearInterval(iv);el.querySelector("#bcd").innerHTML="";
+      el.querySelector("#dq").innerHTML="<div class='dq'>What's the count?</div><div style='display:flex;align-items:center;justify-content:center;gap:14px'><button class='btn ghost' id='cm' style='width:52px'>\u2212</button><b id='cv' style='font-size:2rem;min-width:60px;text-align:center'>0</b><button class='btn ghost' id='cp' style='width:52px'>+</button></div><div class='row'><button class='btn primary' id='cgo'>Check</button></div>";
+      var v=el.querySelector("#cv");el.querySelector("#cm").onclick=function(){val--;v.textContent=(val>0?"+":"")+val;};el.querySelector("#cp").onclick=function(){val++;v.textContent=(val>0?"+":"")+val;};
+      el.querySelector("#cgo").onclick=function(){var ok=val===rc;dstat("bjcount",ok);el.querySelector("#dq").innerHTML="<div class='dres "+(ok?"ok":"no")+"'>"+(ok?"Right: ":"The count was ")+(rc>0?"+":"")+rc+".</div><div class='row'><button class='btn primary' id='dn'>Again</button><button class='btn ghost' id='dx'>Done</button></div>";el.querySelector("#dn").onclick=bjDrillCount;el.querySelector("#dx").onclick=drillClose;};},ms);});}
+/* lobby tab */
+function bjOptsHTML(){var row=function(k,t,d){return "<div class='toggle' style='border-top:0;margin-top:0'><div><b>"+t+"</b><div class='muted' style='font-size:.85rem'>"+d+"</div></div><button class='switch' role='switch' aria-checked='"+bjOpt(k)+"' data-bjo='"+k+"' aria-label='"+t+"'></button></div>";};
+  return "<div class='panel glass'><div class='evtop'><div><div class='venue'>Turn these on or off</div><h2>Blackjack options</h2></div></div>"+row("bjCount","Show the count","Running count, true count, decks left, and a count-based bet suggestion.")+row("bjQuiz","Count checks","Every 5 hands, enter the running count before the next deal.")+row("bjCoach","Strategy coach","Flags any play that isn't basic strategy and explains the right one.")+row("bjDev","Count-adjusted plays","Coach and hints use the main count deviations (insurance at +3, stand 16 vs 10 at 0, and more).")+row("bjSess","Track sessions","Saves each blackjack session with results and accuracy.")+row("bjDrills","Blackjack drills","Basic strategy quiz and a timed count-down.")+"</div>";}
+function bjChartHTML(){var ups=["2","3","4","5","6","7","8","9","10","A"],upC=[0,4,8,12,16,20,24,28,32,48],t={h17:false,surr:false,das:true},can={dbl:true,split:true,surr:false};
+  var cell=function(a){var m={hit:["H","#d9d9d9","#222"],stand:["S","#c8102e","#fff"],double:["D","#2e8b57","#fff"],split:["P","#4c8df0","#fff"]}[a]||["?","#fff","#000"];return "<td style='background:"+m[1]+";color:"+m[2]+";text-align:center;font-weight:800'>"+m[0]+"</td>";};
+  var row=function(lab,cs){return "<tr><td style='font-weight:700;white-space:nowrap'>"+lab+"</td>"+upC.map(function(u){return cell(bjBS(cs,u,can,t));}).join("")+"</tr>";};
+  var h="<table class='gt bjchart'><tr><th></th>"+ups.map(function(u){return "<th style='text-align:center'>"+u+"</th>";}).join("")+"</tr>";
+  [[17,[36,20]],[16,[36,16]],[15,[36,12]],[14,[36,8]],[13,[36,4]],[12,[36,0]],[11,[28,4]],[10,[24,4]],[9,[16,8]],[8,[16,4]]].forEach(function(x){h+=row("Hard "+x[0],x[1]);});
+  [["A,9",28],["A,8",24],["A,7",20],["A,6",16],["A,5",12],["A,4",8],["A,3",4],["A,2",0]].forEach(function(x){h+=row(x[0],[48,x[1]]);});
+  [["A,A",[48,49]],["10,10",[32,33]],["9,9",[28,29]],["8,8",[24,25]],["7,7",[20,21]],["6,6",[16,17]],["5,5",[12,13]],["4,4",[8,9]],["3,3",[4,5]],["2,2",[0,1]]].forEach(function(x){h+=row(x[0],x[1]);});
+  return h+"</table><p class='muted' style='font-size:.8rem'>H hit, S stand, D double (hit if you can't), P split. Six decks, dealer stands on soft 17, double after split.</p>";}
+function renderBJTab(){var st=bjStats(),L=S.bjSess||[];
+  var cards=BJT.map(function(t){var lock=S.bankroll<t.min*5;return "<div class='panel glass ev"+(lock?" locked":"")+"'>"+evArt(t.art,money(t.min)+" min")+"<div class='evtop'><div style='min-width:0'><div class='venue'>"+t.venue+"</div><h2>"+t.n+"</h2></div><div class='tier'>"+bjEdge(t).toFixed(2)+"%</div></div>"+
+    "<div class='evmeta'>"+money(t.min)+" to "+money(t.max)+" \u00b7 "+t.decks+" decks \u00b7 blackjack pays "+(t.bjPay===1.5?"3:2":"6:5")+" \u00b7 dealer "+(t.h17?"hits":"stands on")+" soft 17"+(t.surr?" \u00b7 surrender":"")+" \u00b7 "+Math.round(t.pen*100)+"% dealt before the shuffle</div>"+
+    (t.bjPay<1.5?"<div class='theme'>6:5 blackjack costs you about 1.4% more than 3:2. Avoid these tables in real casinos.</div>":"")+
+    "<div class='row'>"+(lock?"<div class='lock'>Need "+money(t.min*5)+" in your bankroll</div>":"<button class='btn primary' data-bjs='"+t.id+"'>Take a seat</button>")+"</div></div>";}).join("");
+  $("l-body").innerHTML="<div class='themehead' style=\"background:radial-gradient(ellipse at 50% 0%,#2e7a52,#0c2a1c 70%)\"><svg viewBox='0 0 120 70' aria-hidden='true'><g transform='rotate(-10 40 40)'><rect x='26' y='12' width='30' height='42' rx='4' fill='#f4f1ea' stroke='#333' stroke-width='.8'/><text x='34' y='30' font-size='12' font-weight='800' fill='#111' font-family='sans-serif'>A</text></g><g transform='rotate(10 80 40)'><rect x='62' y='12' width='30' height='42' rx='4' fill='#f4f1ea' stroke='#333' stroke-width='.8'/><text x='68' y='30' font-size='12' font-weight='800' fill='#c8102e' font-family='sans-serif'>K</text></g><text x='60' y='66' text-anchor='middle' font-size='10' font-weight='800' fill='#ffe08a' font-family='sans-serif'>21</text></svg><div><div class='venue'>Beat the dealer</div><h2>Blackjack</h2></div></div>"+
+    "<div class='carhead'><h3>Tables</h3><span>Swipe for more \u2192</span></div><div class='carousel'>"+cards+"</div>"+
+    (st.hands?"<div class='panel glass'><h2>Your blackjack</h2><p style='font-size:.92rem'>"+st.hands+" hands, "+(st.net>=0?"+":"\u2212")+money(Math.abs(st.net))+" on "+money(st.wag)+" wagered. Basic strategy accuracy "+(st.bs?Math.round(st.bsOk/st.bs*100)+"%":"not graded yet")+(st.cq?", count checks "+Math.round(st.cqOk/st.cq*100)+"% right":"")+".</p></div>":"")+
+    (bjOpt("bjDrills")?"<div class='panel glass'><div class='evtop'><div><div class='venue'>Practice</div><h2>Blackjack drills</h2></div></div><div class='dhub'><button class='dbtn' id='bjd-1'><b>Basic strategy</b><span>Hand against the dealer's card. "+dpct("bjbs")+"</span></button><button class='dbtn' id='bjd-2'><b>Count down</b><span>Keep the count as cards flash by. "+dpct("bjcount")+"</span></button></div></div>":"")+
+    bjOptsHTML()+
+    (bjOpt("bjSess")?"<div class='panel glass'><div class='evtop'><div><div class='venue'>Every blackjack session</div><h2>Session history</h2></div></div>"+(L.length?L.slice(0,12).map(function(r){return "<div style='display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:.88rem'><span><b>"+r.d+"</b> \u00b7 "+r.where+" \u00b7 "+r.hands+" hands<br><span class='muted'>"+r.mins+" min"+(r.acc===null?"":" \u00b7 strategy "+r.acc+"%")+"</span></span><b style='color:"+(r.net>=0?"var(--good)":"var(--bad)")+"'>"+(r.net>=0?"+":"\u2212")+money(Math.abs(r.net))+"</b></div>";}).join(""):"<p class='muted' style='font-size:.85rem'>Play 5 or more hands, then leave the table to save a session.</p>")+"</div>":"")+
+    "<div class='panel glass'><div class='evtop'><div><div class='venue'>Reference</div><h2>Basic strategy and counting</h2></div></div><details><summary><b>Basic strategy chart</b></summary><div style='overflow-x:auto'>"+bjChartHTML()+"</div></details>"+
+    "<details><summary><b>How Hi-Lo counting works</b></summary><ol style='font-size:.9rem;padding-left:1.2em'><li>Every 2 to 6 you see is +1. Every 7, 8, or 9 is 0. Every 10, face card, or ace is \u22121.</li><li>Keep a running total from the start of the shoe. That's the running count.</li><li>Divide by the decks left to get the true count.</li><li>The higher the true count, the more tens and aces are left, which helps you. Bet more when it's +2 or higher, and the minimum otherwise.</li><li>At a true count of +3 or more, take insurance.</li></ol><p class='muted' style='font-size:.85rem'>Counting is legal, but casinos can ask you to stop or leave. Big bet swings draw attention.</p></details></div>";
+  $("l-body").querySelectorAll("[data-bjs]").forEach(function(b){b.onclick=function(){bjSit(b.dataset.bjs);};});
+  $("l-body").querySelectorAll("[data-bjo]").forEach(function(b){b.onclick=function(){var k=b.dataset.bjo;S.settings[k]=!bjOpt(k);save();renderBJTab();};});
+  if($("bjd-1"))$("bjd-1").onclick=bjDrillBS;if($("bjd-2"))$("bjd-2").onclick=bjDrillCount;}
 
 /* ===== world: events, stakes, career, achievements ===== */
 var EVENTS=[
@@ -3122,16 +3426,16 @@ function seg(id,key){
 }
 function renderLobby(){
   setTimeout(function(){if($("l-av"))$("l-av").onclick=openAvatar;},0);
-  car();if(S.settings.venueLooks===undefined)S.settings.venueLooks=true;if(S.settings.season===undefined)S.settings.season=true;if(S.settings.tilt3d===undefined)S.settings.tilt3d=false;applySeason();["sound","haptics","fx2","liveChips"].forEach(function(k){if(S.settings[k]===undefined)S.settings[k]=true;});if(S.settings.clock===undefined)S.settings.clock=0;if(S.settings.liveHelp===undefined)S.settings.liveHelp=false;
+  car();if(S.settings.venueLooks===undefined)S.settings.venueLooks=true;if(S.settings.season===undefined)S.settings.season=true;if(S.settings.coach===undefined)S.settings.coach=true;if(S.settings.hud===undefined)S.settings.hud=true;if(S.settings.tilt3d===undefined)S.settings.tilt3d=false;applySeason();["sound","haptics","fx2","liveChips"].forEach(function(k){if(S.settings[k]===undefined)S.settings[k]=true;});if(S.settings.clock===undefined)S.settings.clock=0;if(S.settings.liveHelp===undefined)S.settings.liveHelp=false;
   renderProfile();
   $("l-tabs").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===LTAB?"true":"false");b.onclick=function(){LTAB=b.dataset.v;renderLobby();window.scrollTo({top:0});};});
-  if(LTAB==="circuit")renderCircuit();else if(LTAB==="cash")renderCashTab();else if(LTAB==="challenge")renderChallengeTab();else if(LTAB==="draw")renderDrawTab();else if(LTAB==="home")renderHomeTab();else if(LTAB==="train")renderTrainTab();else if(LTAB==="real")renderRealTab();else if(LTAB==="career")renderCareer();else renderSettings();
+  if(LTAB==="circuit")renderCircuit();else if(LTAB==="cash")renderCashTab();else if(LTAB==="challenge")renderChallengeTab();else if(LTAB==="draw")renderDrawTab();else if(LTAB==="bj")renderBJTab();else if(LTAB==="home")renderHomeTab();else if(LTAB==="train")renderTrainTab();else if(LTAB==="real")renderRealTab();else if(LTAB==="career")renderCareer();else renderSettings();
 }
 
 $("g-leave").onclick=leaveTable;
 $("g-tools").onclick=openTools;$("tools-close").onclick=closeTools;
 $("scrim").onclick=function(){if(!$("tools").hidden)closeTools();if(!$("lookSheet").hidden)closeLook();if(!$("playerSheet").hidden)closePlayer();if(!$("avSheet").hidden)closeAvatar();};
-$("p-close").onclick=closePlayer;$("dw-leave").onclick=dwLeave;$("dw-help").onclick=dwHelp;$("av-close").onclick=closeAvatar;
+$("p-close").onclick=closePlayer;$("dw-leave").onclick=dwLeave;$("dw-help").onclick=dwHelp;$("bj-leave").onclick=bjLeave;$("bj-chart").onclick=function(){showModal("<h2>Basic strategy</h2><div style='overflow-x:auto'>"+bjChartHTML()+"</div>",[["Back to the table",function(){},"brass"]]);};$("av-close").onclick=closeAvatar;
 document.addEventListener("keydown",function(e){if(e.key!=="Escape")return;if(!$("tools").hidden)closeTools();if(!$("lookSheet").hidden)closeLook();if(!$("playerSheet").hidden)closePlayer();});
 
 
