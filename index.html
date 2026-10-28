@@ -456,6 +456,12 @@ details{margin:8px 0}details summary{cursor:pointer;padding:4px 0}
 .pcell svg{grid-row:span 3}
 .pcell.off{opacity:.45;filter:grayscale(.8)}
 .profav{position:relative}.profav svg.pbadge{position:absolute;left:3px;top:3px;width:30px!important;height:30px!important;z-index:2;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
+.gchip{display:inline-flex;align-items:center;gap:3px;font-size:.72rem;border-radius:999px;padding:1px 7px;background:color-mix(in srgb,var(--gc) 18%,transparent);border:1px solid var(--gc);color:var(--text);white-space:nowrap}
+.gchip b{color:var(--gc)}
+.gchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.gbig{width:64px;height:64px;border-radius:16px;background:var(--gc);color:#fff;font-family:var(--display);font-size:2rem;font-weight:800;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;flex:none}
+.gbig span{font-size:.75rem;font-weight:700;margin-top:2px}
+.qrow{cursor:pointer;border:0;background:none;padding:0;text-align:left;color:inherit;font:inherit;white-space:nowrap}
 [hidden]{display:none!important}
 @media (max-width:380px){.seat{width:96px;font-size:.68rem}.center{width:206px}.pc.sm,.slot{width:34px;height:47px}.board{height:47px}}
 @media (prefers-reduced-motion:reduce){.pc.deal{animation:none}#atm .fx1,#atm .fx2{animation:none!important}.dealer{transition:none}}
@@ -532,7 +538,7 @@ details{margin:8px 0}details summary{cursor:pointer;padding:4px 0}
         <div class="stk" id="g-hstack"></div>
         <div class="sub" id="g-hsub"></div>
         <div class="act" id="g-hact"></div>
-        <div class="qrow" id="g-q"></div>
+        <button class="qrow" id="g-q" aria-label="Your play this session"></button>
       </div>
     </div>
     <div class="controls" id="g-controls"></div>
@@ -1071,7 +1077,7 @@ function render(){
   var hl=hs?hs.label:"";if(H&&H.done&&H.winners&&H.winners[0])hl="You win "+chips(H.winners[0]);
   setText($("g-hact"),(hs&&hs.sb>0&&!H.done?"In: "+chips(hs.sb)+"   ":"")+hl);
   var ssq=T.mode==="cash"?sess():null,qq=qualityPct(ssq);
-  setHTML($("g-q"),"q"+(ssq?ssq.good+"/"+ssq.dec:"-"),ssq?"<div class='qbar' role='img' aria-label='Play quality "+(qq===null?"not graded yet":qq+"%")+"'><i style='width:"+(qq===null?0:qq)+"%;background:"+qColor(qq)+"'></i></div><span>"+(qq===null?"Play quality: after your first decision":"Play "+qq+"% \u00b7 "+ssq.good+"/"+ssq.dec+" match the tools")+"</span>":"");
+  setHTML($("g-q"),"q"+(ssq?ssq.dec+"/"+qq:"-"),ssq?"<div class='qbar' role='img' aria-label='Accuracy "+(qq===null?"not graded yet":qq)+"'><i style='width:"+(qq===null?0:qq)+"%;background:"+qColor(qq)+"'></i></div><span>"+(qq===null?"Not graded yet":"<b style='color:"+qColor(qq)+"'>"+qq+" "+letter(qq)+"</b> accuracy")+"</span>":"");$("g-q").onclick=function(){if(sess())qualityHelp();};
   var hcls="hero glass";if(H&&!H.done&&H.toAct===0&&hs&&canAct(0))hcls+=" turn";if(H&&H.done&&H.winners&&H.winners[0])hcls+=" win";
   if($("g-hero").className!==hcls)$("g-hero").className=hcls;
   var info;if(T.pass){info="<b>Pass-and-play</b> \u00b7 Hand "+(T.handNo+(H&&!H.done?1:0))+"<br>$1/$2 \u00b7 "+T.players.filter(function(p){return p.hero||p.human;}).length+" players";}
@@ -1771,6 +1777,8 @@ function greetRivals(){
 
 /* ===== hand recorder and leak finder ===== */
 var LEAKS={
+ raise_no_odds:["Raised without the equity","You raised when you were behind their range. Raising a weak hand into a bet only works against players who fold a lot."],
+ off_line:["Went against the tools","You chose a different play than the tools and it cost you. Open the hint to see what they weighed."],
  fold_chart:["Folded a chart hand","You folded a hand that's in your opening chart for that seat. Those hands make money long term, so open them."],
  open_loose:["Opened outside the chart","You raised first in with a hand that isn't in your chart. Tighten up, especially from early seats."],
  limp:["Limped in","You just called the big blind instead of raising or folding. Limping invites everyone in and gives up the initiative."],
@@ -1806,7 +1814,9 @@ function recordDecision(d){
   if(!H||!H.s[0])return;
   try{var A=adviseHero(false);
     var rec={code:A.code,st:H.street,act:d[0],to:d[1]||0,toCall:A.L.toCall,pot:A.pot,need:A.need,eq:A.eq,advice:A.advice,why:A.why,raises:H.raises,pos:A.pos,nOpp:A.opp.length,canRaise:A.L.canRaise,board:H.board.slice()};
-    rec.leak=classify(rec);H.dec=H.dec||[];H.dec.push(rec);if(!rec.leak)addXP(1);if(rec.leak)addRedo(rec);sessDecision(rec);
+    rec.leak=classify(rec);var G=gradeDec(rec);rec.sev=G.sev;rec.loss=G.loss;rec.triv=G.trivial;rec.best=G.best;
+    if(G.sev===0)rec.leak=null;else if(!rec.leak)rec.leak=rec.toCall>0&&rec.act==="raise"?"raise_no_odds":"off_line";
+    H.dec=H.dec||[];H.dec.push(rec);if(!rec.leak)addXP(1);if(rec.leak)addRedo(rec);sessDecision(rec);
     if(rec.act==="fold"&&rec.toCall>0&&rec.eq<rec.need)mission("goodfold");if(rec.act==="fold"&&rec.st===3&&rec.advice==="Fold")mission("riverfold");
     if(rec.st===0&&rec.act==="raise"&&rec.raises===1&&H.preAgg>0){var opn=T.players[H.preAgg];if(opn&&(["station","limper","whale","maniac"].indexOf(opn.arch)>=0||opn.cid==="moonshot"))mission("3bloose");}
     if(rec.act==="fold"&&rec.st>0&&rec.advice==="Fold"&&H.lastAgg>0){var tb=T.players[H.lastAgg];if(tb&&(["nit","tag"].indexOf(tb.arch)>=0||["contessa","ezra"].indexOf(tb.cid)>=0))mission("foldtight");}if(!rec.leak)mission("gooddec");if(rec.st===0&&rec.act==="raise"&&rec.raises>=1)mission("threebet");
@@ -2591,10 +2601,41 @@ function rulesHTML(){var sec=function(t,items){return "<details><summary><b>"+t+
   sec("Table manners",["Keep your cards on the table and in sight.","Don't talk about a hand while it's being played, even if you folded.","Keep your bigger chips visible. Players can ask how much you have.","Buy more chips between hands, not during one.","Tip the dealer about $1 to $2 when you win a decent pot.","Don't blame the dealer for bad cards."])+
   sec("Home game basics",["Agree on the blinds, buy-in, and rebuy limits before the first hand.","Decide in advance whether straddles and running it twice are allowed.","Settle up at the end with the Buy-in ledger above."])+"</div>";}
 
+/* ===== decision grading: accuracy like a chess engine ===== */
+var GRADES=[{n:"Good",i:"\u2713",c:"#3aa86b",s:85},{n:"Inaccuracy",i:"?!",c:"#d9a420",s:50},{n:"Mistake",i:"?",c:"#e07a2a",s:15},{n:"Blunder",i:"??",c:"#c8102e",s:0}];
+function actMatches(act,adv){adv=adv||"";if(adv==="Bet or check")return act==="check"||act==="raise";
+  if(act==="fold")return adv==="Fold";if(act==="call")return adv==="Call";if(act==="check")return adv==="Check";
+  return adv==="Raise"||adv==="Bet"||adv==="Reraise"||adv==="Push all in";}
+function gradeDec(d){var bb=T.bb||2,loss=0,act=d.act,same=actMatches(act,d.advice),lk=d.leak;
+  var trivial=(d.st===0&&d.raises===0&&act==="fold"&&same)||(act==="check"&&d.toCall===0&&same&&d.eq<0.5)||(act==="fold"&&same&&d.toCall>0&&d.eq<d.need-0.15);
+  if(d.st===0&&d.raises===0){
+    if(lk==="fold_chart")loss=bb*Math.max(0.4,((EQ[d.code]||60)-55)/7);
+    else if(lk==="open_loose")loss=bb*Math.max(0.3,(62-(EQ[d.code]||55))/9);
+    else if(lk==="limp")loss=bb*0.6;}
+  else if(d.toCall>0){var evc=d.eq*(d.pot+d.toCall)-d.toCall,best=Math.max(0,evc);
+    if(act==="fold")loss=best;else if(act==="call")loss=best-evc;else loss=Math.max(0,best-evc)+(d.eq<0.35?0.35*Math.max(0,(d.to||0)-d.toCall):0);
+    if(lk==="missed_raise")loss=Math.max(loss,(d.eq-0.6)*d.pot*0.4);}
+  else{if(act==="check"&&d.eq>=0.65)loss=(d.eq-0.5)*d.pot*0.5;if(act==="raise"&&d.eq<0.3&&d.nOpp>=2)loss=0.3*(d.to||d.pot*0.5);}
+  var lb=Math.max(0,loss/bb),sev=same?0:lb<0.2?0:lb<1?1:lb<3?2:3;
+  return {sev:sev,loss:sev?lb:0,trivial:trivial,best:same};}
+function gradeLabel(d){return d.sev===0?(d.best?"Best":"Good"):GRADES[d.sev].n;}
+function gradeChip(d){var g=GRADES[d.sev||0],st=["Pre","Flop","Turn","River"][d.st]||"";return "<span class='gchip' style='--gc:"+(d.sev===0&&d.best?"#2e8b57":g.c)+"' title='"+st+": "+gradeLabel(d)+"'>"+st+" <b>"+(d.sev===0&&d.best?"\u2713\u2713":g.i)+"</b></span>";}
+function accOf(s){return s&&s.w?Math.round(s.sc/s.w):s&&s.dec?Math.round(s.good/s.dec*100):null;}
+function letter(a){return a===null?"":a>=90?"A":a>=80?"B":a>=70?"C":a>=60?"D":"F";}
+function qualityHelp(){var s=sess(),a=accOf(s),cnt=(s&&s.cnt)||[0,0,0,0],lk=s&&s.leaks?Object.keys(s.leaks).sort(function(x,y){return s.leaks[y]-s.leaks[x];}):[],last=(s&&s.recent)||[];
+  showModal("<h2>Your play this session</h2>"+(a===null?"<p>No decisions graded yet.</p>":"<div style='display:flex;align-items:center;gap:14px'><div class='gbig' style='--gc:"+qColor(a)+"'>"+letter(a)+"<span>"+a+"</span></div><div style='font-size:.92rem'><b>"+s.dec+" decisions graded.</b><br>"+cnt[1]+" inaccurac"+(cnt[1]===1?"y":"ies")+", "+cnt[2]+" mistake"+(cnt[2]===1?"":"s")+", "+cnt[3]+" blunder"+(cnt[3]===1?"":"s")+".<br>Mistakes cost about <b>"+(s.lossBB||0).toFixed(1)+" big blinds</b>.</div></div>")+
+    (lk.length?"<div class='tool' style='margin-top:10px'><div class='k'>Work on this</div><div class='v' style='font-size:.92rem'><b>"+(LEAKS[lk[0]]||[lk[0]])[0]+"</b> ("+s.leaks[lk[0]]+"\u00d7). "+((LEAKS[lk[0]]||["",""])[1])+"</div></div>":"")+
+    (last.length?"<div class='lbl'>Your last decisions</div>"+last.slice(-6).reverse().map(function(r){return "<div style='display:flex;justify-content:space-between;gap:8px;font-size:.85rem;padding:3px 0;border-bottom:1px solid var(--line)'><span>"+gradeChip(r)+" "+r.code+": you "+r.act+(r.best?"":", tools said "+r.advice)+"</span><b style='color:"+GRADES[r.sev].c+"'>"+(r.sev?"\u2212"+r.loss.toFixed(1)+" bb":"")+"</b></span></div>";}).join(""):"")+
+    "<details style='margin-top:10px'><summary><b>How grading works</b></summary><div style='font-size:.88rem'><p>Each decision is compared with what the tools recommend, using your equity, the price, and your opening charts. Then it gets a grade based on how much it costs you on average:</p><table class='st'><tr><td><span class='gchip' style='--gc:#2e8b57'><b>\u2713\u2713</b></span> Best</td><td>Matches the tools</td></tr><tr><td><span class='gchip' style='--gc:#3aa86b'><b>\u2713</b></span> Good</td><td>Different, but costs under 0.2 big blinds</td></tr><tr><td><span class='gchip' style='--gc:#d9a420'><b>?!</b></span> Inaccuracy</td><td>Costs 0.2 to 1 big blind</td></tr><tr><td><span class='gchip' style='--gc:#e07a2a'><b>?</b></span> Mistake</td><td>Costs 1 to 3 big blinds</td></tr><tr><td><span class='gchip' style='--gc:#c8102e'><b>??</b></span> Blunder</td><td>Costs more than 3 big blinds</td></tr></table><p>Your accuracy averages the grades (Best and Good score high, blunders score zero). Easy decisions, like folding junk before the flop, count only a quarter as much, so the number reflects the spots that matter. A is 90 and up, B 80, C 70, D 60.</p></div></details>",[["Back to the table",function(){},"brass"]]);}
+
 /* ===== cash sessions: hand counter, play-quality bar, table image, history ===== */
-function sessNew(){return {start:Date.now(),hands:0,dec:0,good:0,net:0,bbNet:0,buyin:T.players[0].stack,rebuys:0,vpip:0,pfr:0,leaks:{},img:{hands:0,vpip:0,pfr:0,agg:0,call:0,sd:0,bluff:0,cbF:0,cbFold:0}};}
+function sessNew(){return {start:Date.now(),hands:0,dec:0,good:0,w:0,sc:0,cnt:[0,0,0,0],lossBB:0,recent:[],net:0,bbNet:0,buyin:T.players[0].stack,rebuys:0,vpip:0,pfr:0,leaks:{},img:{hands:0,vpip:0,pfr:0,agg:0,call:0,sd:0,bluff:0,cbF:0,cbFold:0}};}
+
 function sess(){if(!T||T.mode!=="cash"||T.pass)return null;return T.sess=T.sess||sessNew();}
-function sessDecision(rec){var s=sess();if(!s)return;s.dec++;if(!rec.leak)s.good++;else s.leaks[rec.leak]=(s.leaks[rec.leak]||0)+1;}
+function sessDecision(rec){var s=sess();if(!s)return;if(!s.cnt){s.cnt=[0,0,0,0];s.w=0;s.sc=0;s.lossBB=0;s.recent=[];}
+  var sev=rec.sev||0,w=rec.triv?0.25:1,sc=sev===0?(rec.best?100:GRADES[0].s):GRADES[sev].s;s.dec++;if(!sev)s.good++;s.cnt[sev]++;s.w+=w;s.sc+=w*sc;s.lossBB+=rec.loss||0;
+  if(rec.leak)s.leaks[rec.leak]=(s.leaks[rec.leak]||0)+1;s.recent.push({st:rec.st,sev:sev,best:rec.best,loss:rec.loss||0,code:rec.code,act:rec.act==="raise"?(rec.toCall>0?"raised":"bet"):rec.act==="call"?"called":rec.act==="check"?"checked":"folded",advice:rec.advice});if(s.recent.length>20)s.recent.shift();}
+
 function sessHand(net){var s=sess();if(!s)return;s.hands++;s.net+=net;s.bbNet+=net/T.bb;if(H.heroVpip)s.vpip++;if(H.heroPfr)s.pfr++;
   var I=s.img;I.hands++;if(H.heroVpip)I.vpip++;if(H.heroPfr)I.pfr++;
   var hist=H.hist||[];hist.forEach(function(e){if(e.i!==0||e.st===0)return;if(e.a==="bet"||e.a==="raise")I.agg++;else if(e.a==="call")I.call++;});
@@ -2610,18 +2651,20 @@ function adaptK(p){if(!T||T.mode!=="cash"||!T.sess)return 0;var im=heroImage();r
 function adaptPre(p){var k=adaptK(p);if(!k)return {th:0,three:0};var im=heroImage();return {th:-k*(im.vp-0.25)*35,three:k*Math.max(0,im.vp-0.3)*0.6};}
 function adaptCall(p){var k=adaptK(p);if(!k)return 0;var im=heroImage();return Math.max(-0.08,Math.min(0.12,k*((im.bl-0.12)*0.4+(im.af-1.2)*0.03)));}
 function adaptBluff(p){var k=adaptK(p);if(!k)return 1;var im=heroImage();return Math.max(0.6,1+k*((im.cf-0.45)*2+(im.af<0.8?0.3:0)));}
-function qualityPct(s){return s&&s.dec?Math.round(s.good/s.dec*100):null;}
+function qualityPct(s){return accOf(s);}
+
 function sessFinish(){var s=T&&T.sess;if(!s||s.hands<5){if(T)T.sess=null;return;}
   var im=heroImage(),lk=Object.keys(s.leaks).sort(function(a,b){return s.leaks[b]-s.leaks[a];}).slice(0,2);
   if(s.hands>=30&&qualityPct(s)>=85)mission("qsess");if(s.bbNet>=20)mission("upsess");
-  S.simSess=S.simSess||[];S.simSess.unshift({sid:T.stake,d:today(),t:Date.now(),where:STK(T.stake).n,hands:s.hands,net:Math.round(s.net),bb100:+(s.bbNet/s.hands*100).toFixed(1),q:qualityPct(s),dec:s.dec,vp:Math.round(s.vpip/s.hands*100),pf:Math.round(s.pfr/s.hands*100),img:im.label,leaks:lk,mins:Math.round((Date.now()-s.start)/60000),rebuys:s.rebuys});
+  S.simSess=S.simSess||[];S.simSess.unshift({sid:T.stake,d:today(),t:Date.now(),where:STK(T.stake).n,hands:s.hands,net:Math.round(s.net),bb100:+(s.bbNet/s.hands*100).toFixed(1),q:qualityPct(s),dec:s.dec,cnt:s.cnt,lossBB:+(s.lossBB||0).toFixed(1),vp:Math.round(s.vpip/s.hands*100),pf:Math.round(s.pfr/s.hands*100),img:im.label,leaks:lk,mins:Math.round((Date.now()-s.start)/60000),rebuys:s.rebuys});
   if(S.simSess.length>100)S.simSess.length=100;T.sess=null;save();}
 function qColor(q){return q===null?"var(--muted)":q>=85?"#2e8b57":q>=70?"#c9a14a":"#c8102e";}
-function sessToolsHTML(){var s=sess();if(!s)return "";var q=qualityPct(s),im=heroImage();
+function sessToolsHTML(){var s=sess();if(!s)return "";var a=accOf(s),im=heroImage(),cnt=s.cnt||[0,0,0,0],lk=Object.keys(s.leaks||{}).sort(function(x,y){return s.leaks[y]-s.leaks[x];});
   return "<div class='tool'><div class='k'>This session</div><div class='v' style='font-size:.92rem'>"+s.hands+" hands, "+(s.net>=0?"+":"\u2212")+chips(Math.abs(s.net))+(s.hands>=20?" ("+(s.bbNet/s.hands*100).toFixed(1)+" big blinds per 100 hands)":"")+".<br>"+
-    (q===null?"No decisions graded yet.":"<b>"+s.good+" of "+s.dec+"</b> decisions matched the tools ("+q+"%).")+"</div>"+
+    (a===null?"No decisions graded yet.":"Accuracy <b>"+a+" ("+letter(a)+")</b>: "+cnt[1]+" inaccurac"+(cnt[1]===1?"y":"ies")+", "+cnt[2]+" mistake"+(cnt[2]===1?"":"s")+", "+cnt[3]+" blunder"+(cnt[3]===1?"":"s")+". Mistakes cost about "+(s.lossBB||0).toFixed(1)+" big blinds."+(lk.length?"<br>Work on: <b>"+(LEAKS[lk[0]]||[lk[0]])[0]+"</b>.":""))+"</div>"+
     "<div class='k' style='margin-top:8px'>How the table sees you</div><div class='v' style='font-size:.92rem'><b>"+im.label+"</b>"+(im.h?" after "+im.h+" hands: you play "+Math.round(im.vp*100)+"% of hands, raise "+Math.round(im.pf*100)+"%, and "+(im.cbF?"fold to "+Math.round(im.cf*100)+"% of continuation bets":"haven't faced many continuation bets")+".":"")+
     "<br><span class='muted'>Tough players adjust to this, regulars partly, beginners barely. "+(im.conf<1?"They're still forming a read ("+Math.round(im.conf*100)+"% sure).":"They have a solid read on you now.")+"</span></div></div>";}
+
 function sessHistHTML(){var L=S.simSess||[];
   var h="<div class='panel glass'><div class='evtop'><div><div class='venue'>Every cash session you play here</div><h2>Session history</h2></div></div>";
   if(!L.length)return h+"<p class='muted' style='font-size:.85rem'>Play a cash game for at least 5 hands, then cash out. Each session lands here with your results, how well you played, and how the table saw you.</p></div>";
@@ -2633,24 +2676,23 @@ function sessHistHTML(){var L=S.simSess||[];
   var tot=L.reduce(function(a,r){a.h+=r.hands;a.n+=r.net;a.g+=r.q===null?0:r.q*r.dec/100;a.d+=r.dec;return a;},{h:0,n:0,g:0,d:0});
   h+="<div style='font-size:.9rem;margin:4px 0'>"+L.length+" session"+(L.length>1?"s":"")+", "+tot.h+" hands, "+(tot.n>=0?"+":"\u2212")+money(Math.abs(tot.n))+(tot.d?", "+Math.round(tot.g/tot.d*100)+"% of decisions matched the tools":"")+".</div>"+
     "<svg viewBox='0 0 "+W+" "+Hh+"' width='100%' role='img' aria-label='Recent sessions: bars show big blinds won per 100 hands, the gold line shows play quality'><line x1='0' x2='"+W+"' y1='45' y2='45' stroke='currentColor' opacity='.2'/>"+bars+line+dots+"</svg>"+
-    "<div class='muted' style='font-size:.78rem'>Bars: results in big blinds per 100 hands. Gold line: play quality. Last "+n+" sessions, oldest on the left.</div>";
-  h+=L.slice(0,20).map(function(r,k){return "<button class='hrow' data-ss='"+k+"' style='display:flex;justify-content:space-between;gap:8px'><span><b>"+r.d+"</b> \u00b7 "+r.where+" \u00b7 "+r.hands+" hands<br><span class='muted' style='font-size:.8rem'>"+r.img+"</span></span><span style='text-align:right'><b style='color:"+(r.net>=0?"var(--good)":"var(--bad)")+"'>"+(r.net>=0?"+":"\u2212")+money(Math.abs(r.net))+"</b><br><span style='font-size:.8rem;color:"+qColor(r.q)+"'>"+(r.q===null?"":"Play "+r.q+"%")+"</span></span></button>";}).join("");
+    "<div class='muted' style='font-size:.78rem'>Bars: results in big blinds per 100 hands. Gold line: accuracy. Last "+n+" sessions, oldest on the left.</div>";
+  h+=L.slice(0,20).map(function(r,k){return "<button class='hrow' data-ss='"+k+"' style='display:flex;justify-content:space-between;gap:8px'><span><b>"+r.d+"</b> \u00b7 "+r.where+" \u00b7 "+r.hands+" hands<br><span class='muted' style='font-size:.8rem'>"+r.img+"</span></span><span style='text-align:right'><b style='color:"+(r.net>=0?"var(--good)":"var(--bad)")+"'>"+(r.net>=0?"+":"\u2212")+money(Math.abs(r.net))+"</b><br><span style='font-size:.8rem;color:"+qColor(r.q)+"'>"+(r.q===null?"":"Accuracy "+r.q+" ("+letter(r.q)+")")+"</span></span></button>";}).join("");
   return h+"</div>";}
 function openSess(k){var r=(S.simSess||[])[k];if(!r)return;
-  showModal("<h2>"+r.where+", "+r.d+"</h2><table class='st'><tr><td>Hands</td><td>"+r.hands+" in "+r.mins+" min</td></tr><tr><td>Result</td><td>"+(r.net>=0?"+":"\u2212")+money(Math.abs(r.net))+" ("+r.bb100+" bb/100)"+(r.rebuys?", "+r.rebuys+" rebuy"+(r.rebuys>1?"s":""):"")+"</td></tr><tr><td>Play quality</td><td>"+(r.q===null?"Not graded":r.q+"% of "+r.dec+" decisions")+"</td></tr><tr><td>Hands played</td><td>"+r.vp+"% (raised "+r.pf+"%)</td></tr><tr><td>Table saw you as</td><td>"+r.img+"</td></tr></table>"+
+  showModal("<h2>"+r.where+", "+r.d+"</h2><table class='st'><tr><td>Hands</td><td>"+r.hands+" in "+r.mins+" min</td></tr><tr><td>Result</td><td>"+(r.net>=0?"+":"\u2212")+money(Math.abs(r.net))+" ("+r.bb100+" bb/100)"+(r.rebuys?", "+r.rebuys+" rebuy"+(r.rebuys>1?"s":""):"")+"</td></tr><tr><td>Accuracy</td><td>"+(r.q===null?"Not graded":r.q+" ("+letter(r.q)+") over "+r.dec+" decisions")+(r.cnt?"<br><span class='muted'>"+r.cnt[1]+" inaccuracies, "+r.cnt[2]+" mistakes, "+r.cnt[3]+" blunders, about "+r.lossBB+" big blinds lost</span>":"")+"</td></tr><tr><td>Hands played</td><td>"+r.vp+"% (raised "+r.pf+"%)</td></tr><tr><td>Table saw you as</td><td>"+r.img+"</td></tr></table>"+
     (r.leaks.length?"<p style='font-size:.92rem'><b>Biggest leaks:</b> "+r.leaks.map(function(l){return (LEAKS[l]||[l])[0];}).join("; ")+".</p>":"<p style='font-size:.92rem'>No repeated leaks this session.</p>"),[["Close",function(){},"ghost"],["Delete session",function(){S.simSess.splice(k,1);save();renderLobby();},"ghost"]]);}
 
 /* ===== after-hand coach ===== */
-function decCost(d){var bb=T.bb,c=0;
-  if(d.toCall>0){var ev=d.eq*(d.pot+d.toCall)-d.toCall;if(d.act==="call"&&ev<0)c=-ev;else if(d.act==="fold"&&ev>0)c=ev;else if(d.act==="raise"&&ev<0)c=-ev;}
-  else if(d.leak==="missed_value")c=Math.max(0,d.eq-0.5)*d.pot*0.6;else if(d.leak==="bluff_multi")c=(d.to||d.pot*0.5)*0.4;else if(d.leak==="open_loose"||d.leak==="limp")c=bb*Math.max(0.3,(62-(EQ[d.code]||55))/10);else c=bb*0.5;
-  if(d.leak==="fold_chart")c=bb*Math.max(0.5,((EQ[d.code]||60)-55)/8);
-  if(d.leak==="missed_raise")c=Math.max(c,Math.max(0,d.eq-0.6)*d.pot*0.5);
-  return Math.max(c,bb*0.2)/bb;}
-function coachPick(){var ds=(H.dec||[]).filter(function(d){return d.leak;});if(!ds.length)return null;var best=null,bc=-1;ds.forEach(function(d){var c=decCost(d);if(c>bc){bc=c;best=d;}});return {d:best,cost:bc};}
+function decCost(d){return d.loss||0;}
+
+function coachPick(){var ds=(H.dec||[]).filter(function(d){return d.sev>=1;});if(!ds.length)return null;var best=ds.slice().sort(function(a,b){return b.loss-a.loss;})[0];return {d:best,cost:best.loss,all:H.dec.slice()};}
+
 function coachOn(){return S.settings.coach!==false&&H&&H.coach;}
-function coachHTML(){if(!coachOn())return "";var C=H.coach,d=C.d,st=["before the flop","on the flop","on the turn","on the river"][d.st]||"",act=d.act==="raise"?(d.toCall>0?"raised":"bet"):d.act==="call"?"called":d.act==="check"?"checked":"folded",cost=C.cost<1?C.cost.toFixed(1):String(Math.round(C.cost));
-  return "<div class='coach glass'><div style='display:flex;gap:8px;align-items:flex-start'><div style='flex:1;font-size:.9rem'><span class='ck'>Coach</span> You "+act+(d.code&&d.st===0?" "+d.code:"")+" "+st+". Better: <b>"+d.advice+"</b>, worth about "+cost+" big blind"+(C.cost>=1.5?"s":"")+".</div><button class='btn ghost pill' id='ck-ok' aria-label='Dismiss coach'>Got it</button></div><details style='margin:4px 0 0'><summary class='muted' style='font-size:.8rem'>Why</summary><div class='muted' style='font-size:.85rem'>"+d.why+" Saved to Redo your mistakes.</div></details></div>";}
+function coachHTML(){if(!coachOn())return "";var C=H.coach,d=C.d,g=GRADES[d.sev],st=["before the flop","on the flop","on the turn","on the river"][d.st]||"",act=d.act==="raise"?(d.toCall>0?"raised":"bet"):d.act==="call"?"called":d.act==="check"?"checked":"folded";
+  return "<div class='coach glass' style='border-color:"+g.c+"'><div style='display:flex;gap:8px;align-items:flex-start'><div style='flex:1;font-size:.9rem'><span class='ck' style='color:"+g.c+"'>"+g.n+" "+g.i+"</span> You "+act+(d.code&&d.st===0?" "+d.code:"")+" "+st+(d.toCall>0?" facing "+chips(d.toCall):"")+". Better: <b>"+d.advice+"</b>. Cost about <b>"+(C.cost<1?C.cost.toFixed(1):Math.round(C.cost))+" big blind"+(C.cost>=1.5?"s":"")+"</b>.</div><button class='btn ghost pill' id='ck-ok'>Got it</button></div>"+
+    "<div class='gchips'>"+C.all.map(gradeChip).join("")+"</div><details style='margin:4px 0 0'><summary class='muted' style='font-size:.8rem'>Why</summary><div class='muted' style='font-size:.85rem'>"+d.why+" Saved to Redo your mistakes.</div></details></div>";}
+
 /* ===== opponent stats on the seats ===== */
 function hudRec(name){T.hud=T.hud||{};return T.hud[name]=T.hud[name]||{h:0,vp:0,pr:0,cbO:0,cb:0,agg:0,call:0};}
 function hudHand(){if(!H||!H.hist)return;H.seats.forEach(function(i){if(i===0)return;var p=T.players[i];if(!p||p.human)return;var r=hudRec(p.name);r.h++;
