@@ -450,6 +450,12 @@ details{margin:8px 0}details summary{cursor:pointer;padding:4px 0}
 .bjc.c5{background:#c8102e}.bjc.c25{background:#2e8b57}.bjc.c100{background:#1a1a1a}.bjc.c500{background:#6a2a8a}
 .bjact{grid-template-columns:repeat(auto-fit,minmax(70px,1fr))}
 .bjchart td,.bjchart th{padding:3px 4px;font-size:.72rem;border:1px solid var(--line)}
+.pbadge{vertical-align:middle;flex:none}
+.pgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:8px 0}
+.pcell{display:grid;grid-template-columns:44px 1fr;column-gap:8px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:6px 8px;font-size:.78rem}
+.pcell svg{grid-row:span 3}
+.pcell.off{opacity:.45;filter:grayscale(.8)}
+.profav{position:relative}.profav svg.pbadge{position:absolute;left:3px;top:3px;width:30px!important;height:30px!important;z-index:2;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
 [hidden]{display:none!important}
 @media (max-width:380px){.seat{width:96px;font-size:.68rem}.center{width:206px}.pc.sm,.slot{width:34px;height:47px}.board{height:47px}}
 @media (prefers-reduced-motion:reduce){.pc.deal{animation:none}#atm .fx1,#atm .fx2{animation:none!important}.dealer{transition:none}}
@@ -1800,7 +1806,7 @@ function recordDecision(d){
   if(!H||!H.s[0])return;
   try{var A=adviseHero(false);
     var rec={code:A.code,st:H.street,act:d[0],to:d[1]||0,toCall:A.L.toCall,pot:A.pot,need:A.need,eq:A.eq,advice:A.advice,why:A.why,raises:H.raises,pos:A.pos,nOpp:A.opp.length,canRaise:A.L.canRaise,board:H.board.slice()};
-    rec.leak=classify(rec);H.dec=H.dec||[];H.dec.push(rec);if(rec.leak)addRedo(rec);sessDecision(rec);
+    rec.leak=classify(rec);H.dec=H.dec||[];H.dec.push(rec);if(!rec.leak)addXP(1);if(rec.leak)addRedo(rec);sessDecision(rec);
     if(rec.act==="fold"&&rec.toCall>0&&rec.eq<rec.need)mission("goodfold");if(rec.act==="fold"&&rec.st===3&&rec.advice==="Fold")mission("riverfold");
     if(rec.st===0&&rec.act==="raise"&&rec.raises===1&&H.preAgg>0){var opn=T.players[H.preAgg];if(opn&&(["station","limper","whale","maniac"].indexOf(opn.arch)>=0||opn.cid==="moonshot"))mission("3bloose");}
     if(rec.act==="fold"&&rec.st>0&&rec.advice==="Fold"&&H.lastAgg>0){var tb=T.players[H.lastAgg];if(tb&&(["nit","tag"].indexOf(tb.arch)>=0||["contessa","ezra"].indexOf(tb.cid)>=0))mission("foldtight");}if(!rec.leak)mission("gooddec");if(rec.st===0&&rec.act==="raise"&&rec.raises>=1)mission("threebet");
@@ -3211,6 +3217,29 @@ function passLock(st){return hsPassOK(st)?"":"Unlock: "+hsPassText(st);}
 function hsPanelHTML(){var hs=STAKES.filter(function(s){return s.pass;});return "<div class='panel glass'><div class='evtop'><div><div class='venue'>Earn your way into the biggest games</div><h2>High stakes passes</h2></div></div>"+
   hs.map(function(s){var ok=hsPassOK(s);return "<div style='display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--line);font-size:.88rem'><span style='font-size:1.1rem'>"+(ok?"\u2705":"\ud83d\udd12")+"</span><span><b>"+s.title+"</b> ("+s.n+")<br><span class='muted'>"+(ok?"Pass earned. Also needs rep level "+s.req+" and a "+money(s.buy)+" bankroll.":hsPassText(s))+"</span></span></div>";}).join("")+"</div>";}
 
+/* ===== ranks to 100 and prestige ===== */
+function roman(n){return ["","I","II","III","IV","V","VI","VII","VIII","IX","X"][n]||String(n);}
+function prestigeOf(){return car().prestige||0;}
+function prestigeName(p){return p>=MAXP?"Master Prestige":p?"Prestige "+roman(p):"";}
+function rankLabel(lv){var p=prestigeOf();return (p?prestigeName(p)+" \u00b7 ":"")+titleOf(lv);}
+function accessLv(){var c=car();return Math.max(levelOf(c.xp),c.maxLv||0);}
+function nextRank(lv){for(var i=0;i<RANKS.length;i++)if(RANKS[i][0]>lv)return RANKS[i];return null;}
+function prestigeBadge(p,sz){if(!p)return "";sz=sz||28;var tier=p>=10?3:Math.floor((p-1)/3),col=["#b8733a","#c9cfd6","#e8b923","#8a4ae8"][tier],rim=["#6b3f18","#6a737c","#8a6a10","#e8b923"][tier],pips=p>=10?0:((p-1)%3)+1,g="";
+  for(var k=0;k<pips;k++)g+="<circle cx='"+(16+(k-(pips-1)/2)*6)+"' cy='27' r='1.8' fill='"+rim+"'/>";
+  var mid=p>=10?"<path d='M8 20l2-9 4 4 2-6 2 6 4-4 2 9z' fill='#ffe08a' stroke='#fff' stroke-width='.8'/>":"<path d='M16 6l2.6 5.6 6 .6-4.5 4 1.3 6-5.4-3.1-5.4 3.1 1.3-6-4.5-4 6-.6z' fill='"+rim+"'/>";
+  return "<svg class='pbadge' width='"+sz+"' height='"+sz+"' viewBox='0 0 32 32' role='img' aria-label='"+prestigeName(p)+"'><path d='M16 1l13 6v9c0 8-6 13-13 15C9 29 3 24 3 16V7z' fill='"+col+"' stroke='"+rim+"' stroke-width='1.5'/>"+mid+g+"</svg>";}
+var P_REWARDS={1:"Prestige Obsidian table",2:"Prestige Chevron card back",3:"Hall of Fame atmosphere",4:"Prestige Crimson table",5:"Laurel card back",6:"Diamond Lounge atmosphere",7:"Prestige Platinum table",8:"Platinum card back",9:"Supernova atmosphere",10:"Master Prestige table and card back"};
+function doPrestige(){var c=car(),p=c.prestige||0;if(levelOf(c.xp)<MAXLV||p>=MAXP)return;
+  showModal("<h2>Enter "+prestigeName(p+1)+"?</h2><p>Your rank goes back to level 1 and you climb all 100 levels again. You keep your bankroll, achievements, trophies, looks, and access to every table and event you've already unlocked.</p><div style='display:flex;align-items:center;gap:12px;margin:10px 0'>"+prestigeBadge(p+1,56)+"<div><b>"+prestigeName(p+1)+"</b><div class='muted' style='font-size:.88rem'>Reward: "+P_REWARDS[p+1]+"</div></div></div>",
+    [["Prestige",function(){c.prestige=p+1;c.maxLv=MAXLV;c.xp=0;c.pDates=c.pDates||{};c.pDates[p+1]=today();unlock("prestige1");if(p+1>=MAXP)unlock("prestige10");save();toast(prestigeName(p+1)+" unlocked. Reward: "+P_REWARDS[p+1]+".");renderLobby();},"brass"],["Not yet",function(){},"ghost"]]);}
+function rankPanelHTML(){var c=car(),lv=levelOf(c.xp),p=c.prestige||0,nx=nextRank(lv),toNext=nx?xpFor(nx[0])-c.xp:0;
+  var h="<div class='panel glass'><div class='evtop'><div><div class='venue'>Rank and prestige</div><h2>"+(p?prestigeBadge(p,26)+" ":"")+rankLabel(lv)+"</h2></div><div class='tier'>LV "+lv+"</div></div>";
+  h+=lv>=MAXLV?(p>=MAXP?"<p>You've reached the top: Master Prestige, level 100. There's nowhere left to climb.</p>":"<p><b>Max rank.</b> You can prestige to start the climb again and earn the next emblem.</p><div class='row'><button class='btn brass' id='pr-go'>Enter "+prestigeName(p+1)+"</button></div>"):"<p style='font-size:.92rem'>"+(nx?"Next rank: <b>"+nx[1]+"</b> at level "+nx[0]+", "+toNext.toLocaleString()+" XP away.":"")+" Every decision that matches the tools earns XP, along with hands, missions, events, and achievements.</p>";
+  h+="<details><summary><b>All ranks</b></summary><table class='st'>"+RANKS.map(function(r){var got=lv>=r[0];return "<tr><td>"+(got?"\u2705":"\u2b1c")+" Level "+r[0]+"</td><td><b>"+r[1]+"</b></td></tr>";}).join("")+"</table></details>";
+  h+="<details"+(p?" open":"")+"><summary><b>Prestige emblems</b></summary><div class='pgrid'>"+[1,2,3,4,5,6,7,8,9,10].map(function(k){var on=p>=k;return "<div class='pcell"+(on?"":" off")+"'>"+prestigeBadge(k,40)+"<b>"+prestigeName(k)+"</b><span>"+P_REWARDS[k]+"</span>"+(on&&c.pDates&&c.pDates[k]?"<span class='muted'>"+c.pDates[k]+"</span>":"")+"</div>";}).join("")+"</div>"+
+    "<p class='muted' style='font-size:.82rem'>Reach level 100 to prestige. Your rank resets, but your bankroll, unlocks, and table access stay.</p></details></div>";
+  return h;}
+
 /* ===== world: events, stakes, career, achievements ===== */
 var EVENTS=[
  {id:"daily",tier:0,n:"Daily Freeroll",venue:"Online lobby",buy:0,field:6,stages:[0],pay:[100,50],skill:["beginner","regular"],look:{table:"teal",atm:"clean"},req:1,xp:30,daily:true},
@@ -3246,6 +3275,7 @@ var STAKES=[
 ];
 STAKES[4].venue="Private high roller suite";
 var ACH=[
+ ["level50","Halfway Home","Reach level 50"],["level100","The House","Reach level 100"],["prestige1","Prestige","Enter prestige for the first time"],["prestige10","Master Prestige","Reach Master Prestige"],
  ["first_hand","First Deal","Play your first hand"],["first_pot","On the Board","Win a pot"],["hands100","Familiar Face","Play 100 hands"],["hands1000","Grinder","Play 1,000 hands"],
  ["first_cash","In the Money","Cash in a tournament"],["first_title","Champion","Win a tournament"],["final_table","Final Table","Reach the final table of a multi-stage event"],["all_tiers","Circuit Veteran","Cash in every circuit event"],
  ["main_event","World Champion","Win the Main Event"],["br5k","Building a Roll","Reach a $5,000 bankroll"],["br50k","Serious Money","Reach a $50,000 bankroll"],["br500k","Whale","Reach a $500,000 bankroll"],
@@ -3256,14 +3286,16 @@ var ACH=[
 EVENTS.splice(1,0,seasonalEvent());
 function EV(id){for(var i=0;i<EVENTS.length;i++)if(EVENTS[i].id===id)return EVENTS[i];return EVENTS[EVENTS.length-1];}
 function STK(id){for(var i=0;i<STAKES.length;i++)if(STAKES[i].id===id)return STAKES[i];return STAKES[0];}
-function achName(id){for(var i=0;i<ACH.length;i++)if(ACH[i][0]===id)return ACH[i][1];return id;}
+function achName(id){for(var i=0;i<ACH.length;i++)if(ACH[i][0]===id)return ACH[i][1];var m=/^p(\d+)$/.exec(id);if(m)return "reaching "+prestigeName(+m[1]);return id;}
 function car(){S.car=S.car||{xp:0,ach:{},events:{},trophies:[],daily:{date:"",used:false,count:0}};return S.car;}
-function levelOf(xp){return Math.floor(Math.sqrt(xp/60))+1;}
-function xpFor(l){return 60*(l-1)*(l-1);}
-function titleOf(l){return l<3?"Rookie":l<5?"Regular":l<8?"Grinder":l<12?"Shark":l<16?"Pro":l<20?"High Roller":l<25?"Champion":"Legend";}
+var RANKS=[[1,"Rookie"],[3,"Regular"],[5,"Grinder"],[8,"Shark"],[12,"Pro"],[16,"High Roller"],[20,"Champion"],[25,"Legend"],[30,"Road Gambler"],[35,"Rounder"],[40,"Card Sharp"],[45,"Whale Hunter"],[50,"Silver Bracelet"],[55,"Gold Bracelet"],[60,"High Stakes Regular"],[65,"Big Game Hunter"],[70,"Ice Cold"],[75,"The Professor"],[80,"Hall of Famer"],[85,"Living Legend"],[90,"Card Room Royalty"],[95,"Poker Immortal"],[100,"The House"]];
+var MAXLV=100,MAXP=10,XP25=34560,XPSTEP=1500;
+function levelOf(xp){return xp<XP25?Math.floor(Math.sqrt(xp/60))+1:Math.min(MAXLV,25+Math.floor((xp-XP25)/XPSTEP));}
+function xpFor(l){return l<=25?60*(l-1)*(l-1):XP25+(l-25)*XPSTEP;}
+function titleOf(l){var t=RANKS[0][1];RANKS.forEach(function(r){if(l>=r[0])t=r[1];});return t;}
 function today(){var d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
 function addXP(n){var c=car(),before=levelOf(c.xp);c.xp+=Math.round(n);var after=levelOf(c.xp);
-  if(after>before){toast("Level up: "+after+" \u00b7 "+titleOf(after));if(after>=10)unlock("level10");if(after>=20)unlock("level20");}}
+  if(after>before){if(titleOf(after)!==titleOf(before))toast("New rank: "+titleOf(after)+" (level "+after+")");else toast("Level up: "+after+" \u00b7 "+titleOf(after));if(after>=10)unlock("level10");if(after>=20)unlock("level20");if(after>=50)unlock("level50");if(after>=MAXLV){unlock("level100");if(prestigeOf()<MAXP)toast("Max rank. You can prestige from the Career tab.");}}}
 function unlock(id){var c=car();if(c.ach[id])return;c.ach[id]=today();c.xp+=100;toast("Achievement: "+achName(id));}
 var TOASTQ=[],TOASTING=false;
 function toast(t){TOASTQ.push(t);if(!TOASTING)nextToast();}
@@ -3363,10 +3395,10 @@ function heroBust(){
 /* ===== lobby ===== */
 var LTAB="circuit";
 function dots(skill){var a=Array.isArray(skill)?skill:skill==="mixed"?SKILLS:[skill];var seen={};return a.filter(function(s){if(seen[s])return false;seen[s]=1;return true;}).map(function(s){return "<span class='dot "+s+"'></span> "+SKILL_LABEL[s];}).join(" &nbsp;");}
-function lockReason(req,buy){var lv=levelOf(car().xp);if(lv<req)return "Reach rep level "+req;if(S.bankroll<buy)return "Need a "+money(buy)+" bankroll";return "";}
+function lockReason(req,buy){var lv=accessLv();if(lv<req)return "Reach rep level "+req;if(S.bankroll<buy)return "Need a "+money(buy)+" bankroll";return "";}
 function renderProfile(){
   var c=car(),lv=levelOf(c.xp),a=xpFor(lv),b=xpFor(lv+1),pct=Math.round((c.xp-a)/(b-a)*100),nAch=Object.keys(c.ach).length;
-  $("l-prof").innerHTML="<div class='profrow'><button class='profav' id='l-av' aria-label='Edit your avatar'>"+avatarSVG(heroAv())+"<span class='lvtag'>LV "+lv+"</span></button><div style='flex:1;min-width:0'><div class='ttl'>"+titleOf(lv)+"</div><div class='xpbar'><i style='width:"+pct+"%'></i></div><div class='muted' style='font-size:.8rem'>"+(c.xp-a).toLocaleString()+" / "+(b-a).toLocaleString()+" XP to level "+(lv+1)+"</div></div></div>"+
+  $("l-prof").innerHTML="<div class='profrow'><button class='profav' id='l-av' aria-label='Edit your avatar'>"+avatarSVG(heroAv())+prestigeBadge(prestigeOf(),26)+"<span class='lvtag'>LV "+lv+"</span></button><div style='flex:1;min-width:0'><div class='ttl'>"+rankLabel(lv)+"</div><div class='xpbar'><i style='width:"+(lv>=MAXLV?100:pct)+"%'></i></div><div class='muted' style='font-size:.8rem'>"+(lv>=MAXLV?(prestigeOf()<MAXP?"Max rank. Prestige from the Career tab.":"Master Prestige, max rank."):(c.xp-a).toLocaleString()+" / "+(b-a).toLocaleString()+" XP to level "+(lv+1))+"</div></div></div>"+
     "<div class='bank'>"+money(S.bankroll)+"</div><div class='muted' style='font-size:.85rem'>Bankroll"+(S.cash?" (+"+money(S.cash.players[0].stack)+" on a cash table)":"")+" \u00b7 "+c.trophies.length+" trophies \u00b7 "+nAch+"/"+ACH.length+" achievements</div>";
 }
 function evCard(ev){
@@ -3416,13 +3448,13 @@ function renderCashTab(){
   $("l-body").querySelectorAll("[data-res]").forEach(function(b){b.onclick=function(){sitCash(b.dataset.res,true);};});
 }
 function renderCareer(){
-  var c=car(),h="";
+  var c=car(),h=rankPanelHTML();
   h+="<div class='panel glass'><h2>Trophy case</h2>"+(c.trophies.length?"<div class='trophies'>"+c.trophies.map(function(t){return "<div class='trophy'><div class='cup'>\ud83c\udfc6</div><div><b>"+t.n+"</b><div class='muted' style='font-size:.82rem'>"+money(t.prize)+" \u00b7 "+t.date+"</div></div></div>";}).join("")+"</div>":"<p class='muted'>Win an event to put your first trophy here.</p>")+"</div>";
   h+=renderRivals();
   h+="<div class='panel glass'><h2>Achievements</h2><p class='muted' style='font-size:.85rem'>"+Object.keys(c.ach).length+" of "+ACH.length+" unlocked. Each one is worth 100 XP, and some unlock exclusive table looks.</p><div class='achgrid'>"+ACH.map(function(a){var on=!!c.ach[a[0]],rw=rewardFor(a[0]);return "<div class='ach"+(on?" on":"")+"'><div class='ai'>"+(on?"\u2605":"\u2606")+"</div><div><b>"+a[1]+"</b><div class='muted' style='font-size:.8rem'>"+a[2]+(rw?" \u00b7 Unlocks "+rw:"")+"</div></div></div>";}).join("")+"</div></div>";
   h+="<div class='panel glass'><h2>Circuit record</h2><table class='st'>"+EVENTS.filter(function(e){return !e.hidden;}).map(function(e){var r=c.events[e.id];return "<tr><td>"+e.n+"</td><td>"+(r&&r.entries?(r.wins?r.wins+" won":r.cashes?"best "+ordinal(r.best):"best "+ordinal(r.best))+" \u00b7 "+r.entries+" played":"not played")+"</td></tr>";}).join("")+"</table></div>";
   h+="<div class='panel glass'><h2>Stats</h2><div id='l-stats'></div></div>";
-  $("l-body").innerHTML=h;renderStats();
+  $("l-body").innerHTML=h;renderStats();if($("pr-go"))$("pr-go").onclick=doPrestige;
 }
 function renderStats(){
   var c=S.stats.cash,t=S.stats.tour;
@@ -3514,7 +3546,11 @@ var TABLES=[
  {id:"arcade",n:"Retro Arcade",bg:"linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px) 0 0/16px 16px,linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px) 0 0/16px 16px,radial-gradient(ellipse at 50% 40%,#3b1c7a,#160a33)",sh:"inset 0 0 0 6px #ffe14d,inset 0 0 0 9px #160a33,0 0 0 3px #ff4d8a,0 18px 40px rgba(0,0,0,.4)",logo:"Player 1",chip:"#ffe14d"},
  {id:"marble",n:"White Marble",bg:"linear-gradient(115deg,transparent 40%,rgba(120,120,120,.18) 41%,transparent 43%),linear-gradient(60deg,transparent 60%,rgba(120,120,120,.12) 61%,transparent 63%),linear-gradient(160deg,transparent 20%,rgba(150,150,150,.15) 21%,transparent 22.5%),radial-gradient(ellipse at 50% 40%,#fbfbf8,#d9d8d2)",sh:rail("#2a2a2a","#c9a14a"),logo:"Atelier",text:"#1d1d1b",muted:"rgba(29,29,27,.6)",chip:"#1d1d1b",chipText:"#fbfbf8"},
  {id:"jungle",n:"Jungle",bg:"radial-gradient(circle at 20% 30%,rgba(0,0,0,.18) 0 18px,transparent 19px),radial-gradient(circle at 70% 70%,rgba(0,0,0,.15) 0 24px,transparent 25px),radial-gradient(circle at 60% 20%,rgba(255,255,255,.05) 0 14px,transparent 15px),radial-gradient(ellipse at 50% 40%,#3f7a2e,#1e3f16)",sh:rail("#2a1a0b","#c8e07a"),logo:"Wild Card",chip:"#c8e07a"},
- {id:"cherry",n:"Cherry Lacquer",bg:"linear-gradient(160deg,rgba(255,255,255,.18),transparent 35%),radial-gradient(ellipse at 50% 40%,#c3162b,#6a0612)",sh:rail("#0d0d0d","#f4f4f4"),logo:"Lucky",chip:"#f4f4f4",chipText:"#6a0612"}
+ {id:"cherry",n:"Cherry Lacquer",bg:"linear-gradient(160deg,rgba(255,255,255,.18),transparent 35%),radial-gradient(ellipse at 50% 40%,#c3162b,#6a0612)",sh:rail("#0d0d0d","#f4f4f4"),logo:"Lucky",chip:"#f4f4f4",chipText:"#6a0612"},
+ {id:"pobs",n:"Prestige Obsidian",lock:"p1",bg:"radial-gradient(ellipse at 50% 38%,#2a2a2e 0%,#121214 65%,#050506 100%)",sh:rail("#050506","#c8102e"),logo:"Prestige",chip:"#c8102e",chipText:"#fff"},
+ {id:"pcrim",n:"Prestige Crimson",lock:"p4",bg:"repeating-linear-gradient(135deg,rgba(255,255,255,.03) 0 2px,transparent 2px 10px),radial-gradient(ellipse at 50% 38%,#8a1a2a 0%,#4a0a14 65%,#20040a 100%)",sh:rail("#1a0408","#e8c36a"),logo:"Prestige",chip:"#e8c36a"},
+ {id:"pplat",n:"Prestige Platinum",lock:"p7",bg:"radial-gradient(ellipse at 50% 38%,#6a7480 0%,#3a424c 65%,#1a1e24 100%)",sh:rail("#14181c","#e6ecf2"),logo:"Prestige",chip:"#e6ecf2",chipText:"#111"},
+ {id:"pmaster",n:"Master Prestige",lock:"p10",bg:"repeating-conic-gradient(from 0deg at 50% 45%,rgba(232,185,35,.08) 0 6deg,transparent 6deg 12deg),radial-gradient(ellipse at 50% 38%,#4a1a8a 0%,#24084a 65%,#10021f 100%)",sh:rail("#0a0114","#e8b923"),logo:"Master Prestige",chip:"#e8b923"}
 ];
 function svg(s){return "url(\"data:image/svg+xml,"+encodeURIComponent(s).replace(/'/g,"%27").replace(/\(/g,"%28").replace(/\)/g,"%29")+"\")";}
 var BACKS=[
@@ -3545,7 +3581,11 @@ var BACKS=[
  {id:"mosaic",n:"Mosaic",bg:"conic-gradient(from 45deg,#e76f51 25%,#2a9d8f 0 50%,#e9c46a 0 75%,#264653 0) 0 0/12px 12px",bc:"#f4f1de"},
  {id:"galaxy",n:"Galaxy",bg:"radial-gradient(circle at 30% 30%,rgba(255,120,220,.6),transparent 40%),radial-gradient(circle at 70% 70%,rgba(90,160,255,.6),transparent 45%),#0c0620",bc:"#e9d7ff"},
  {id:"forest",n:"Forest",bg:"linear-gradient(135deg,#1f4d2b 25%,transparent 25%) 0 0/10px 10px,linear-gradient(225deg,#1f4d2b 25%,transparent 25%) 0 0/10px 10px,#2f6b3e",bc:"#e8dfb8"},
- {id:"lava",n:"Lava",bg:"radial-gradient(circle at 30% 40%,#ffb000,transparent 35%),radial-gradient(circle at 70% 70%,#ff3b00,transparent 40%),#5a0a00",bc:"#ffd27a"}
+ {id:"lava",n:"Lava",bg:"radial-gradient(circle at 30% 40%,#ffb000,transparent 35%),radial-gradient(circle at 70% 70%,#ff3b00,transparent 40%),#5a0a00",bc:"#ffd27a"},
+ {id:"pchev",n:"Prestige Chevron",lock:"p2",bg:"repeating-linear-gradient(135deg,#1a1a1a 0 6px,#c8102e 6px 9px,#1a1a1a 9px 15px)",bc:"#e8c36a"},
+ {id:"plaurel",n:"Laurel",lock:"p5",bg:"radial-gradient(circle at 50% 50%,transparent 38%,#e8c36a 39% 42%,transparent 43%),repeating-linear-gradient(45deg,#2a5a3a 0 4px,#1f4a2f 4px 8px)",bc:"#e8c36a"},
+ {id:"pplatb",n:"Platinum",lock:"p8",bg:"linear-gradient(135deg,#e6ecf2,#9aa4ae 50%,#e6ecf2)",bc:"#3a424c"},
+ {id:"pmasterb",n:"Master",lock:"p10",bg:"repeating-conic-gradient(from 0deg at 50% 50%,#4a1a8a 0 15deg,#e8b923 15deg 30deg)",bc:"#fff"}
 ];
 TABLES.push(
  {id:"velvet",n:"Trophy Velvet",lock:"first_title",bg:"radial-gradient(ellipse at 50% 38%,#6b1238 0%,#3a0a1e 65%,#1e040f 100%)",sh:rail("#120208","#e8c36a"),logo:"Champion",chip:"#e8c36a"},
@@ -3585,7 +3625,10 @@ var ATMOS=[
  {id:"reef",n:"Underwater",bg:"radial-gradient(ellipse at 50% 0%,rgba(140,230,255,.35),transparent 55%),linear-gradient(180deg,#0b5b80 0%,#04263a 100%)",fx:"bubbles"},
  {id:"desert",n:"Desert Night",bg:"linear-gradient(180deg,#120a24 0%,#3a1f4a 55%,#b85a3a 100%)",fx:"stars"},
  {id:"penthouse",n:"Penthouse",bg:"linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.6)),repeating-linear-gradient(90deg,rgba(255,220,140,.08) 0 2px,transparent 2px 60px),linear-gradient(180deg,#1a1d2b,#0a0b12)",fx:"citylights"},
- {id:"forest",n:"Firefly Forest",bg:"radial-gradient(ellipse at 50% 100%,#123a1c 0%,#06140b 70%)",fx:"fireflies"}
+ {id:"forest",n:"Firefly Forest",bg:"radial-gradient(ellipse at 50% 100%,#123a1c 0%,#06140b 70%)",fx:"fireflies"},
+ {id:"hof",n:"Hall of Fame",lock:"p3",bg:"radial-gradient(ellipse at 50% 0%,rgba(232,185,35,.35) 0%,#1a1408 45%,#080604 100%)",fx:"beams"},
+ {id:"diamond",n:"Diamond Lounge",lock:"p6",bg:"linear-gradient(160deg,#0e2a3a 0%,#06121a 60%,#020608 100%)",fx:"sparkle"},
+ {id:"nova",n:"Supernova",lock:"p9",bg:"radial-gradient(circle at 50% 30%,#ff9a3a 0%,#8a1a4a 30%,#1a0628 65%,#05010a 100%)",fx:"stars"}
 ];
 BACKS.push(
  {id:"diamond",n:"Diamond",lock:"first_title",bg:"linear-gradient(135deg,rgba(255,255,255,.55) 0 12%,transparent 12% 50%,rgba(255,255,255,.3) 50% 62%,transparent 62%) 0 0/10px 10px,linear-gradient(135deg,#7fd8ff,#e6f8ff 50%,#7fb8ff)",bc:"#fff"},
@@ -3601,7 +3644,7 @@ ATMOS.push(
  {id:"yacht",n:"Superyacht",lock:"br500k",bg:"linear-gradient(180deg,#1a3a6a 0%,#0e2340 50%,#08162a 100%)",fx:"citylights"},
  {id:"royalflush",n:"Royal Flush",lock:"royal",bg:"radial-gradient(ellipse at 50% 30%,#7a1aa0 0%,#2a0050 60%,#12001f 100%)",fx:"beams"}
 );
-function okItem(o){return !o.lock||!!car().ach[o.lock];}
+function okItem(o){if(!o.lock)return true;var m=/^p(\d+)$/.exec(o.lock);if(m)return prestigeOf()>=+m[1];return !!car().ach[o.lock];}
 function rewardFor(id){var a=[];[[TABLES,"table"],[BACKS,"card back"],[ATMOS,"atmosphere"]].forEach(function(x){x[0].forEach(function(o){if(o.lock===id)a.push("the "+o.n+" "+x[1]);});});return a.join(" and ");}
 var FXCSS={
  smoke:".fx1{background:radial-gradient(circle at 30% 40%,rgba(200,190,170,.18),transparent 35%),radial-gradient(circle at 70% 60%,rgba(200,190,170,.14),transparent 40%);filter:blur(30px);animation:drift 26s ease-in-out infinite alternate}.fx2{background:radial-gradient(circle at 60% 30%,rgba(220,210,190,.12),transparent 35%);filter:blur(40px);animation:drift 34s ease-in-out infinite alternate-reverse}",
