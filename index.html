@@ -674,6 +674,7 @@ function startHand(){
   closeTools();
   if(T.mode==="cash"){
     if(T.pass)T.players.forEach(function(p){if((p.hero||p.human)&&p.stack<=0){p.stack=T.buy;p.buyins=(p.buyins||1)+1;toast(p.name+" rebuys for "+money(T.buy)+".");}});
+    T.players.forEach(function(p,i){if(!p.hero&&!p.human&&p.stack<=0&&STK(T.stake).cast){var seated=T.players.map(function(q){return q.cid;}),free=CLUB_IDS.filter(function(id){return seated.indexOf(id)<0;});if(free.length){var c=castById(pick(free));T.players[i]={name:c.short,cid:c.id,skill:c.skill,stack:T.buy,hero:false,out:false};}}});
     T.players.forEach(function(p,i){if(!p.hero&&!p.human&&p.stack<=0){var stA=STK(T.stake).arch,nb=stA?archBot(pick(stA),T.buy||200,namesAt()):newBot(T.skill,T.buy||200,namesAt());T.players[i]=nb;}});
     if(!T.pass&&T.players[0].stack<=0){heroBust();return;}
   }else{
@@ -815,8 +816,10 @@ function endHand(sd){
     saveHandRecord(net);if(T.mode==="cash")sessHand(net);H.coach=coachPick();if(T.chal)chal().hands++;
     mission("hand");
     if(H.winners[0]){if(H.pos[0]==="BTN")mission("btnwin");
-      if(H.showdown){mission("sdwin");if(catOf(H.vals[0])>=2)mission("bigwin");if(live().some(function(i){return i!==0&&T.players[i].cid;}))mission("beatcast");if(catOf(H.vals[0])>=7)confetti(70);}
-      else mission("nosdwin");}
+      if(H.showdown){var lsr=live().filter(function(i){return i!==0&&!H.winners[i];});if(lsr.some(function(i){return T.players[i].arch==="station";}))mission("valstation");if(lsr.some(function(i){return CLUB_IDS.indexOf(T.players[i].cid)>=0;})){mission("beathr");car().hrBeats=(car().hrBeats||0)+1;}
+        mission("sdwin");if(catOf(H.vals[0])>=2)mission("bigwin");if(live().some(function(i){return i!==0&&T.players[i].cid;}))mission("beatcast");if(catOf(H.vals[0])>=7)confetti(70);}
+      else{mission("nosdwin");if(H.board.length===0&&H.preAgg===0&&["CO","BTN","SB"].indexOf(H.pos[0])>=0)mission("steal");}}
+    if(T.mode==="cash"&&T.bb>=50)mission("hshand");
     if(H.winners[0]){sfx("win");buzz([30,40,30]);}
     if(H.read){var rd=reads(),ok=H.read.guess===H.read.truthGroup;rd.n++;if(ok){rd.ok++;mission("readok");}rd.by[H.read.key]=(rd.by[H.read.key]||0)+1;toast("Read "+(ok?"correct":"missed")+": "+H.read.who+" had "+H.read.truth+(H.read.truth==="draw"?" (a straight or flush draw)":"")+".");}
     H.seats.forEach(function(i){var q=T.players[i];if(i===0||!q.cid)return;var r=riv(q.cid);r.hands++;
@@ -1588,6 +1591,32 @@ var THEMES={
    bio:"Has played the same penny slot for decades and treats poker exactly the same. Pulls an imaginary lever before every single call.",
    lines:{win:["Jackpot! Ding ding ding!","Told you this machine was hot."],allin:["Max bet, baby!"],bust:["The next machine over is due."]},
    av:{bg:"#4a3a0a",skin:"#d9a47a",hairColor:"#b8322a",shape:"round",hair:"curly",eyes:"wide",nose:"small",mouth:"grin",lips:true,extra:"earring",cloth:"#2a8a6a",blush:true}}
+ ]},
+ club:{n:"The High Rollers' Club",tag:"Six of the biggest games in the world, all at one table, all convinced the others are the fish.",look:{table:"onyx",atm:"penthouse"},cast:[
+  {id:"sterling",short:"Sterling",name:"Sterling Vance III",skill:"tough",job:"Hedge fund manager, Manhattan",
+   bio:"Treats every pot like a hostile takeover. Has never smiled at a poker table, though staff swear they saw him smirk once in 2019.",
+   lines:{win:["Acquired.","Your position has been liquidated.","Margins are margins."],allin:["I'm going long.","Let's see your quarterly numbers."],bust:["A rounding error."]},
+   av:{bg:"#1a1f2a",skin:"#f2d2b6",hairColor:"#9a8a70",shape:"long",hair:"slick",eyes:"normal",nose:"hook",mouth:"flat",brows:"thin",outfit:"suit",cloth:"#1c1f26",extra:"tie"}},
+  {id:"mamalu",short:"Mama Lu",name:"Lucia \u201cMama Lu\u201d Benedetti",skill:"tough",job:"Restaurant empire matriarch",
+   bio:"Built forty restaurants from one kitchen. Brings cannoli for the table, asks about your mother, then takes every chip you own while you chew.",
+   lines:{win:["Mangia. You'll need your strength.","Such a nice young person. Such a bad call."],allin:["Mama's hungry.","Everything on the table, like Sunday dinner."],bust:["Who wants leftovers?"]},
+   av:{look:"fem",bg:"#5a1a1a",skin:"#e2ad84",hairColor:"#d8d2c4",shape:"round",hair:"bun",eyes:"glasses",nose:"big",mouth:"smile",lipColor:"#a14848",outfit:"cardigan",cloth:"#3a2a5a",extra:"pearls",blush:true}},
+  {id:"ada",short:"Dr. Quill",name:"Dr. Ada Quill",skill:"tough",job:"Math professor on sabbatical",
+   bio:"Wrote the textbook on probability, literally. Plays perfectly balanced poker and narrates the math under her breath, which is somehow worse.",
+   lines:{win:["Expected value, realized.","The math was never in doubt."],allin:["The equity says yes.","Let's sample the distribution."],bust:["Variance. It happens to the best of us, rarely."]},
+   av:{look:"fem",bg:"#1e3a66",skin:"#8d5a3b",hairColor:"#111111",shape:"long",hair:"afro",eyes:"square",nose:"small",mouth:"smirk",lipColor:"#8a2a4a",outfit:"turtleneck",cloth:"#1a1a1a",extra:"earring"}},
+  {id:"moonshot",short:"Moonshot",name:"Chad \u201cMoonshot\u201d Kowalski",skill:"beginner",job:"Crypto founder, very rich this week",
+   bio:"Made a fortune on a coin named after his dog. Plays every hand, raises every street, and posts each loss online as a learning experience.",
+   lines:{win:["To the moon!","Diamond hands, baby.","Screenshot that."],allin:["Full send!","Number go up."],bust:["Buying the dip. Again."]},
+   av:{bg:"#3a1a4a",skin:"#f2d2b6",hairColor:"#d8b06a",shape:"square",hair:"spiky",eyes:"mirrored",nose:"small",mouth:"grin",outfit:"hoodie",cloth:"#111111",extra:"chain",hat:"backcap",hatColor:"#e8b923"}},
+  {id:"contessa",short:"Contessa",name:"Contessa Valentina Ferrante",skill:"tough",job:"Vineyard heiress, Lake Como",
+   bio:"Arrives by helicopter, plays exactly two hours, and leaves with everyone's money. Has never been seen raising without a hand, or folding to anyone.",
+   lines:{win:["Grazie.","As expected."],allin:["Allora. Let us finish this.","A small risk, for me."],bust:["How rustic."]},
+   av:{look:"fem",bg:"#4a3a0a",skin:"#efc7a5",hairColor:"#2a1d14",shape:"long",hair:"sideswept",eyes:"shades",nose:"small",mouth:"flat",lipColor:"#c8304a",outfit:"dress",cloth:"#1a1a1a",extra:"pearls"}},
+  {id:"ezra",short:"Old Ezra",name:"Ezra \u201cOld Man\u201d Pike",skill:"tough",job:"Road gambler since 1962",
+   bio:"Played every back room from Galveston to Reno before most of the table was born. Folds for hours, then takes the one pot that matters.",
+   lines:{win:["Been waiting all night for that one.","Patience pays, son."],allin:["Time to get paid.","I've seen this movie before."],bust:["Even old dogs get bit."]},
+   av:{bg:"#2a3b34",skin:"#c68a5e",hairColor:"#e8e8e8",shape:"square",hair:"receding",eyes:"squint",nose:"hook",mouth:"smirk",facial:"walrus",outfit:"suit",cloth:"#5a3a1a",hat:"fedora",hatColor:"#3a2f28",item:"toothpick"}}
  ]}
 };
 var CAST_ST={
@@ -1610,7 +1639,9 @@ var CAST_ST={
  ruthie:{loose:-2,agg:1.1,bluff:0.7,sticky:0.02,trap:0.25,sizing:"std",tilt:0.1},
  tex:{loose:12,agg:1.2,bluff:0.8,sticky:0.1,trap:0,sizing:"big",tilt:0.5},
  stranger:{loose:0,agg:1,bluff:1,sticky:0,trap:0.2,sizing:"polar",tilt:0.2},
- lorraine:{loose:10,agg:0.7,bluff:0.6,sticky:0.12,trap:0.05,sizing:"small",tilt:0.4}
+ lorraine:{loose:10,agg:0.7,bluff:0.6,sticky:0.12,trap:0.05,sizing:"small",tilt:0.4},
+ sterling:{loose:2,agg:1.5,bluff:1.3,sticky:0,trap:0.15,sizing:"polar",tilt:0.15},mamalu:{loose:4,agg:1.2,bluff:0.9,sticky:0.02,trap:0.4,sizing:"std",tilt:0.1},ada:{loose:0,agg:1.25,bluff:1,sticky:0,trap:0.25,sizing:"std",tilt:0.05},
+ moonshot:{loose:16,agg:1.6,bluff:1.5,sticky:0.14,trap:0,sizing:"big",tilt:0.8},contessa:{loose:-5,agg:1.35,bluff:0.6,sticky:-0.03,trap:0.2,sizing:"std",tilt:0.05},ezra:{loose:-8,agg:1.1,bluff:0.5,sticky:-0.02,trap:0.35,sizing:"small",tilt:0.05}
 };
 Object.keys(THEMES).forEach(function(k){THEMES[k].cast.forEach(function(c){c.st=CAST_ST[c.id];});});
 function castById(id){for(var k in THEMES){var c=THEMES[k].cast;for(var i=0;i<c.length;i++)if(c[i].id===id)return c[i];}return null;}
@@ -1770,7 +1801,9 @@ function recordDecision(d){
   try{var A=adviseHero(false);
     var rec={code:A.code,st:H.street,act:d[0],to:d[1]||0,toCall:A.L.toCall,pot:A.pot,need:A.need,eq:A.eq,advice:A.advice,why:A.why,raises:H.raises,pos:A.pos,nOpp:A.opp.length,canRaise:A.L.canRaise,board:H.board.slice()};
     rec.leak=classify(rec);H.dec=H.dec||[];H.dec.push(rec);if(rec.leak)addRedo(rec);sessDecision(rec);
-    if(rec.act==="fold"&&rec.toCall>0&&rec.eq<rec.need)mission("goodfold");if(!rec.leak)mission("gooddec");if(rec.st===0&&rec.act==="raise"&&rec.raises>=1)mission("threebet");
+    if(rec.act==="fold"&&rec.toCall>0&&rec.eq<rec.need)mission("goodfold");if(rec.act==="fold"&&rec.st===3&&rec.advice==="Fold")mission("riverfold");
+    if(rec.st===0&&rec.act==="raise"&&rec.raises===1&&H.preAgg>0){var opn=T.players[H.preAgg];if(opn&&(["station","limper","whale","maniac"].indexOf(opn.arch)>=0||opn.cid==="moonshot"))mission("3bloose");}
+    if(rec.act==="fold"&&rec.st>0&&rec.advice==="Fold"&&H.lastAgg>0){var tb=T.players[H.lastAgg];if(tb&&(["nit","tag"].indexOf(tb.arch)>=0||["contessa","ezra"].indexOf(tb.cid)>=0))mission("foldtight");}if(!rec.leak)mission("gooddec");if(rec.st===0&&rec.act==="raise"&&rec.raises>=1)mission("threebet");
     var LK=S.leaks=S.leaks||{n:0,agree:0,by:{}};LK.n++;if(!rec.leak)LK.agree++;else LK.by[rec.leak]=(LK.by[rec.leak]||0)+1;
   }catch(e){}
 }
@@ -2029,11 +2062,11 @@ function closeAvatar(){$("avSheet").hidden=true;if($("modal").hidden&&$("tools")
 var CHAT={beginner:{win:["Ooh, I won! I never win!","Was that good? It felt good.","Beginner's luck, baby."],lose:["Wait, that beats me?","But I had a pair...","The river hates me."],idle:["Is it my turn? Oh, it's not.","I'm just here to have fun.","How many chips is a lot?"],fold:["Nope, not this time.","I'll sit this one out."],needle:["Oh no, sorry! Was that mean?","I think I got lucky."]},
   regular:{win:["Standard.","That's how it's done.","Value town."],lose:["Nice hand.","Ran into it.","Can't win them all."],idle:["Card dead tonight.","Somebody please fold a hand.","Blinds are getting juicy."],fold:["Too rich for me.","Fold. Disciplined."],needle:["Nice try.","Close, but no."]},
   tough:{win:["Ship it.","Thanks for the donation.","You can't play back at me."],lose:["Lucky river.","You'll give it back.","Unreal. Runner-runner."],idle:["Who wants to play a pot with me?","Wake me up when someone has a hand.","I raise because I like the sound."],fold:["Saving these chips for you.","I'll get you next time."],needle:["Too easy.","Better luck next hand."]}};
-var CAST_CHAT={frankie:["Anybody want a coney? I'm buying.","My chili's hotter than this deck."],delphine:["River's running high tonight.","Steady as she goes."],hogsworth:["Is there a cheaper chip? These feel common.","Father owns a building like this."],millie:["Thirty-one years and I've never seen a deck this cold.","Back in my day, cards were paper. Still are."],otto:["Another round for the table!","This level calls for a stein."],
+var CAST_CHAT={sterling:["Is anyone here actually solvent?","My assistant is watching this on a delay."],mamalu:["Eat something, you look thin.","My grandson plays like you. He's twelve."],ada:["That river was a 4.3% event.","I'm keeping notes. For a paper."],moonshot:["Who wants to flip for it?","I'm streaming this, say hi."],contessa:["The champagne here is adequate.","I have a flight at nine."],ezra:["Back in my day we played with real cards.","Son, I've folded more hands than you've seen."],frankie:["Anybody want a coney? I'm buying.","My chili's hotter than this deck."],delphine:["River's running high tonight.","Steady as she goes."],hogsworth:["Is there a cheaper chip? These feel common.","Father owns a building like this."],millie:["Thirty-one years and I've never seen a deck this cold.","Back in my day, cards were paper. Still are."],otto:["Another round for the table!","This level calls for a stein."],
   margo:["Everything is going according to plan.","I've accounted for that."],gus:["Meter's running, folks.","Can we speed this up?"],tumbler:["Listen. Hear that? Neither do I.","These chips have a lovely tone."],irving:["I work here. I mean, I don't. Who said that?","Just a regular customer. Very regular."],twitch:["This deck has terrible security.","Running a quick scan on you."],
   juniper:["I'm not here. You didn't see me.","Lovely evening for espionage."],vex:["Soon this table will be mine. All of it.","Do you like my cufflinks? They're lasers."],gilda:["Darling, that's a lovely watch. Was.","I adore a high-stakes room."],barnaby:["Is it customary to wager the castle?","Splendid little game, this."],henchman:["...","(adjusts sunglasses)"],
   dino:["Drinks are on the house. Which is me.","I built this room, you know."],ruthie:["You two would make a lovely couple.","I've seen worse bluffs at a wedding."],tex:["Back home we call that a little bet.","Y'all ever seen a real oil well?"],stranger:["This next hand goes out to the lovely dealer.","Hold for applause."],lorraine:["Pulling the lever!","Feels like a jackpot kind of night."]};
-Object.keys(THEMES).forEach(function(k){THEMES[k].cast.forEach(function(c){c.lines.chat=CAST_CHAT[c.id]||[];if(["delphine","millie","margo","juniper","gilda","ruthie","lorraine"].indexOf(c.id)>=0&&c.av)c.av.look="fem";});});
+Object.keys(THEMES).forEach(function(k){THEMES[k].cast.forEach(function(c){c.lines.chat=CAST_CHAT[c.id]||[];if(["delphine","millie","margo","juniper","gilda","ruthie","lorraine","mamalu","ada","contessa"].indexOf(c.id)>=0&&c.av)c.av.look="fem";});});
 function sayText(i,t,ms){if(!H||!T||!t)return;H.talk=H.talk||{};H.talk[i]={t:t,until:Date.now()+(H.skip?900:(ms||2800))};render();setTimeout(render,H.skip?950:(ms||2800)+100);}
 function chatLine(p,kind){if(p.human||p.hero)return "";if(p.cid){var c=castById(p.cid);if(kind==="idle"&&c&&c.lines.chat&&c.lines.chat.length)return pick(c.lines.chat);}var pool=CHAT[p.skill]||CHAT.regular;return pool[kind]?pick(pool[kind]):"";}
 function chatterStart(){if(!H||H.skip||Math.random()>0.12)return;var bots=H.seats.filter(function(i){return i!==0;});if(!bots.length)return;var i=pick(bots);setTimeout(function(){if(H&&!H.done)sayText(i,chatLine(T.players[i],"idle"),3000);},900);}
@@ -2081,8 +2114,8 @@ function ladderEnd(place){
   showModal("<h2>"+(won?"You beat "+c.name:c.name+" wins this one")+"</h2>"+(won?"<div style='text-align:center'>"+trophySVG()+"</div>":"")+"<p>"+(won?"Rung "+(r+1)+" of "+L.length+" cleared. You won "+money(prize)+"."+(r+1<L.length?" Next up: "+L[r+1].name+".":" You beat the whole ladder."):"\u201c"+pick(c.lines.win)+"\u201d Try again anytime from the Circuit tab.")+"</p>",[["Back to lobby",function(){toLobby();}]]);
 }
 /* missions */
-var MPOOL_D=[["play20","Play 20 hands",20,"hand"],["btnwin","Win 3 pots from the button",3,"btnwin"],["sdwin","Win 2 pots at showdown",2,"sdwin"],["goodfold","Make 3 disciplined folds (no odds to call)",3,"goodfold"],["reads","Make 2 correct reads",2,"readok"],["steal","Win 3 pots without a showdown",3,"nosdwin"],["threebet","3-bet preflop twice",2,"threebet"],["puzzles","Solve all 3 daily puzzles",3,"puzzle"],["bigwin","Win a pot with two pair or better",1,"bigwin"]];
-var MPOOL_W=[["w_hands","Play 150 hands",150,"hand"],["w_cash","Cash in 2 tournaments",2,"cash"],["w_win","Win a tournament",1,"title"],["w_ladder","Climb a rung on the heads-up ladder",1,"ladder"],["w_char","Beat a named character at showdown 3 times",3,"beatcast"],["w_clean","Make 40 decisions that match the tools",40,"gooddec"]];
+var MPOOL_D=[["play20","Play 20 hands",20,"hand"],["btnwin","Win 3 pots from the button",3,"btnwin"],["sdwin","Win 2 pots at showdown",2,"sdwin"],["goodfold","Make 3 disciplined folds (no odds to call)",3,"goodfold"],["reads","Make 2 correct reads",2,"readok"],["steal","Win 3 pots without a showdown",3,"nosdwin"],["threebet","3-bet preflop twice",2,"threebet"],["puzzles","Solve all 3 daily puzzles",3,"puzzle"],["bigwin","Win a pot with two pair or better",1,"bigwin"],["valstation","Win 2 showdowns against a calling station",2,"valstation"],["steal","Steal the blinds 3 times from a late seat",3,"steal"],["riverfold","Make 2 good river folds",2,"riverfold"],["3bloose","3-bet a loose player's raise",1,"3bloose"],["foldtight","Fold to a tight player's bet when you're beaten",2,"foldtight"]];
+var MPOOL_W=[["w_hands","Play 150 hands",150,"hand"],["w_cash","Cash in 2 tournaments",2,"cash"],["w_win","Win a tournament",1,"title"],["w_ladder","Climb a rung on the heads-up ladder",1,"ladder"],["w_char","Beat a named character at showdown 3 times",3,"beatcast"],["w_clean","Make 40 decisions that match the tools",40,"gooddec"],["w_hs","Play 200 hands at $25/$50 or higher",200,"hshand"],["w_q","Finish a cash session of 30+ hands with 85%+ play quality",1,"qsess"],["w_up","Finish 3 cash sessions up 20+ big blinds",3,"upsess"],["w_hr","Beat a High Rollers' Club member at showdown",1,"beathr"]];
 function weekKey(){var d=new Date(),days=Math.floor((d.getTime()-d.getTimezoneOffset()*60000)/86400000);return "w"+Math.floor((days+3)/7);}
 function pickN(pool,n,seed){var r=seeded(hashStr(seed)),a=pool.slice(),out=[];while(out.length<n&&a.length){out.push(a.splice(Math.floor(r()*a.length),1)[0]);}return out;}
 function missions(){var M=S.miss=S.miss||{},dk=dayKey(),wk=weekKey();
@@ -2574,7 +2607,8 @@ function adaptBluff(p){var k=adaptK(p);if(!k)return 1;var im=heroImage();return 
 function qualityPct(s){return s&&s.dec?Math.round(s.good/s.dec*100):null;}
 function sessFinish(){var s=T&&T.sess;if(!s||s.hands<5){if(T)T.sess=null;return;}
   var im=heroImage(),lk=Object.keys(s.leaks).sort(function(a,b){return s.leaks[b]-s.leaks[a];}).slice(0,2);
-  S.simSess=S.simSess||[];S.simSess.unshift({d:today(),t:Date.now(),where:STK(T.stake).n,hands:s.hands,net:Math.round(s.net),bb100:+(s.bbNet/s.hands*100).toFixed(1),q:qualityPct(s),dec:s.dec,vp:Math.round(s.vpip/s.hands*100),pf:Math.round(s.pfr/s.hands*100),img:im.label,leaks:lk,mins:Math.round((Date.now()-s.start)/60000),rebuys:s.rebuys});
+  if(s.hands>=30&&qualityPct(s)>=85)mission("qsess");if(s.bbNet>=20)mission("upsess");
+  S.simSess=S.simSess||[];S.simSess.unshift({sid:T.stake,d:today(),t:Date.now(),where:STK(T.stake).n,hands:s.hands,net:Math.round(s.net),bb100:+(s.bbNet/s.hands*100).toFixed(1),q:qualityPct(s),dec:s.dec,vp:Math.round(s.vpip/s.hands*100),pf:Math.round(s.pfr/s.hands*100),img:im.label,leaks:lk,mins:Math.round((Date.now()-s.start)/60000),rebuys:s.rebuys});
   if(S.simSess.length>100)S.simSess.length=100;T.sess=null;save();}
 function qColor(q){return q===null?"var(--muted)":q>=85?"#2e8b57":q>=70?"#c9a14a":"#c8102e";}
 function sessToolsHTML(){var s=sess();if(!s)return "";var q=qualityPct(s),im=heroImage();
@@ -2736,7 +2770,9 @@ var ART={
  home:["radial-gradient(ellipse at 50% 0%,rgba(255,220,140,.45),transparent 60%),repeating-linear-gradient(90deg,#5a3a22 0 22px,#4a2f1c 22px 24px)","lamp"],
  micro:["repeating-linear-gradient(0deg,rgba(255,255,255,.18) 0 10px,transparent 10px 20px),repeating-linear-gradient(90deg,rgba(255,255,255,.18) 0 10px,transparent 10px 20px),#b8322a","house"],
  casino12:["radial-gradient(circle at 25% 25%,#e8b923 0 3px,transparent 4px) 0 0/20px 20px,radial-gradient(circle at 75% 75%,#3a8a5a 0 3px,transparent 4px) 0 0/20px 20px,#6a1424","slots"],
- challenge:["linear-gradient(180deg,#1f4d33,#0b1f15)","chips"]
+ challenge:["linear-gradient(180deg,#1f4d33,#0b1f15)","chips"],
+ hs1:["linear-gradient(180deg,#0b0b0b,#3a2a0a 60%,#e8b923)","diamond"],hs2:["linear-gradient(180deg,#4aa3d8,#0f3f6a)","yacht"],hs3:["radial-gradient(ellipse at 50% 20%,#5a3a0a,#0b0905 70%)","crown"],
+ hr1:["linear-gradient(135deg,#0b0b0b,#2a2410 50%,#0b0b0b)","diamond"],hr2:["radial-gradient(ellipse at 50% 20%,#6a1a3a,#0b0508 70%)","crown"]
 };
 function specialArt(){var m=new Date().getMonth()+1;return m===10?["linear-gradient(180deg,#3a1a4a,#120818)","pumpkin"]:m===12||m===1?["linear-gradient(180deg,#2a5a9a,#0f2a4a)","snow"]:m===2?["linear-gradient(180deg,#7a1a3a,#2a0a14)","heart"]:m===3?["linear-gradient(180deg,#1f5a33,#0b2a15)","clover"]:m===7?["linear-gradient(180deg,#1a2a6a,#0a0a24)","star"]:["linear-gradient(180deg,#2a2a2a,#0b0b0b)","star"];}
 function evArt(id,label){var a=id==="special"?specialArt():ART[id];if(!a)return "";
@@ -3164,6 +3200,17 @@ function renderBJTab(){var st=bjStats(),L=S.bjSess||[];
   $("l-body").querySelectorAll("[data-bjo]").forEach(function(b){b.onclick=function(){var k=b.dataset.bjo;S.settings[k]=!bjOpt(k);save();renderBJTab();};});
   if($("bjd-1"))$("bjd-1").onclick=bjDrillBS;if($("bjd-2"))$("bjd-2").onclick=bjDrillCount;}
 
+/* ===== high stakes: passes, extra missions ===== */
+var CLUB_IDS=["sterling","mamalu","ada","moonshot","contessa","ezra"];
+function hsPassOK(st){if(!st.pass)return true;var L=S.simSess||[],C=car();
+  if(st.pass==="p1")return L.some(function(r){return (r.sid==="high"||r.sid==="nose"||r.where==="$25/$50"||r.where==="$100/$200")&&r.hands>=100&&r.net>0&&(r.q||0)>=75;});
+  if(st.pass==="p2")return L.some(function(r){return r.sid==="hs1"&&r.net>0&&r.hands>=50;});
+  if(st.pass==="p3")return (C.hrBeats||0)>=3;return true;}
+function hsPassText(st){return st.pass==="p1"?"Win a session of 100+ hands at $25/$50 or higher with 75%+ play quality":st.pass==="p2"?"Finish a winning session of 50+ hands at The Penthouse Game":st.pass==="p3"?"Beat High Rollers' Club members at showdown 3 times ("+(car().hrBeats||0)+"/3)":"";}
+function passLock(st){return hsPassOK(st)?"":"Unlock: "+hsPassText(st);}
+function hsPanelHTML(){var hs=STAKES.filter(function(s){return s.pass;});return "<div class='panel glass'><div class='evtop'><div><div class='venue'>Earn your way into the biggest games</div><h2>High stakes passes</h2></div></div>"+
+  hs.map(function(s){var ok=hsPassOK(s);return "<div style='display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--line);font-size:.88rem'><span style='font-size:1.1rem'>"+(ok?"\u2705":"\ud83d\udd12")+"</span><span><b>"+s.title+"</b> ("+s.n+")<br><span class='muted'>"+(ok?"Pass earned. Also needs rep level "+s.req+" and a "+money(s.buy)+" bankroll.":hsPassText(s))+"</span></span></div>";}).join("")+"</div>";}
+
 /* ===== world: events, stakes, career, achievements ===== */
 var EVENTS=[
  {id:"daily",tier:0,n:"Daily Freeroll",venue:"Online lobby",buy:0,field:6,stages:[0],pay:[100,50],skill:["beginner","regular"],look:{table:"teal",atm:"clean"},req:1,xp:30,daily:true},
@@ -3173,6 +3220,8 @@ var EVENTS=[
  {id:"desert",tier:4,n:"Desert Palace Series",venue:"Desert Palace casino",buy:1000,field:54,stages:[2,2,0],pay:[19440,11880,8100,5940,4860,3780],skill:["regular","tough"],look:{table:"desert",atm:"desert"},req:7,xp:280,finalTheme:"heist"},
  {id:"monte",tier:5,n:"Riviera Invitational",venue:"Casino de la Riviera, Monaco",buy:2500,field:36,stages:[2,3,0],pay:[36000,22500,13500,10800,7200],skill:["tough","regular","tough"],look:{table:"onyx",atm:"monte"},req:11,xp:450,finalTheme:"gala"},
  {id:"main",tier:6,n:"World Championship Main Event",venue:"The Grand Ballroom, Las Vegas",buy:10000,field:108,stages:[2,2,3,0],pay:[324000,194400,129600,97200,75600,64800,48600,48600,32400,32400,16200,16200],skill:["tough","tough","regular"],look:{table:"cherry",atm:"vegas"},req:15,xp:900,finalTheme:"neon"},
+ {id:"hr1",tier:7,n:"High Roller Invitational",venue:"The Penthouse Ballroom, Las Vegas",buy:25000,field:18,stages:[2,0],pay:[180000,110000,70000,50000,40000],skill:["tough","tough","regular"],look:{table:"onyx",atm:"penthouse"},req:17,xp:1300,finalTheme:"club"},
+ {id:"hr2",tier:8,n:"Super High Roller Bowl",venue:"A private arena, invitation only",buy:100000,field:36,stages:[2,3,0],pay:[1440000,900000,540000,360000,216000,144000],skill:["tough"],look:{table:"onyx",atm:"penthouse"},req:20,xp:2500,finalTheme:"club"},
  {id:"sat",tier:5,n:"Main Event Satellite",venue:"Satellite room, Las Vegas",buy:1000,field:6,stages:[0],pay:[0],ticket:"main",skill:["regular","tough","tough"],look:{table:"vegas",atm:"vegas"},req:10,xp:200},
  {id:"ladder",hidden:true,tier:0,n:"Heads-up Ladder",venue:"The back room",buy:0,field:2,stages:[0],pay:[0],skill:["regular"],look:{table:"onyx",atm:"backroom"},req:1,xp:0},
  {id:"legacy",hidden:true,tier:0,n:"Classic Sit & Go",venue:"Home game",buy:100,field:6,stages:[0],pay:[390,210],skill:["beginner","regular","tough"],look:null,req:1,xp:40}
@@ -3190,7 +3239,10 @@ var STAKES=[
  {id:"low",n:"$2/$5",sb:2,bb:5,buy:500,req:3,skill:["beginner","regular","regular"],venue:"Riverboat card room",look:{table:"vegas",atm:"rain"}},
  {id:"mid",n:"$5/$10",sb:5,bb:10,buy:1000,req:6,skill:["regular","regular","tough"],venue:"Downtown card room",look:{table:"burgundy",atm:"backroom"}},
  {id:"high",n:"$25/$50",sb:25,bb:50,buy:5000,req:10,skill:["regular","tough","tough"],venue:"Desert Palace high limit room",look:{table:"onyx",atm:"penthouse"}},
- {id:"nose",n:"$100/$200",sb:100,bb:200,buy:20000,req:16,skill:["tough"],venue:"The Bellagio-style back room",look:{table:"royal",atm:"monte"}}
+ {id:"nose",n:"$100/$200",sb:100,bb:200,buy:20000,req:16,skill:["tough"],venue:"The Fountain Room, high limit",look:{table:"royal",atm:"monte"}},
+ {id:"hs1",n:"Penthouse $200/$400",sb:200,bb:400,buy:40000,req:17,pass:"p1",cast:3,skill:["tough"],venue:"A private penthouse game above the Strip",look:{table:"onyx",atm:"penthouse"}},
+ {id:"hs2",n:"Yacht $500/$1,000",sb:500,bb:1000,buy:100000,req:19,pass:"p2",cast:4,skill:["tough"],venue:"A superyacht anchored off the Riviera",look:{table:"royal",atm:"monte"}},
+ {id:"hs3",n:"The Big Game $1,000/$2,000",sb:1000,bb:2000,buy:200000,req:21,pass:"p3",cast:5,skill:["tough"],venue:"The private game every high roller talks about",look:{table:"onyx",atm:"penthouse"}}
 ];
 STAKES[4].venue="Private high roller suite";
 var ACH=[
@@ -3199,7 +3251,7 @@ var ACH=[
  ["main_event","World Champion","Win the Main Event"],["br5k","Building a Roll","Reach a $5,000 bankroll"],["br50k","Serious Money","Reach a $50,000 bankroll"],["br500k","Whale","Reach a $500,000 bankroll"],
  ["quads","Four of a Kind","Win a hand with four of a kind"],["sflush","Straight Flush","Make a straight flush"],["royal","Royal Flush","Make a royal flush"],["badbeat","Bad Beat","Lose at showdown with a full house or better"],
  ["hammer","The Hammer","Win a pot with 7-2 offsuit"],["double_ko","Two for One","Knock out two players in one hand"],["comeback","Comeback Kid","Win a tournament after dropping under 10 big blinds"],["bigpot","Monster Pot","Win a pot of 100 big blinds or more"],
- ["highstakes","High Roller","Sit at a $25/$50 table or bigger"],["daily7","Daily Habit","Play 7 daily freerolls"],["level10","Made It","Reach rep level 10"],["level20","Legend Status","Reach rep level 20"],["ladder_champ","Ladder Champion","Beat all 20 characters on the heads-up ladder"]
+ ["highstakes","High Roller","Sit at a $25/$50 table or bigger"],["daily7","Daily Habit","Play 7 daily freerolls"],["level10","Made It","Reach rep level 10"],["level20","Legend Status","Reach rep level 20"],["ladder_champ","Ladder Champion","Beat every character on the heads-up ladder"]
 ];
 EVENTS.splice(1,0,seasonalEvent());
 function EV(id){for(var i=0;i<EVENTS.length;i++)if(EVENTS[i].id===id)return EVENTS[i];return EVENTS[EVENTS.length-1];}
@@ -3238,7 +3290,8 @@ function ordinal(n){var s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||
 function makeCash(st){
   var skill=st.skill==="user"?S.settings.skill:st.skill,ps=[{name:"You",hero:true,stack:st.buy,out:false,skill:"hero"}],taken=["You"];
   var n=st.seats||6,ak=st.arch?shuffle(st.arch):null;for(var i=0;i<n-1;i++){var b=ak?archBot(ak[i%ak.length],st.buy,taken):newBot(skill,st.buy,taken);taken.push(b.name);ps.push(b);}
-  if(st.id!=="micro"&&!st.arch)maybeRival(ps);
+  if(st.cast){shuffle(CLUB_IDS.slice()).slice(0,st.cast).forEach(function(id,k){var c=castById(id);ps[k+1]={name:c.short,cid:c.id,skill:c.skill,stack:st.buy,hero:false,out:false};});}
+  else if(st.id!=="micro"&&!st.arch)maybeRival(ps);
   return {mode:"cash",stake:st.id,skill:skill,players:ps,button:rnd(n),sb:st.sb,bb:st.bb,buy:st.buy,level:0,handNo:0,home:!!st.home,casino:!!st.casino,live:!!(st.home||st.casino)};
 }
 function stageField(ev,s){var f=ev.field;for(var i=0;i<s;i++)f=f*ev.stages[i]/6;return Math.round(f);}
@@ -3350,13 +3403,13 @@ function renderCircuit(){
 function renderCashTab(){
   var h="";
   STAKES.forEach(function(st){if(st.hidden)return;
-    var lock=lockReason(st.req,st.buy),here=S.cash&&S.cash.stake===st.id,other=S.cash&&!here,btn;
+    var lock=lockReason(st.req,st.buy)||passLock(st),here=S.cash&&S.cash.stake===st.id,other=S.cash&&!here,btn;
     if(here)btn="<button class='btn brass' data-res='"+st.id+"'>Resume, "+money(S.cash.players[0].stack)+" in chips</button>";
     else if(other)btn="<div class='lock'>You're seated at "+STK(S.cash.stake).n+"</div>";
     else if(lock)btn="<div class='lock'>\ud83d\udd12 "+lock+"</div>";
     else btn="<button class='btn primary' data-sit='"+st.id+"'>Sit down, buy in "+money(st.buy)+"</button>";
     h+="<div class='panel glass ev"+(lock&&!here?" locked":"")+"'>"+evArt(st.id,st.n)+"<div class='evtop'><div><div class='venue'>"+st.venue+"</div><h2>"+st.n+" No-Limit</h2></div><div class='tier'>"+(st.buy/st.bb)+" bb</div></div>"+
-      "<div class='evmeta'>"+(st.arch?"Players: "+ARCH_ORDER.filter(function(k){return st.arch.indexOf(k)>=0;}).map(function(k){var c=st.arch.filter(function(x){return x===k;}).length;return (c>1?c+" ":"")+ARCH[k].n.toLowerCase()+(c>1?"s":"");}).join(", "):st.skill==="user"?"Opponents set in Settings: "+dots(S.settings.skill):dots(st.skill))+"</div><div class='row'>"+btn+"</div></div>";
+      "<div class='evmeta'>"+(st.cast?st.cast+" members of the High Rollers' Club, plus tough regulars":st.arch?"Players: "+ARCH_ORDER.filter(function(k){return st.arch.indexOf(k)>=0;}).map(function(k){var c=st.arch.filter(function(x){return x===k;}).length;return (c>1?c+" ":"")+ARCH[k].n.toLowerCase()+(c>1?"s":"");}).join(", "):st.skill==="user"?"Opponents set in Settings: "+dots(S.settings.skill):dots(st.skill))+"</div><div class='row'>"+btn+"</div></div>";
   });
   $("l-body").innerHTML="<div class='carhead'><h3>Cash games</h3><span>Swipe for more \u2192</span></div><div class='carousel'>"+h+"</div>";
   $("l-body").querySelectorAll("[data-sit]").forEach(function(b){b.onclick=function(){sitCash(b.dataset.sit,false);};});
