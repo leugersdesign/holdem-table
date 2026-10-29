@@ -2834,7 +2834,10 @@ function dwSched(ms){clearTimeout(DW_T);DW_T=setTimeout(dwLoop,ms);}
 var DWSTAKES=[
  {id:"dw1",n:"$1/$2",title:"Kitchen Table Draw",sb:1,bb:2,buy:200,arch:["limper","station","limper","nit","tag"],venue:"A kitchen table game, beer and pretzels",look:{table:"walnut",atm:"library"},art:"home"},
  {id:"dw2",n:"$2/$5",title:"Card Room Draw",sb:2,bb:5,buy:500,arch:["tag","nit","station","limper","maniac"],venue:"An old-school card room, smoke in the rafters",look:{table:"classic",atm:"backroom"},art:"anchor"},
- {id:"dw3",n:"$5/$10",title:"Saloon High Draw",sb:5,bb:10,buy:1000,arch:["lag","tag","maniac","nit","tag"],venue:"A frontier saloon back table",look:{table:"desert",atm:"saloon"},art:"desert"}];
+ {id:"dw3",n:"$5/$10",title:"Saloon High Draw",sb:5,bb:10,buy:1000,arch:["lag","tag","maniac","nit","tag"],venue:"A frontier saloon back table",look:{table:"desert",atm:"saloon"},art:"desert"},
+ {id:"dw4",n:"$10/$20",title:"Riverboat Draw",sb:10,bb:20,buy:2000,req:8,arch:["tag","lag","nit","maniac","tag"],venue:"Upper deck of a paddlewheel casino",look:{table:"vegas",atm:"riverboat"},art:"river"},
+ {id:"dw5",n:"$25/$50",title:"Penthouse Draw",sb:25,bb:50,buy:5000,req:12,cast:2,arch:["tag","lag","tag","nit","maniac"],venue:"A private suite, old-school game",look:{table:"onyx",atm:"penthouse"},art:"hs1"},
+ {id:"dw6",n:"$100/$200",title:"The Big Draw",sb:100,bb:200,buy:20000,req:16,cast:4,arch:["lag","tag","tag","maniac","nit"],venue:"The biggest draw game in town",look:{table:"onyx",atm:"penthouse"},art:"hs3"}];
 function dwStake(id){return DWSTAKES.find(function(s){return s.id===id;})||DWSTAKES[0];}
 function dwStats(){return S.dwStats=S.dwStats||{hands:0,won:0,net:0,sd:0,sdw:0};}
 /* hand helpers */
@@ -2848,24 +2851,25 @@ function dwDrawInfo(cs){var su={},cnt={},rk=dwRanks(cs);cs.forEach(function(c){s
   var oe=null,gs=null;if(u.length===5){for(var drop=0;drop<5;drop++){var k4=u.filter(function(_,i){return i!==drop;});var span=k4[3]-k4[0];if(span===3&&k4[0]>0&&k4[3]<12)oe=k4;else if(span<=4&&!gs)gs=k4;}
     var wheel=u.filter(function(r){return r===12||r<=3;});if(!oe&&wheel.length>=4)gs=gs||wheel.slice(0,4);}
   return {flush:fl?su[fl]:null,oe:oe,gs:gs};}
-function dwBestDiscard(cs,p){var v=evaluate(cs),cat=catOf(v),rk=dwRanks(cs),cnt={};rk.forEach(function(r){cnt[r]=(cnt[r]||0)+1;});
+function dwBestDiscard(cs,p,nOpp){if(nOpp===undefined)nOpp=DWH&&DWH.seats?Math.max(1,dwLive().length-1):1;var v=evaluate(cs),cat=catOf(v),rk=dwRanks(cs),cnt={};rk.forEach(function(r){cnt[r]=(cnt[r]||0)+1;});
   var idx=function(pred){var o=[];cs.forEach(function(c,i){if(pred(c,i))o.push(i);});return o;};
   if(cat>=4)return {d:[],why:"A made hand of five cards. Stand pat."};
   if(cat===7)return {d:[],why:"Four of a kind. Stand pat."};
-  if(cat===3){var t=+Object.keys(cnt).find(function(k){return cnt[k]===3;});return {d:idx(function(c){return (c>>2)!==t;}),why:"Keep the three of a kind and draw two. About 1 in 10 to make a full house or better."};}
+  if(cat===3){var t=+Object.keys(cnt).find(function(k){return cnt[k]===3;});return {d:idx(function(c){return (c>>2)!==t;}),why:"Keep the three of a kind and draw two. The simulation shows it beats keeping a kicker."};}
   if(cat===2){return {d:idx(function(c){return cnt[c>>2]===1;}),why:"Keep two pair and draw one. About 1 in 12 (8.5%) to make a full house."};}
   var di=dwDrawInfo(cs);
-  if(di.flush)return {d:idx(function(c){return di.flush.indexOf(c)<0;}),why:"Four to a flush: draw one. About 19% to hit."};
   if(cat===1){var pr=+Object.keys(cnt).find(function(k){return cnt[k]===2;});
-    if(di.oe&&pr<6)return {d:idx(function(c,i){return di.oe.indexOf(c>>2)<0||rk.indexOf(c>>2)!==i;}),why:"A small pair is worth less than an open-ended straight draw. Draw one: about 17% to hit."};
+    if(di.flush&&pr<=5&&nOpp>=2)return {d:idx(function(c){return di.flush.indexOf(c)<0;}),why:"Small pair plus four to a flush against 2 or more players: the simulation says break the pair and draw to the flush. It wins about 50% more often in crowded pots."};
     return {d:idx(function(c){return (c>>2)!==pr;}),why:"Keep the pair and draw three. About 29% to improve, mostly to two pair or trips."};}
+  if(di.flush)return {d:idx(function(c){return di.flush.indexOf(c)<0;}),why:"Four to a flush: draw one. About 19% to hit."};
   if(di.oe)return {d:idx(function(c,i){return di.oe.indexOf(c>>2)<0||rk.indexOf(c>>2)!==i;}),why:"Open-ended straight draw: draw one. About 17% to hit."};
   if(p&&styleOf(p).bluff>=1.4&&Math.random()<0.06)return {d:[],why:"Snowing: standing pat with nothing to represent a big hand."};
-  var hi=Math.max.apply(null,rk);if(hi===12)return {d:idx(function(c){return (c>>2)!==12;}).slice(0,4),why:"Nothing but an ace. Keep the ace and draw four."};
-  var keep=rk.slice().sort(function(a,b){return b-a;}).slice(0,2);return {d:idx(function(c,i){return keep.indexOf(c>>2)<0||rk.indexOf(c>>2)!==i;}).slice(0,3),why:"Nothing to build on. Keep the two highest cards and draw three, or fold before the draw next time."};}
+  var hi=Math.max.apply(null,rk);if(hi===12&&nOpp>=2)return {d:idx(function(c){return (c>>2)!==12;}).slice(0,4),why:"Ace high against 2 or more players: keep only the ace and draw four. The simulation shows it wins more often in crowded pots."};
+  var keep=rk.slice().sort(function(a,b){return b-a;}).slice(0,2);return {d:idx(function(c,i){return keep.indexOf(c>>2)<0||rk.indexOf(c>>2)!==i;}).slice(0,3),why:hi===12?"Ace high heads-up: keep the ace and your next-highest card, and draw three. It edges out drawing four against one player.":"Nothing to build on. Keep the two highest cards and draw three, or fold before the draw next time."};}
 /* table setup */
 function dwSit(id,resume){if(!resume){var st=dwStake(id);if(S.bankroll<st.buy)return toast("You need "+money(st.buy)+" to sit here.");S.bankroll-=st.buy;var ps=[{name:"You",hero:true,stack:st.buy,skill:"hero",out:false}],taken=["You"];
-  shuffle(st.arch.slice()).forEach(function(k){var b=archBot(k,st.buy,taken);taken.push(b.name);ps.push(b);});S.draw={stake:st.id,players:ps,button:rnd(6),sb:st.sb,bb:st.bb,buy:st.buy,handNo:0,net0:0};save();}
+  shuffle(st.arch.slice()).forEach(function(k){var b=archBot(k,st.buy,taken);taken.push(b.name);ps.push(b);});
+  if(st.cast)shuffle(CLUB_IDS.slice()).slice(0,st.cast).forEach(function(id,k){var c=castById(id);ps[k+1]={name:c.short,cid:c.id,skill:c.skill,stack:st.buy,hero:false,out:false};});S.draw={stake:st.id,players:ps,button:rnd(6),sb:st.sb,bb:st.bb,buy:st.buy,handNo:0,net0:0};save();}
   DW=S.draw;dwEnter();}
 function dwEnter(){$("lobby").hidden=true;$("game").hidden=true;$("draw").hidden=false;window.scrollTo({top:0});var st=dwStake(DW.stake),L=look(),t=byId(TABLES,st.look.table)||TABLES[0],a=byId(ATMOS,st.look.atm)||ATMOS[0];
   if(!S.settings.venueLooks){t=byId(TABLES,L.table)||TABLES[0];a=byId(ATMOS,L.atm)||ATMOS[0];}if(!okItem(t))t=TABLES[0];if(!okItem(a))a=ATMOS[0];
@@ -2887,14 +2891,14 @@ function dwStart(){if(DWH&&!DWH.done)return;DW_TOK++;clearTimeout(DW_T);clearTim
   var seats=[0,1,2,3,4,5].filter(function(i){return DW.players[i].stack>0;});DW.button=dwNext(DW.button,seats);
   var deck=shuffle(Array.from({length:52},function(_,k){return k;})),sbI=dwNext(DW.button,seats),bbI=dwNext(sbI,seats);
   DWH={id:DW_TOK,seats:seats,s:{},deck:deck,street:0,cur:0,minR:DW.bb,toAct:0,done:false,log:[],status:"",sbI:sbI,bbI:bbI,heroStart:DW.players[0].stack,raises:0,lastAgg:-1,winners:{},showdown:false};
-  seats.forEach(function(i){DWH.s[i]={cards:deck.splice(0,5),folded:false,allin:false,sb:0,tot:0,acted:false,drew:null,label:""};});
-  DWH.jacks=dwOpt("dwJacks");DWH.carry=DW.carry||0;DW.carry=0;DWH.dec=[];DWH.acts=[];DWH.opened=false;DW.sess=DW.sess||{start:Date.now(),hands:0,net:0,dec:0,good:0};if(DWH.jacks)DW.jacksSess=true;
+  seats.forEach(function(i){DWH.s[i]={cards:deck.splice(0,5),folded:false,allin:false,sb:0,tot:0,acted:false,drew:null,drewAt:-1,label:""};});
+  DWH.jacks=dwOpt("dwJacks");DWH.two=dwOpt("dwTwo");DWH.carry=DW.carry||0;DW.carry=0;DWH.dec=[];DWH.acts=[];DWH.opened=false;DW.sess=DW.sess||{start:Date.now(),hands:0,net:0,dec:0,good:0};if(DWH.jacks)DW.jacksSess=true;
   if(DWH.jacks){seats.forEach(function(i){dwPut(i,DW.sb);DWH.s[i].sb=0;DWH.s[i].label="Ante";});DWH.cur=0;DWH.toAct=dwNext(DW.button,seats);}
   else{dwPut(sbI,DW.sb);dwPut(bbI,DW.bb);DWH.cur=DW.bb;DWH.s[sbI].label="SB";DWH.s[bbI].label="BB";DWH.toAct=dwNext(bbI,seats);}DW_SEL={};
   dwLog("Hand "+(DW.handNo+1)+". "+DW.players[DW.button].name+" has the button.");sfx("deal");dwRender();dwControls();dwSched(350);}
 function dwLegal(i){var p=DW.players[i],s=DWH.s[i],toCall=Math.max(0,DWH.cur-s.sb),maxTo=s.sb+p.stack,minTo=Math.min(maxTo,DWH.cur+DWH.minR),can=p.stack>toCall,noOpen=DWH.jacks&&DWH.street===0&&DWH.cur===0&&!dwQual(s.cards);return {toCall:toCall,minTo:minTo,maxTo:maxTo,canRaise:can&&!noOpen,noOpen:noOpen};}
 function dwLoop(){if(!DWH||DWH.done)return;if(dwLive().length===1)return dwWin();
-  if(DWH.street===1)return dwDrawNext();
+  if(DWH.street===1||DWH.street===3)return dwDrawNext();
   var found=-1;for(var k=0;k<6;k++){var j=(DWH.toAct+k)%6;if(DWH.seats.indexOf(j)<0)continue;var s=DWH.s[j];if(dwCanAct(j)&&(!s.acted||s.sb<DWH.cur)){found=j;break;}}
   if(found<0)return dwEndStreet();
   if(DWH.seats.filter(function(j){return dwCanAct(j);}).length===1&&DWH.s[found].sb>=DWH.cur)return dwEndStreet();
@@ -2911,19 +2915,20 @@ function dwAct(i,a,to){var s=DWH.s[i],p=DW.players[i],L=dwLegal(i),nm=p.hero?"Yo
   s.acted=true;DWH.toAct=(i+1)%6;dwRender();dwControls();dwSched(120);}
 function dwEndStreet(){if(DWH.street===0&&DWH.jacks&&!DWH.opened){DW.carry=dwPot();DWH.noOpen=true;dwLog("Nobody opened. "+money(DW.carry)+" carries to the next hand.");return dwEnd();}
   DWH.seats.forEach(function(i){var s=DWH.s[i];s.sb=0;s.acted=false;if(!s.folded&&!s.allin)s.label="";});DWH.cur=0;DWH.minR=DW.bb;DWH.raises=0;
-  if(DWH.street===0){DWH.street=1;DWH.drawOrder=[];var j=DW.button;for(var k=0;k<6;k++){j=(j+1)%6;if(DWH.seats.indexOf(j)>=0&&!DWH.s[j].folded)DWH.drawOrder.push(j);}DWH.drawIdx=0;dwLog("The draw.");dwRender();dwSched(300);}
-  else if(DWH.street===1){DWH.street=2;var f=-1,b=DW.button;for(var q=0;q<6;q++){b=(b+1)%6;if(DWH.seats.indexOf(b)>=0&&!DWH.s[b].folded){f=b;break;}}DWH.toAct=f;dwLog("Betting after the draw.");dwRender();dwSched(300);}
+  if(DWH.street===0||(DWH.street===2&&DWH.two)){DWH.street++;DWH.drawOrder=[];var j=DW.button;for(var k=0;k<6;k++){j=(j+1)%6;if(DWH.seats.indexOf(j)>=0&&!DWH.s[j].folded)DWH.drawOrder.push(j);}DWH.drawIdx=0;dwLog(DWH.two?(DWH.street===1?"First draw.":"Second draw."):"The draw.");dwRender();dwSched(300);}
+  else if(DWH.street===1||DWH.street===3){DWH.street++;var f=-1,b=DW.button;for(var q=0;q<6;q++){b=(b+1)%6;if(DWH.seats.indexOf(b)>=0&&!DWH.s[b].folded){f=b;break;}}DWH.toAct=f;dwLog("Betting after the draw.");dwRender();dwSched(300);}
   else dwShowdown();}
 function dwDrawNext(){if(DWH.drawIdx>=DWH.drawOrder.length)return dwEndStreet();var i=DWH.drawOrder[DWH.drawIdx];DWH.toAct=i;dwRender();
   if(i===0){DW_SEL={};dwControls();sfx("turn");return;}
   var tok=DWH.id,delay={slow:1000,normal:600,fast:220}[S.settings.speed]||600;
-  clearTimeout(DW_BT);DW_BT=setTimeout(function(){if(!DWH||DWH.id!==tok||DWH.done||DWH.street!==1||DWH.drawOrder[DWH.drawIdx]!==i)return;dwDoDraw(i,dwBestDiscard(DWH.s[i].cards,DW.players[i]).d);},delay);}
-function dwDoDraw(i,idxs){var s=DWH.s[i],p=DW.players[i];if(s.drew!==null)return;if(i===0)dwGradeDraw(idxs);idxs=idxs.slice().sort(function(a,b){return b-a;});idxs.forEach(function(k){s.cards[k]=DWH.deck.pop();});s.drew=idxs.length;s.label=idxs.length?"Drew "+idxs.length:"Stood pat";
+  clearTimeout(DW_BT);DW_BT=setTimeout(function(){if(!DWH||DWH.id!==tok||DWH.done||(DWH.street!==1&&DWH.street!==3)||DWH.drawOrder[DWH.drawIdx]!==i)return;dwDoDraw(i,dwBestDiscard(DWH.s[i].cards,DW.players[i]).d);},delay);}
+function dwDoDraw(i,idxs){var s=DWH.s[i],p=DW.players[i];if(s.drewAt===DWH.street)return;s.drewAt=DWH.street;if(i===0)dwGradeDraw(idxs);idxs=idxs.slice().sort(function(a,b){return b-a;});idxs.forEach(function(k){s.cards[k]=DWH.deck.pop();});s.drew=idxs.length;s.label=idxs.length?"Drew "+idxs.length:"Stood pat";
   dwLog((p.hero?"You ":p.name+" ")+(idxs.length?(p.hero?"draw ":"draws ")+idxs.length+".":(p.hero?"stand pat.":"stands pat.")));sfx("deal");DWH.drawIdx++;DW_SEL={};dwRender();dwControls();dwSched(200);}
 /* bots */
 function dwBot(i){var p=DW.players[i],s=DWH.s[i],E=eff(p),L=dwLegal(i),pot=dwPot(),bb=DW.bb,r=Math.random();
   if(DWH.street===0&&DWH.jacks&&DWH.cur===0){if(!dwQual(s.cards))return ["check"];return dwStrength(s.cards)>=0.5||r<0.5*E.agg?dwRaise(i,Math.max(bb,pot*0.6)):["check"];}
-  if(DWH.street===0){var st=dwStrength(s.cards),di=dwDrawInfo(s.cards),drawy=di.flush||di.oe;if(drawy&&st<0.4)st=Math.max(st,di.flush?0.44:0.4);
+  if(DWH.street===0){var A=dwPreSim(i,E.loose);if(A.a==="raise"){if(DWH.raises===0||r<0.6*E.agg+0.2)return dwRaise(i,DWH.raises===0?bb*3:DWH.cur*3);return L.toCall?["call"]:["check"];}
+    if(A.a==="call")return ["call"];if(A.a==="check")return ["check"];if(r<0.03*E.bluff&&DWH.raises===0)return dwRaise(i,bb*3);if(E.sticky>0.1&&L.toCall<=bb*2&&r<0.5)return ["call"];return ["fold"];
     var lsk=-E.loose*0.012,thr=0.5+lsk,pos=(i-DW.button+6)%6;thr-=pos===0?0.06:pos===5?0.03:0;
     if(DWH.raises===0){if(st>=thr+0.1||(st>=thr&&r<0.35*E.agg))return dwRaise(i,bb*(3+(p.skill==="beginner"?0.5:0)));if(st>=thr-0.08&&(E.agg<0.8||r<0.5))return L.toCall?["call"]:["check"];return L.toCall?["fold"]:["check"];}
     var cThr=0.55-E.loose*0.01-E.sticky*0.6+(DWH.raises>1?0.12:0);if(st>=0.78&&r<0.55*E.agg)return dwRaise(i,DWH.cur*3);if(st>=cThr||(drawy&&L.toCall<=pot*0.25))return ["call"];return L.toCall?["fold"]:["check"];}
@@ -2958,20 +2963,20 @@ function dwRender(){if(!DW||!DWH)return;
     var bet=s&&s.sb>0&&!DWH.done?s.sb:0;setHTML(el.querySelector(".betw"),"b"+bet,bet?"<span class='bet'>"+chipPile(bet)+"<b>"+money(bet)+"</b></span>":"");}
   var dp=DEALERPOS[DW.button],de=$("dw-dealer");de.style.left=dp.left;de.style.top=dp.top;
   setHTML($("dw-pot"),"p"+dwPot(),dwPot()?chipPile(dwPot(),true)+"<span>Pot "+money(dwPot())+"</span>":"");setText($("dw-status"),DWH.status);
-  setText($("dw-street"),DWH.done?"":DWH.street===0?"Betting before the draw":DWH.street===1?"The draw":"Betting after the draw");
-  var hs=DWH.s[0],hc=$("dw-hcards"),drawing=!DWH.done&&DWH.street===1&&DWH.toAct===0&&hs&&!hs.folded&&hs.drew===null;
+  setText($("dw-street"),DWH.done?"":DWH.street===0?"Betting before the draw":DWH.two?["","First draw","Betting after the first draw","Second draw","Final betting"][DWH.street]:DWH.street===1?"The draw":"Betting after the draw");
+  var hs=DWH.s[0],hc=$("dw-hcards"),drawing=!DWH.done&&(DWH.street===1||DWH.street===3)&&DWH.toAct===0&&hs&&!hs.folded&&hs.drewAt!==DWH.street;
   hc.innerHTML=hs?hs.cards.map(function(c,k){return "<button class='dwc"+(DW_SEL[k]?" sel":"")+"' data-k='"+k+"'"+(drawing?"":" disabled")+" aria-label='"+(DW_SEL[k]?"Keep":"Discard")+" this card'>"+cardStatic(c,"lg",DWH.done&&DWH.winners[0]&&DWH.showdown?"w5":"")+(DW_SEL[k]?"<em class='dtag'>Discard</em>":"")+"</button>";}).join(""):"";
   if(drawing)hc.querySelectorAll(".dwc").forEach(function(b){b.onclick=function(){var k=+b.dataset.k;if(DW_SEL[k])delete DW_SEL[k];else{var n=Object.keys(DW_SEL).length,ace=hs.cards.some(function(c,j){return (c>>2)===12&&!DW_SEL[j]&&j!==k;});if(n>=(ace?4:3))return toast("Draw up to 3 cards, or 4 if you keep an ace.");DW_SEL[k]=1;}dwRender();dwControls();};});
   setText($("dw-hstack"),money(DW.players[0].stack));setHTML($("dw-hav"),"h"+JSON.stringify(heroAv()),avatarSVG(heroAv()));
   setText($("dw-hsub"),hs?handName(evaluate(hs.cards))+(hs.drew!==null&&hs.drew!==undefined?" \u00b7 "+(hs.drew?"drew "+hs.drew:"stood pat"):""):"");
   setText($("dw-hact"),hs?(DWH.done&&DWH.winners[0]?"You win "+money(DWH.winners[0]):hs.label):"");
   var hcls="hero glass";if(!DWH.done&&DWH.toAct===0&&hs&&!hs.folded)hcls+=" turn";if(DWH.done&&DWH.winners[0])hcls+=" win";$("dw-hero").className=hcls;
-  var st=dwStake(DW.stake);$("dw-info").innerHTML="<b>"+st.title+"</b> \u00b7 Hand "+(DW.handNo+(DWH.done?0:1))+"<br>"+st.n+(DWH.jacks?" \u00b7 jacks to open":" \u00b7 one draw");}
+  var st=dwStake(DW.stake);$("dw-info").innerHTML="<b>"+st.title+"</b> \u00b7 Hand "+(DW.handNo+(DWH.done?0:1))+"<br>"+st.n+(DWH.jacks?" \u00b7 jacks to open":"")+(DWH.two?" \u00b7 two draws":" \u00b7 one draw");}
 function dwControls(){var c=$("dw-controls");if(!DWH)return c.innerHTML="";
   if(DWH.done){c.innerHTML=dwCoachHTML()+"<div class='actions one'><button class='btn brass' id='dw-next'>Deal next hand</button></div>";$("dw-next").onclick=dwStart;if($("dwck-ok"))$("dwck-ok").onclick=function(){DWH.coach=null;dwControls();};return;}
-  var hs=DWH.s[0];if(!hs||hs.folded||DWH.toAct!==0||(DWH.street===1&&hs.drew!==null)){c.innerHTML="<div class='waiting glass'>"+(hs&&hs.folded?"You folded. <button class='btn ghost pill' id='dw-skip'>Next hand</button>":"Waiting on "+(DW.players[DWH.toAct]?DW.players[DWH.toAct].name:"the table")+"...")+"</div>";
+  var hs=DWH.s[0];if(!hs||hs.folded||DWH.toAct!==0||((DWH.street===1||DWH.street===3)&&hs.drewAt===DWH.street)){c.innerHTML="<div class='waiting glass'>"+(hs&&hs.folded?"You folded. <button class='btn ghost pill' id='dw-skip'>Next hand</button>":"Waiting on "+(DW.players[DWH.toAct]?DW.players[DWH.toAct].name:"the table")+"...")+"</div>";
     if($("dw-skip"))$("dw-skip").onclick=function(){dwFastFinish();};return;}
-  if(DWH.street===1){var n=Object.keys(DW_SEL).length,best=dwBestDiscard(hs.cards);
+  if(DWH.street===1||DWH.street===3){var n=Object.keys(DW_SEL).length,best=dwBestDiscard(hs.cards);
     c.innerHTML="<div class='dwtip glass'>Tap cards to discard. <button class='btn ghost pill' id='dw-hint'>Hint</button><div id='dw-hinttxt' class='muted' style='font-size:.85rem' hidden>"+best.why+"</div></div><div class='actions'><button class='btn primary' id='dw-go' style='grid-column:1/-1'>"+(n?"Draw "+n:"Stand pat")+"</button></div>";
     $("dw-hint").onclick=function(){DW_SEL={};best.d.forEach(function(k){DW_SEL[k]=1;});dwRender();dwControls();var t=$("dw-hinttxt");if(t)t.hidden=false;};
     $("dw-go").onclick=function(){dwDoDraw(0,Object.keys(DW_SEL).map(Number));};return;}
@@ -2985,9 +2990,9 @@ function dwControls(){var c=$("dw-controls");if(!DWH)return c.innerHTML="";
 function dwFastFinish(){var sp=S.settings.speed;S.settings.speed="fast";var tok=DWH.id;var iv=setInterval(function(){if(!DWH||DWH.id!==tok||DWH.done){clearInterval(iv);S.settings.speed=sp;}},200);}
 /* lobby tab */
 function renderDrawTab(){var st=dwStats(),here=S.draw;
-  var cards=DWSTAKES.map(function(s){var cur=here&&here.stake===s.id,other=here&&!cur,lock=S.bankroll<s.buy&&!cur;
+  var cards=DWSTAKES.map(function(s){var cur=here&&here.stake===s.id,other=here&&!cur,lock=(S.bankroll<s.buy||accessLv()<(s.req||1))&&!cur;
     return "<div class='panel glass ev"+(lock?" locked":"")+"'>"+evArt(s.art,s.n)+"<div class='evtop'><div style='min-width:0'><div class='venue'>"+s.venue+"</div><h2>"+s.title+"</h2></div><div class='tier'>"+s.buy/s.bb+" bb</div></div>"+
-      "<div class='evmeta'>Players: "+s.arch.map(function(k){return ARCH[k].n.toLowerCase();}).join(", ")+"</div><div class='row'>"+(cur?"<button class='btn brass' data-dwr='"+s.id+"'>Resume, "+money(here.players[0].stack)+" in chips</button>":other?"<div class='lock'>You're seated at "+dwStake(here.stake).title+"</div>":lock?"<div class='lock'>Need "+money(s.buy)+" in your bankroll</div>":"<button class='btn primary' data-dws='"+s.id+"'>Sit down, buy in "+money(s.buy)+"</button>")+"</div></div>";}).join("");
+      "<div class='evmeta'>Players: "+s.arch.map(function(k){return ARCH[k].n.toLowerCase();}).join(", ")+"</div><div class='row'>"+(cur?"<button class='btn brass' data-dwr='"+s.id+"'>Resume, "+money(here.players[0].stack)+" in chips</button>":other?"<div class='lock'>You're seated at "+dwStake(here.stake).title+"</div>":lock?"<div class='lock'>"+(accessLv()<(s.req||1)?"Reach rep level "+s.req:"Need "+money(s.buy)+" in your bankroll")+"</div>":"<button class='btn primary' data-dws='"+s.id+"'>Sit down, buy in "+money(s.buy)+"</button>")+"</div></div>";}).join("");
   $("l-body").innerHTML="<div class='themehead' style=\"background:"+ART.anchor[0]+"\"><svg viewBox='0 0 120 70' aria-hidden='true'><g transform='translate(10 8)'>"+[0,1,2,3,4].map(function(k){return "<rect x='"+(k*18)+"' y='"+(Math.abs(2-k)*3)+"' width='24' height='34' rx='3' fill='#f4f1ea' stroke='#333' stroke-width='.8' transform='rotate("+((k-2)*8)+" "+(k*18+12)+" 40)'/>";}).join("")+"</g><text x='60' y='66' text-anchor='middle' font-size='9' font-weight='800' fill='#e9d7b0' font-family='sans-serif'>ONE DRAW</text></svg><div><div class='venue'>The old-school game</div><h2>5-card draw</h2></div></div>"+
     "<div class='carhead'><h3>Tables</h3><span>Swipe for more \u2192</span></div><div class='carousel'>"+cards+"</div>"+dwDrillsHTML()+dwOptsHTML()+dwSessHTML()+
     (st.hands?"<div class='panel glass'><h2>Your draw results</h2><p style='font-size:.92rem'>"+st.hands+" hands, "+(st.net>=0?"+":"\u2212")+money(Math.abs(st.net))+". Won "+Math.round(st.won/st.hands*100)+"% of hands"+(st.sd?", "+Math.round(st.sdw/st.sd*100)+"% at showdown":"")+".</p></div>":"")+
@@ -2998,10 +3003,11 @@ function renderDrawTab(){var st=dwStats(),here=S.draw;
   $("l-body").querySelectorAll("[data-dwr]").forEach(function(b){b.onclick=function(){dwSit(b.dataset.dwr,true);};});}
 
 /* ===== draw options: jacks or better, coach, stats, sessions, drills ===== */
-function dwOpt(k){var d={dwJacks:false,dwCoach:true,dwHud:true,dwSess:true,dwDrills:true};return S.settings[k]===undefined?d[k]:!!S.settings[k];}
+function dwOpt(k){var d={dwTwo:false,dwJacks:false,dwCoach:true,dwHud:true,dwSess:true,dwDrills:true};return S.settings[k]===undefined?d[k]:!!S.settings[k];}
 function dwQual(cs){var v=evaluate(cs),c=catOf(v);if(c>=2)return true;if(c!==1)return false;var cnt={};cs.forEach(function(x){cnt[x>>2]=(cnt[x>>2]||0)+1;});return +Object.keys(cnt).find(function(k){return cnt[k]===2;})>=9;}
 function dwThreat(i){var t=0;dwLive().forEach(function(j){if(j===i)return;var d=DWH.s[j].drew;t=Math.max(t,d===0?0.18:d===1?0.06:d===2?0.1:-0.04);});return t;}
 function dwAdvice(i){var s=DWH.s[i],L=dwLegal(i),pot=dwPot(),pos=(i-DW.button+6)%6;
+  if(DWH.street===0&&!(DWH.jacks&&DWH.cur===0))return dwPreSim(i,0);
   if(DWH.street===0){var st=dwStrength(s.cards),di=dwDrawInfo(s.cards),drawy=di.flush||di.oe;if(drawy&&st<0.4)st=Math.max(st,di.flush?0.44:0.4);
     if(DWH.jacks&&DWH.cur===0)return dwQual(s.cards)?(st>=0.5?{a:"raise",e:st,why:"You have openers (jacks or better). Open with a bet."}:{a:"check",e:st,why:"You can open, but a small pair of jacks plays better as a check from early seats."}):{a:"check",e:st,why:"You need jacks or better to open, so check."};
     var thr=0.5-(pos===0?0.06:pos===5?0.03:0);
@@ -3023,14 +3029,14 @@ function dwGrade(i,a,to){if(i!==0||!DWH)return;var A=dwAdvice(0),L=dwLegal(0),po
   if(want==="fold"&&(mine==="call"||mine==="raise")){leak=DWH.street===0?"Played a weak hand before the draw":"Called or raised behind";cost=DWH.street===0?bb:Math.max(0.3*bb,(0.12-(A.e-(L.toCall/(pot+L.toCall||1))))*(pot+L.toCall));}
   else if((want==="call"||want==="raise")&&mine==="fold"){leak="Folded a hand worth playing";cost=Math.max(0.5*bb,(A.e-(L.toCall/(pot+L.toCall||1)))*(pot+L.toCall)*0.8);}
   else if(want==="raise"&&mine==="check"&&DWH.street===0&&!(DWH.jacks&&!dwQual(DWH.s[0].cards))){leak="Didn't open a strong hand";cost=bb;}
-  else if(want==="raise"&&mine==="check"&&DWH.street===2){leak="Missed a value bet";cost=0.5*pot*0.4;}
-  else if(want==="check"&&mine==="raise"&&DWH.street===2&&A.e<0.35&&dwLive().some(function(j){return j!==0&&DWH.s[j].drew<=1;})){leak="Bluffed into a strong draw";cost=(to||pot*0.5)*0.5;}
+  else if(want==="raise"&&mine==="check"&&DWH.street>=2){leak="Missed a value bet";cost=0.5*pot*0.4;}
+  else if(want==="check"&&mine==="raise"&&DWH.street>=2&&A.e<0.35&&dwLive().some(function(j){return j!==0&&DWH.s[j].drew<=1;})){leak="Bluffed into a strong draw";cost=(to||pot*0.5)*0.5;}
   else if(want==="check"&&mine==="raise"&&DWH.street===0&&A.e<0.42){leak="Opened too light";cost=bb;}
   DWH.dec=DWH.dec||[];DWH.dec.push({st:DWH.street,act:a,advice:want,why:A.why,leak:leak,cost:cost/bb});}
 function dwGradeDraw(idxs){var hs=DWH.s[0],best=dwBestDiscard(hs.cards),leak=null;if(best.d.length!==idxs.length)leak=idxs.length>best.d.length?"Drew too many cards":"Kept cards that don't help";
   DWH.dec=DWH.dec||[];DWH.dec.push({st:1,act:idxs.length?"drew "+idxs.length:"stood pat",advice:best.d.length?"Draw "+best.d.length:"Stand pat",why:best.why,leak:leak,cost:leak?0.8:0,cards:hs.cards.slice()});}
 function dwCoachPick(){var ds=(DWH.dec||[]).filter(function(d){return d.leak;});if(!ds.length)return null;return ds.sort(function(a,b){return b.cost-a.cost;})[0];}
-function dwCoachHTML(){var d=DWH&&DWH.coach;if(!d||!dwOpt("dwCoach"))return "";var st=["before the draw","at the draw","after the draw"][d.st]||"";
+function dwCoachHTML(){var d=DWH&&DWH.coach;if(!d||!dwOpt("dwCoach"))return "";var st=["before the draw","at the draw","after the draw","at the second draw","in the final betting"][d.st]||"";
   return "<div class='coach glass'><div style='display:flex;gap:8px;align-items:flex-start'><div style='flex:1;font-size:.9rem'><span class='ck'>Coach</span> "+d.leak+" "+st+". Better: <b>"+(d.advice==="raise"?(d.st===0?"Raise":"Bet"):d.advice.charAt(0).toUpperCase()+d.advice.slice(1))+"</b>, worth about "+(d.cost<1?d.cost.toFixed(1):Math.round(d.cost))+" big blind"+(d.cost>=1.5?"s":"")+".</div><button class='btn ghost pill' id='dwck-ok'>Got it</button></div><details style='margin:4px 0 0'><summary class='muted' style='font-size:.8rem'>Why</summary><div class='muted' style='font-size:.85rem'>"+d.why+"</div></details></div>";}
 /* opponent stats */
 function dwHudRec(n){DW.hud=DW.hud||{};return DW.hud[n]=DW.hud[n]||{h:0,vp:0,pr:0,dr:0,pat:0,tot:0};}
@@ -3048,10 +3054,10 @@ function dwSessHTML(){var L=S.dwSess||[];if(!dwOpt("dwSess"))return "";
   return "<div class='panel glass'><div class='evtop'><div><div class='venue'>Every draw session</div><h2>Draw session history</h2></div></div>"+(L.length?L.slice(0,12).map(function(r){return "<div style='display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:.88rem'><span><b>"+r.d+"</b> \u00b7 "+r.where+" \u00b7 "+r.hands+" hands<br><span class='muted'>"+r.mins+" min"+(r.q===null?"":" \u00b7 play "+r.q+"%")+"</span></span><span style='text-align:right'><b style='color:"+(r.net>=0?"var(--good)":"var(--bad)")+"'>"+(r.net>=0?"+":"\u2212")+money(Math.abs(r.net))+"</b><br><span class='muted'>"+r.bb100+" bb/100</span></span></div>";}).join(""):"<p class='muted' style='font-size:.85rem'>Play at least 5 hands and cash out. Each session lands here with your results and play quality.</p>")+"</div>";}
 /* drills */
 function dwDealDrillHand(){for(var t=0;t<60;t++){var d=shuffle(Array.from({length:52},function(_,k){return k;})),h=d.slice(0,5),c=catOf(evaluate(h)),di=dwDrawInfo(h);if(c>=1||di.flush||di.oe||Math.random()<0.25)return h;}return d.slice(0,5);}
-function dwDrillDraw(){var h=dwDealDrillHand(),sel={},best=dwBestDiscard(h);
+function dwDrillDraw(){var h=dwDealDrillHand(),sel={},nO=pick([1,3]),best=dwBestDiscard(h,null,nO);
   function view(el,done){el.querySelector("#ddh").innerHTML=h.map(function(c,k){return "<button class='dwc"+(sel[k]?" sel":"")+"' data-k='"+k+"'"+(done?" disabled":"")+">"+cardStatic(c,"lg",done&&best.d.indexOf(k)>=0?"":"")+(sel[k]?"<em class='dtag'>Discard</em>":"")+"</button>";}).join("");
     if(!done)el.querySelectorAll("#ddh .dwc").forEach(function(b){b.onclick=function(){var k=+b.dataset.k;if(sel[k])delete sel[k];else{var ace=h.some(function(c,j){return (c>>2)===12&&!sel[j]&&j!==k;});if(Object.keys(sel).length>=(ace?4:3))return toast("Up to 3 cards, or 4 if you keep an ace.");sel[k]=1;}view(el,false);};});}
-  drillOpen("<h2>What to draw</h2><div class='muted' style='font-size:.85rem'>Tap the cards you'd throw away, then submit.</div><div id='ddh' style='display:flex;gap:4px;justify-content:center;margin:14px 0'></div><div id='dq'><button class='btn primary dopt' id='dd-go'>Submit</button></div>",function(el){view(el,false);
+  drillOpen("<h2>What to draw</h2><div class='muted' style='font-size:.85rem'>"+(nO===1?"Heads-up, one opponent.":"Three opponents in the pot.")+" Tap the cards you'd throw away, then submit.</div><div id='ddh' style='display:flex;gap:4px;justify-content:center;margin:14px 0'></div><div id='dq'><button class='btn primary dopt' id='dd-go'>Submit</button></div>",function(el){view(el,false);
     el.querySelector("#dd-go").onclick=function(){var mine=Object.keys(sel).map(Number),ok=mine.length===best.d.length;dstat("dwdraw",ok);view(el,true);
       el.querySelector("#dq").innerHTML="<div class='dres "+(ok?"ok":"no")+"'>"+(ok?"Right.":"Best: "+(best.d.length?"draw "+best.d.length:"stand pat")+".")+"</div><p style='font-size:.92rem'>"+best.why+"</p><div class='row'><button class='btn primary' id='dn'>Next hand</button><button class='btn ghost' id='dx'>Done</button></div>";
       el.querySelector("#dn").onclick=dwDrillDraw;el.querySelector("#dx").onclick=drillClose;};});}
@@ -3066,15 +3072,44 @@ function dwDrillRead(){var ak=pick(["station","limper","nit","tag","maniac","lag
 function dwOptsHTML(){var row=function(k,t,d){return "<div class='toggle' style='border-top:0;margin-top:0'><div><b>"+t+"</b><div class='muted' style='font-size:.85rem'>"+d+"</div></div><button class='switch' role='switch' aria-checked='"+dwOpt(k)+"' data-dwo='"+k+"' aria-label='"+t+"'></button></div>";};
   return "<div class='panel glass'><div class='evtop'><div><div class='venue'>Turn these on or off</div><h2>Draw options</h2></div></div>"+
     row("dwJacks","Jacks or better to open","Classic home rule: everyone antes, and you need a pair of jacks or better to bet first. If nobody opens, the pot carries to the next hand.")+
+    row("dwTwo","Two draws","Adds a second draw and a third betting round, like triple draw but with two.")+
     row("dwCoach","After-hand coach","Shows your biggest mistake when a hand ends.")+
     row("dwHud","Opponent stats on seats","How often each player plays, raises, and stands pat.")+
     row("dwSess","Track sessions","Saves each draw session with results and play quality.")+
     row("dwDrills","Draw drills","What to draw, and reading what opponents drew.")+"</div>";}
 function dwDrillsHTML(){if(!dwOpt("dwDrills"))return "";return "<div class='panel glass'><div class='evtop'><div><div class='venue'>Practice</div><h2>Draw drills</h2></div></div><div class='dhub'><button class='dbtn' id='dwd-1'><b>What to draw</b><span>Pick your discards. "+dpct("dwdraw")+"</span></button><button class='dbtn' id='dwd-2'><b>Read the draw</b><span>Call or fold from what they drew. "+dpct("dwread")+"</span></button></div></div>";}
 
+/* ===== draw strategy from a 1,000,000-hand simulation ===== */
+var DWSIM={"p-6":[0.517,0.21,0.194,0.142],"p-3":[0.456,0.204,0.189,0.132],"p-5":[0.497,0.206,0.193,0.14],"trips":[0.938,0.876,0.851,0.726],"2p-low":[0.773,0.592,0.534,0.324],"A-high":[0.419,0.191,0.147,0.107],"K-high":[0.366,0.167,0.106,0.076],"p-4":[0.473,0.205,0.192,0.135],"p-A":[0.805,0.626,0.546,0.381],"p-T":[0.639,0.346,0.205,0.189],"Q-or-less":[0.321,0.127,0.072,0.059],"4flush":[0.372,0.227,0.203,0.193],"p-7":[0.552,0.212,0.199,0.15],"p-K":[0.751,0.554,0.435,0.292],"2p-A":[0.893,0.794,0.769,0.571],"p-J":[0.67,0.409,0.211,0.207],"p-8":[0.578,0.212,0.199,0.157],"p-Q":[0.712,0.482,0.321,0.243],"openend":[0.311,0.182,0.163,0.157],"p-2":[0.419,0.197,0.182,0.129],"p-9":[0.612,0.276,0.198,0.167],"straight":[0.974,0.966,0.957,0.894],"2p-K":[0.873,0.759,0.703,0.516],"2p-Q":[0.843,0.717,0.661,0.452],"2p-T-J":[0.82,0.649,0.575,0.388],"flush":[0.982,0.975,0.968,0.932],"boat":[0.992,0.982,0.974,0.965],"quads":[0.998,0.995,0.99,0.99],"sf":[1,1,1,1]};
+function dwClass(cs){var v=evaluate(cs),cat=catOf(v),rk=cs.map(function(c){return c>>2;}),cnt={};rk.forEach(function(r){cnt[r]=(cnt[r]||0)+1;});var R="23456789TJQKA";
+  if(cat>=8)return "sf";if(cat===7)return "quads";if(cat===6)return "boat";if(cat===5)return "flush";if(cat===4)return "straight";if(cat===3)return "trips";
+  if(cat===2){var hp=Math.max.apply(null,Object.keys(cnt).filter(function(k){return cnt[k]===2;}).map(Number));return "2p-"+(hp>=10?R[hp]:hp>=7?"T-J":"low");}
+  if(cat===1)return "p-"+R[+Object.keys(cnt).find(function(k){return cnt[k]===2;})];
+  var di=dwDrawInfo(cs);if(di.flush)return "4flush";if(di.oe)return "openend";var hi=Math.max.apply(null,rk);return hi===12?"A-high":hi===11?"K-high":"Q-or-less";}
+function dwEq(cs){return DWSIM[dwClass(cs)]||[0.3,0.1,0.1,0.05];}
+function dwBehind(i){var n=0,j=i;for(var k=1;k<6;k++){j=(i+k)%6;if(DWH.seats.indexOf(j)<0||DWH.s[j].folded)continue;if(DWH.s[j].acted&&DWH.s[j].sb>=DWH.cur)continue;n++;}return n;}
+function dwRaiserEarly(){var r=DWH.lastAgg;if(r<0)return true;var pos=(r-DW.button+6)%6;return pos>=1&&pos<=3;}
+/* pre-draw decision from the simulation: returns raise, call, check, or fold plus the reason */
+function dwPreSim(i,loose){var s=DWH.s[i],L=dwLegal(i),pot=dwPot(),e=dwEq(s.cards),cl=dwClass(s.cards),lb=(loose||0)*0.01,n=dwBehind(i);
+  var draw=cl==="4flush"||cl==="openend";
+  if(DWH.raises===0){var need=n>=4?0.55:n===3?0.48:n===2?0.40:0;var ok=n<=1?e[0]>=0.57-lb:e[1]>=need-lb;
+    if(ok)return {a:"raise",e:e,why:"In 1,000,000 simulated hands, "+cl.replace("p-","a pair of ")+" wins "+Math.round((n<=1?e[0]:e[1])*100)+"% against "+(n<=1?"a random hand":"a hand good enough to call")+". With "+n+" player"+(n===1?"":"s")+" left to act, that's strong enough to open."};
+    if(L.toCall===0)return {a:"check",e:e,why:"Not strong enough to open with "+n+" players left to act. Take the free draw."};
+    if(draw&&L.toCall<=pot*0.3)return {a:"call",e:e,why:"A four-card "+(cl==="4flush"?"flush":"straight")+" draw is cheap enough here, and it plays well in pots with several players."};
+    return {a:"fold",e:e,why:"The simulation says this hand loses money from this seat. Openers here need about "+(n>=4?"a pair of kings":n===3?"a pair of queens":n===2?"a pair of jacks":"a pair of 8s")+" or better."};}
+  var early=dwRaiserEarly()||DWH.raises>1,eq=early?e[2]:e[1],callT=(early?0.40:0.45)-lb,raiseT=early?0.6:0.62;
+  if(eq>=raiseT)return {a:"raise",e:e,why:"Against "+(early?"an early raiser's range (jacks or better)":"a late raiser's range")+", this hand wins about "+Math.round(eq*100)+"% after the draw. Reraise."};
+  if(eq>=callT)return {a:"call",e:e,why:"You win about "+Math.round(eq*100)+"% against "+(early?"an early raiser":"a late raiser")+" after the draw. Enough to call."};
+  if(draw&&L.toCall<=pot*(cl==="4flush"?0.27:0.2))return {a:"call",e:e,why:"The price is good enough for your draw: you only need to hit about one time in four."};
+  return {a:"fold",e:e,why:"You win only about "+Math.round(eq*100)+"% against "+(early?"an early raiser's range":"this raiser")+" after the draw. Fold."};}
+function dwSimHTML(){var rows=[["Pair of 2s to 7s","p-5"],["Pair of 8s","p-8"],["Pair of jacks","p-J"],["Pair of queens","p-Q"],["Pair of kings","p-K"],["Pair of aces","p-A"],["Two pair, low","2p-low"],["Two pair, aces up","2p-A"],["Three of a kind","trips"],["Four to a flush","4flush"],["Open-ended straight draw","openend"],["Ace high","A-high"]];
+  return "<details><summary><b>Simulated strategy (1,000,000 hands)</b></summary><p style='font-size:.85rem'>Six players, one draw, everyone drawing the standard way. How often each starting hand wins after the draw:</p><table class='gt'><tr><th>Starting hand</th><th>vs 1 random</th><th>vs a caller (8s+)</th><th>vs a raiser (jacks+)</th></tr>"+
+   rows.map(function(r){var e=DWSIM[r[1]];return "<tr><td>"+r[0]+"</td><td>"+Math.round(e[0]*100)+"%</td><td>"+Math.round(e[1]*100)+"%</td><td>"+Math.round(e[2]*100)+"%</td></tr>";}).join("")+"</table>"+
+   "<ul style='font-size:.88rem;padding-left:1.1em'><li><b>Opening:</b> with 4+ players behind, open kings or better. With 3 behind, queens. With 2 behind, jacks. From the button or small blind, 8s or better.</li><li><b>Facing a raise:</b> call an early raiser with kings or better or two pair, and reraise with queens-up two pair or better. Against a late raiser, call with queens or better.</li><li><b>One pair:</b> draw three. Keeping a kicker wins 1 to 2% less often.</li><li><b>Small pair with four to a flush:</b> keep the pair heads-up, but break it and draw to the flush with 2+ opponents. The flush draw wins about 50% more often in crowded pots.</li><li><b>Two pair:</b> draw one. <b>Trips:</b> draw two, not one.</li><li><b>Ace high:</b> heads-up keep the ace and your next card; against more players, keep just the ace and draw four.</li><li><b>Draws:</b> four to a flush hits about 1 in 5; call only when the price is better than about 3 to 1.</li></ul></details>";}
+
 function dwGuideHTML(){return "<div class='panel glass'><div class='evtop'><div><div class='venue'>Quick guide</div><h2>How draw works</h2></div></div><ol style='font-size:.9rem;padding-left:1.2em'><li>Everyone gets five cards face down. Blinds are posted like hold\u2019em.</li><li>A round of betting.</li><li>The draw: discard up to 3 cards (4 if you keep an ace) and get new ones.</li><li>A second round of betting, then the best five-card hand wins.</li></ol>"+
     "<details><summary><b>What to draw</b></summary><table class='gt'><tr><th>You have</th><th>Draw</th><th>Chance to improve</th></tr><tr><td>One pair</td><td>3</td><td>29%</td></tr><tr><td>Two pair</td><td>1</td><td>8.5% (full house)</td></tr><tr><td>Three of a kind</td><td>2</td><td>10%</td></tr><tr><td>Four to a flush</td><td>1</td><td>19%</td></tr><tr><td>Open-ended straight draw</td><td>1</td><td>17%</td></tr><tr><td>Inside straight draw</td><td>1</td><td>8.5%</td></tr></table></details>"+
-    "<details><summary><b>Reading the draw</b></summary><ul style='font-size:.9rem;padding-left:1.1em'><li><b>Stood pat:</b> a straight or better, or a bluff. Respect it from careful players.</li><li><b>Drew 1:</b> two pair, or a flush or straight draw that may have missed.</li><li><b>Drew 2:</b> usually three of a kind.</li><li><b>Drew 3:</b> one pair. Two pair beats most of these.</li><li><b>Drew 4:</b> an ace and hope.</li></ul></details>"+
+    dwSimHTML()+"<details><summary><b>Reading the draw</b></summary><ul style='font-size:.9rem;padding-left:1.1em'><li><b>Stood pat:</b> a straight or better, or a bluff. Respect it from careful players.</li><li><b>Drew 1:</b> two pair, or a flush or straight draw that may have missed.</li><li><b>Drew 2:</b> usually three of a kind.</li><li><b>Drew 3:</b> one pair. Two pair beats most of these.</li><li><b>Drew 4:</b> an ace and hope.</li></ul></details>"+
     "<details><summary><b>Before the draw</b></summary><p style='font-size:.9rem'>Open with jacks or better from early seats, and a pair of 8s or better from the button. Small pairs and draws are calls, not raises. A raise before the draw usually means two pair or better.</p></details></div>";}
 function dwHelp(){showModal(dwGuideHTML().replace("panel glass","")+"",[["Back to the table",function(){},"brass"]]);}
 
