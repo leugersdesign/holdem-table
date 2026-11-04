@@ -470,6 +470,12 @@ details{margin:8px 0}details summary{cursor:pointer;padding:4px 0}
 .gchip{display:inline-flex;align-items:center;gap:3px;font-size:.72rem;border-radius:999px;padding:1px 7px;background:color-mix(in srgb,var(--gc) 18%,transparent);border:1px solid var(--gc);color:var(--text);white-space:nowrap}
 .gchip b{color:var(--gc)}
 .gchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.gcrow{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:4px}
+.gcrow:empty{display:none}
+.gcb{border:0;background:none;padding:0;margin:0;cursor:pointer;font:inherit;color:inherit}
+.gcb.new .gchip{animation:gcpop .45s ease}
+.gflash{font-size:.72rem;font-weight:700;color:var(--gc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+@keyframes gcpop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}
 .gbig{width:64px;height:64px;border-radius:16px;background:var(--gc);color:#fff;font-family:var(--display);font-size:2rem;font-weight:800;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;flex:none}
 .gbig span{font-size:.75rem;font-weight:700;margin-top:2px}
 .qrow{cursor:pointer;border:0;background:none;padding:0;text-align:left;color:inherit;font:inherit;white-space:nowrap}
@@ -531,6 +537,7 @@ details{margin:8px 0}details summary{cursor:pointer;padding:4px 0}
         <div class="stk" id="g-hstack"></div>
         <div class="sub" id="g-hsub"></div>
         <div class="act" id="g-hact"></div>
+        <div class="gcrow" id="g-gc" aria-live="polite"></div>
         <button class="qrow" id="g-q" aria-label="Your play this session"></button>
       </div>
     </div>
@@ -1195,6 +1202,7 @@ function render(){
   setText($("g-hact"),(hs&&hs.sb>0&&!H.done?"In: "+chips(hs.sb)+"   ":"")+hl);
   var ssq=T.mode==="cash"?sess():null,qq=qualityPct(ssq);
   setHTML($("g-q"),"q"+(ssq?ssq.dec+"/"+qq:"-"),ssq?"<div class='qbar' role='img' aria-label='Accuracy "+(qq===null?"not graded yet":qq)+"'><i style='width:"+(qq===null?0:qq)+"%;background:"+qColor(qq)+"'></i></div><span>"+(qq===null?"Not graded yet":"<b style='color:"+qColor(qq)+"'>"+qq+" "+letter(qq)+"</b> accuracy")+"</span>":"");$("g-q").onclick=function(){if(sess())qualityHelp();};
+  gcRender();
   var hcls="hero glass";if(H&&!H.done&&H.toAct===0&&hs&&canAct(0))hcls+=" turn";if(H&&H.done&&H.winners&&H.winners[0])hcls+=" win";
   if($("g-hero").className!==hcls)$("g-hero").className=hcls;
   var info;if(T.pass){info="<b>Pass-and-play</b> \u00b7 Hand "+(T.handNo+(H&&!H.done?1:0))+"<br>$1/$2 \u00b7 "+T.players.filter(function(p){return p.hero||p.human;}).length+" players";}
@@ -1990,7 +1998,7 @@ function recordDecision(d){
     if(G.sev===0)rec.leak=null;else if(!rec.leak)rec.leak=rec.toCall>0&&rec.act==="raise"?"raise_no_odds":"off_line";
     var lu=liveUnitOf(rec);if(lu)cpush(lu,"l",rec.sev===0);liveUnitsExtra(rec).forEach(function(x){cpush(x[0],"l",x[1]);});
     if(T.live&&rec.st===3&&rec.toCall>0){T.heroRv=T.heroRv||{face:0,fold:0};T.heroRv.face++;if(rec.act==="fold")T.heroRv.fold++;}
-    H.dec=H.dec||[];H.dec.push(rec);if(!rec.leak)addXP(1);if(rec.leak)addRedo(rec);sessDecision(rec);
+    H.dec=H.dec||[];H.dec.push(rec);H.gcAt=Date.now();setTimeout(function(){try{gcRender();}catch(e){}},3300);if(!rec.leak)addXP(1);if(rec.leak)addRedo(rec);sessDecision(rec);
     if(rec.act==="fold"&&rec.toCall>0&&rec.eq<rec.need)mission("goodfold");if(rec.act==="fold"&&rec.st===3&&rec.advice==="Fold")mission("riverfold");
     if(rec.st===0&&rec.act==="raise"&&rec.raises===1&&H.preAgg>0){var opn=T.players[H.preAgg];if(opn&&(["station","limper","whale","maniac"].indexOf(opn.arch)>=0||opn.cid==="moonshot"))mission("3bloose");}
     if(rec.act==="fold"&&rec.st>0&&rec.advice==="Fold"&&H.lastAgg>0){var tb=T.players[H.lastAgg];if(tb&&(["nit","tag"].indexOf(tb.arch)>=0||["contessa","ezra"].indexOf(tb.cid)>=0))mission("foldtight");}if(!rec.leak)mission("gooddec");if(rec.st===0&&rec.act==="raise"&&rec.raises>=1)mission("threebet");
@@ -2990,12 +2998,29 @@ function qualityHelp(){var s=sess(),a=accOf(s),cnt=(s&&s.cnt)||[0,0,0,0],lk=s&&s
   showModal("<h2>Your play this session</h2>"+(a===null?"<p>No decisions graded yet.</p>":"<div style='display:flex;align-items:center;gap:14px'><div class='gbig' style='--gc:"+qColor(a)+"'>"+letter(a)+"<span>"+a+"</span></div><div style='font-size:.92rem'><b>"+s.dec+" decisions graded.</b><br>"+cnt[1]+" inaccurac"+(cnt[1]===1?"y":"ies")+", "+cnt[2]+" mistake"+(cnt[2]===1?"":"s")+", "+cnt[3]+" blunder"+(cnt[3]===1?"":"s")+".<br>Mistakes cost about <b>"+(s.lossBB||0).toFixed(1)+" big blinds</b>.</div></div>")+
     (lk.length?"<div class='tool' style='margin-top:10px'><div class='k'>Work on this</div><div class='v' style='font-size:.92rem'><b>"+(LEAKS[lk[0]]||[lk[0]])[0]+"</b> ("+s.leaks[lk[0]]+"\u00d7). "+((LEAKS[lk[0]]||["",""])[1])+"</div></div>":"")+
     (last.length?"<div class='lbl'>Your last decisions</div>"+last.slice(-6).reverse().map(function(r){return "<div style='display:flex;justify-content:space-between;gap:8px;font-size:.85rem;padding:3px 0;border-bottom:1px solid var(--line)'><span>"+gradeChip(r)+" "+r.code+": you "+r.act+(r.best?"":", tools said "+r.advice)+"</span><b style='color:"+GRADES[r.sev].c+"'>"+(r.sev?"\u2212"+r.loss.toFixed(1)+" bb":"")+"</b></span></div>";}).join(""):"")+
-    "<details style='margin-top:10px'><summary><b>How grading works</b></summary><div style='font-size:.88rem'><p>Each decision is compared with what the tools recommend, using your equity, the price, and your opening charts. Then it gets a grade based on how much it costs you on average:</p><table class='st'><tr><td><span class='gchip' style='--gc:#2e8b57'><b>\u2713\u2713</b></span> Best</td><td>Matches the tools</td></tr><tr><td><span class='gchip' style='--gc:#3aa86b'><b>\u2713</b></span> Good</td><td>Different, but costs under 0.2 big blinds</td></tr><tr><td><span class='gchip' style='--gc:#d9a420'><b>?!</b></span> Inaccuracy</td><td>Costs 0.2 to 1 big blind</td></tr><tr><td><span class='gchip' style='--gc:#e07a2a'><b>?</b></span> Mistake</td><td>Costs 1 to 3 big blinds</td></tr><tr><td><span class='gchip' style='--gc:#c8102e'><b>??</b></span> Blunder</td><td>Costs more than 3 big blinds</td></tr></table><p>Your accuracy averages the grades (Best and Good score high, blunders score zero). Easy decisions, like folding junk before the flop, count only a quarter as much, so the number reflects the spots that matter. A is 90 and up, B 80, C 70, D 60.</p></div></details>",[["Back to the table",function(){},"brass"]]);}
+    "<details style='margin-top:10px'><summary><b>How grading works</b></summary><div style='font-size:.88rem'><p>In cash games, a chip under your stack grades each decision as you make it. Tap a chip to see what the model wanted and why.</p><p>Each decision is compared with what the tools recommend, using your equity, the price, and your opening charts. Then it gets a grade based on how much it costs you on average:</p><table class='st'><tr><td><span class='gchip' style='--gc:#2e8b57'><b>\u2713\u2713</b></span> Best</td><td>Matches the model</td></tr><tr><td><span class='gchip' style='--gc:#3aa86b'><b>\u2713</b></span> Good</td><td>Differs from the model, but costs under 0.2 big blinds</td></tr><tr><td><span class='gchip' style='--gc:#d9a420'><b>?!</b></span> Inaccuracy</td><td>Costs 0.2 to 1 big blind</td></tr><tr><td><span class='gchip' style='--gc:#e07a2a'><b>?</b></span> Mistake</td><td>Costs 1 to 3 big blinds</td></tr><tr><td><span class='gchip' style='--gc:#c8102e'><b>??</b></span> Blunder</td><td>Costs more than 3 big blinds</td></tr></table><p>Your accuracy averages the grades (Best and Good score high, blunders score zero). Easy decisions, like folding junk before the flop, count only a quarter as much, so the number reflects the spots that matter. A is 90 and up, B 80, C 70, D 60.</p></div></details>",[["Back to the table",function(){},"brass"]]);}
 
 /* ===== cash sessions: hand counter, play-quality bar, table image, history ===== */
 function sessNew(){return {start:Date.now(),hands:0,dec:0,good:0,w:0,sc:0,cnt:[0,0,0,0],lossBB:0,recent:[],net:0,bbNet:0,buyin:T.players[0].stack,rebuys:0,vpip:0,pfr:0,leaks:{},img:{hands:0,vpip:0,pfr:0,agg:0,call:0,sd:0,bluff:0,cbF:0,cbFold:0}};}
 
 function sess(){if(!T||T.mode!=="cash"||T.pass)return null;return T.sess=T.sess||sessNew();}
+/* per-decision grade strip: does your play match the grading model? */
+function gcOn(){return T&&T.mode==="cash"&&!T.pass&&S.settings.gradeLive!==false;}
+function gcColor(d){return d.best?"#2e8b57":GRADES[d.sev||0].c;}
+function gcIcon(d){return d.best?"\u2713\u2713":GRADES[d.sev||0].i;}
+function gcVerdict(d){if(d.best)return "Matches the model";if(d.sev===0)return "Differs, still fine: model said "+d.advice;return "Differs, "+GRADES[d.sev].n.toLowerCase()+": model said "+d.advice+", \u2212"+d.loss.toFixed(1)+" bb";}
+function gcRender(){var el=$("g-gc");if(!el)return;if(!gcOn()||!H||!H.dec||!H.dec.length){setHTML(el,"none","");return;}
+  var ds=H.dec,last=ds.length-1,fresh=H.gcAt&&Date.now()<H.gcAt+3200;
+  setHTML(el,"gc"+ds.length+(fresh?"f":"")+(H.done?"d":""),ds.map(function(d,k){var st=["Pre","Flop","Turn","River"][d.st]||"",ic=gcIcon(d);
+    return "<button class='gcb"+(k===last&&fresh?" new":"")+"' data-gi='"+k+"' aria-label='"+st+": "+gcVerdict(d)+". Tap for details.'><span class='gchip' style='--gc:"+gcColor(d)+"'>"+st+" <b>"+ic+"</b></span></button>";}).join("")+
+    (fresh?"<span class='gflash' style='--gc:"+gcColor(ds[last])+"'>"+gcVerdict(ds[last])+"</span>":""));
+  el.querySelectorAll("[data-gi]").forEach(function(b){b.onclick=function(){gcDetail(H.dec[+b.dataset.gi]);};});}
+function gcDetail(d){if(!d)return;var st=["Preflop","Flop","Turn","River"][d.st]||"",you=d.act==="raise"?(d.toCall>0?"Raise":"Bet"):d.act.charAt(0).toUpperCase()+d.act.slice(1);
+  showModal("<h2>"+st+": <span style='color:"+gcColor(d)+"'>"+(d.best?"Matches the model":d.sev===0?"Differs from the model":"Differs from the model ("+GRADES[d.sev].n.toLowerCase()+")")+"</span></h2>"+
+    (!d.best&&d.sev===0?"<p class='muted' style='font-size:.85rem'>Not counted as a mistake. The difference costs under 0.2 big blinds on average.</p>":"")+
+    "<table class='st'><tr><td>Your hand</td><td><b>"+d.code+"</b>"+(d.board&&d.board.length?" on "+d.board.map(cardTxtC).join(" "):"")+"</td></tr><tr><td>You</td><td><b>"+you+"</b></td></tr><tr><td>Model</td><td><b>"+d.advice+"</b></td></tr>"+
+    (d.toCall>0?"<tr><td>Price</td><td>"+p1(d.need)+" equity needed, you had about "+p1(d.eq)+"</td></tr>":"")+(d.sev?"<tr><td>Cost</td><td>About "+d.loss.toFixed(1)+" big blinds on average</td></tr>":"")+"</table>"+
+    "<p style='font-size:.92rem'>"+(d.why||"")+"</p>",[["Back to the table",function(){},"brass"]]);}
 function sessDecision(rec){var s=sess();if(!s)return;if(!s.cnt){s.cnt=[0,0,0,0];s.w=0;s.sc=0;s.lossBB=0;s.recent=[];}
   var sev=rec.sev||0,w=rec.triv?0.25:1,sc=sev===0?(rec.best?100:GRADES[0].s):GRADES[sev].s;s.dec++;if(!sev)s.good++;s.cnt[sev]++;s.w+=w;s.sc+=w*sc;s.lossBB+=rec.loss||0;
   if(rec.leak)s.leaks[rec.leak]=(s.leaks[rec.leak]||0)+1;s.recent.push({st:rec.st,sev:sev,best:rec.best,loss:rec.loss||0,code:rec.code,act:rec.act==="raise"?(rec.toCall>0?"raised":"bet"):rec.act==="call"?"called":rec.act==="check"?"checked":"folded",advice:rec.advice});if(s.recent.length>20)s.recent.shift();}
@@ -3755,7 +3780,7 @@ function renderSettings(){
     "<div class='panel glass'><div class='lbl' style='margin-top:0'>Home game opponents ($1/$2)</div><div class='seg' id='l-skill'><button data-v='beginner'>Beginner</button><button data-v='regular'>Regular</button><button data-v='tough'>Tough</button><button data-v='mixed'>Mixed</button></div><p class='muted' id='l-skill-desc' style='font-size:.88rem;margin:8px 0 0'></p>"+
     "<div class='lbl'>Bot speed</div><div class='seg' id='l-speed'><button data-v='slow'>Slow</button><button data-v='normal'>Normal</button><button data-v='fast'>Fast</button></div></div>"+
     "<div class='panel glass'><h2>Table feel</h2>"+
-    [["coach","After-hand coach","Shows your biggest mistake when a hand ends."],["hud","Opponent stats on seats","How often each player plays and raises, shown under their name."],["tilt3d","3D table","Tilts the felt like you're sitting at it."],["season","Seasonal decorations","Holiday touches during the right weeks of the year."],["sound","Sounds","Card, chip, and win sounds."],["haptics","Vibration","Buzz on your turn and when you win, on phones that support it."],["fx2","Chip animations","Bets slide into the pot."]].map(function(x){return "<div class='toggle' style='border-top:0;margin-top:0'><div><b>"+x[1]+"</b><div class='muted' style='font-size:.85rem'>"+x[2]+"</div></div><button class='switch' role='switch' data-sw='"+x[0]+"' aria-checked='"+(!!S.settings[x[0]])+"' aria-label='"+x[1]+"'></button></div>";}).join("")+
+    [["gradeLive","Grade each decision","After every action in cash games, a chip under your stack shows whether your play matched the model. Tap a chip for the reason."],["coach","After-hand coach","Shows your biggest mistake when a hand ends."],["hud","Opponent stats on seats","How often each player plays and raises, shown under their name."],["tilt3d","3D table","Tilts the felt like you're sitting at it."],["season","Seasonal decorations","Holiday touches during the right weeks of the year."],["sound","Sounds","Card, chip, and win sounds."],["haptics","Vibration","Buzz on your turn and when you win, on phones that support it."],["fx2","Chip animations","Bets slide into the pot."]].map(function(x){return "<div class='toggle' style='border-top:0;margin-top:0'><div><b>"+x[1]+"</b><div class='muted' style='font-size:.85rem'>"+x[2]+"</div></div><button class='switch' role='switch' data-sw='"+x[0]+"' aria-checked='"+(!!S.settings[x[0]])+"' aria-label='"+x[1]+"'></button></div>";}).join("")+
     "<div class='lbl'>Shot clock (all tables)</div><div class='seg' id='l-clock'><button data-v='0'>Off</button><button data-v='30'>30 sec</button><button data-v='15'>15 sec</button></div></div>"+
     "<div class='panel glass'><h2>Live mode</h2><p class='muted' style='font-size:.85rem'>Applies to Home Game Night on the Cash tab: nine-handed, loose, with straddles and big raises.</p>"+
     "<div class='lbl' style='margin-top:0'>Sharks per table (Casino $1/$2 and Home Game Night)</div><div class='seg' id='l-sharks'><button data-v='0'>None</button><button data-v='1'>One</button><button data-v='2'>Two</button></div><p class='muted' style='font-size:.8rem'>Strong regulars who adapt to how you play. Takes effect at your next new table.</p>"+
@@ -4002,6 +4027,7 @@ function closeLook(){$("lookSheet").hidden=true;if($("modal").hidden&&$("tools")
 $("look-close").onclick=closeLook;
 $("look-rand").onclick=function(){var L=look(),ok=function(a){return a.filter(okItem);};L.table=pick(ok(TABLES)).id;L.back=pick(ok(BACKS)).id;L.face=pick(FACES).id;L.atm=pick(ok(ATMOS)).id;if(T)S.settings.venueLooks=false;save();applyLook(T?venueLook():null);renderLook();};
 $("g-style").onclick=openLook;
+if(S.settings.gradeLive===undefined){S.settings.gradeLive=true;save();}
 buildLookCSS();applyLook();
 
 renderLobby();
