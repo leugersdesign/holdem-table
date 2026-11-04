@@ -687,7 +687,7 @@ function startHand(){
     if(T.pass)T.players.forEach(function(p){if((p.hero||p.human)&&p.stack<=0){p.stack=T.buy;p.buyins=(p.buyins||1)+1;toast(p.name+" rebuys for "+money(T.buy)+".");}});
     T.players.forEach(function(p,i){if(!p.hero&&!p.human&&p.stack<=0&&STK(T.stake).cast){var seated=T.players.map(function(q){return q.cid;}),free=CLUB_IDS.filter(function(id){return seated.indexOf(id)<0;});if(free.length){var c=castById(pick(free));T.players[i]={name:c.short,cid:c.id,skill:c.skill,stack:T.buy,hero:false,out:false};}}});
     if(T.home)T.players.forEach(function(p,i){if(!p.hero&&!p.human&&p.stack<=0&&!p.cid&&Math.random()<0.7&&(p.rebuys||0)<3){p.stack=T.buy;p.rebuys=(p.rebuys||0)+1;p.tilt=Math.max(p.tilt||0,3+rnd(5));toast(p.name+" rebuys for "+money(T.buy)+" and looks annoyed.");}});
-    if(T.live&&T.handNo>=40&&Math.random()<0.02){var gone=T.players.map(function(p,i){return i;}).filter(function(i){var q=T.players[i];return i!==0&&!q.hero&&!q.human&&!q.cid&&q.stack>0;});
+    if(T.live&&!T.noLeave&&T.handNo>=40&&Math.random()<0.02){var gone=T.players.map(function(p,i){return i;}).filter(function(i){var q=T.players[i];return i!==0&&!q.hero&&!q.human&&!q.cid&&q.stack>0;});
       if(gone.length){var gi=pick(gone),old=T.players[gi],stB=STK(T.stake).arch,nb2=stB?archBot(pick(stB),T.buy||200,namesAt()):newBot(T.skill,T.buy||200,namesAt());T.players[gi]=nb2;toast(old.name+" cashes out. "+nb2.name+" takes the seat.");}}
     if(T.home&&T.handNo===60)toast("Two hours in. The drinks are flowing, and the loose players are getting looser.");
     T.players.forEach(function(p,i){if(!p.hero&&!p.human&&p.stack<=0){var stA=STK(T.stake).arch,nb=stA?archBot(pick(stA),T.buy||200,namesAt()):newBot(T.skill,T.buy||200,namesAt());T.players[i]=nb;}});
@@ -865,6 +865,7 @@ function endHand(sd){
   try{var w0=Object.keys(H.winners||{}).map(Number)[0];if(w0!==undefined){var tgt=w0===0?$("g-hero"):SEAT_EL[w0];var pe=$("g-pot");flyChips([pe,pe,pe],tgt);}}catch(e){}
   if(over){var tt=T,place=T.players[0].out?T.players[0].place:1;setTimeout(function(){if(T===tt)eventEnd(place);},1100);}
   else if(cleared){var t2=T;setTimeout(function(){if(T===t2)stageCleared();},1100);}
+  else if(T.live&&T.mode==="cash"&&T.handNo===30&&!T.sharkQuizDone){setTimeout(sharkQuiz,1300);}
   else if(H.skip&&!coachOn()){var hid=H.id;setTimeout(function(){if(H&&H.id===hid&&H.done)startHand();},500);}
 }
 
@@ -945,6 +946,13 @@ function botPre(i){
   var stackBB=(p.stack+s.sb)/bb,ip=pos==="BTN"||pos==="CO";
   p._cls=e>=68?"strong":e>=55?"medium":"weak";
   if(useLive(p)&&REC_KEYS.indexOf(liveKey(p))<0)E=Object.assign({},E,{loose:Math.min(E.loose,liveKey(p)==="maniac"?7:2)});
+  if(useLive(p)&&liveKey(p)==="shark"){var lateS=["HJ","CO","BTN","SB"].indexOf(pos)>=0;
+    if(H.raises===0&&limpers>0){var weakL=H.seats.filter(function(j){return j!==i&&j!==H.bbI&&j!==H.sbI&&H.s[j].tot>0&&REC_KEYS.indexOf(liveKey(T.players[j]))>=0;}).length;
+      if(e>=(weakL?54:58)-(lateS?2:0))return raiseTo(i,bb*(6+limpers));if(e>=50&&lateS&&Math.random()<0.4)return ["call"];return passive(i);}
+    if(H.raises===0&&lateS&&e>=55&&Math.random()<0.85)return raiseTo(i,bb*(T.casino?5:4.5));
+    if(H.raises===1&&H.preAgg>=0&&H.preAgg!==i){var opk=liveKey(T.players[H.preAgg]),loose3=LOOSE_KEYS.indexOf(opk)>=0;
+      if(e>=(loose3?60:66)||(lateS&&loose3&&e>=56&&Math.random()<0.45))return raiseTo(i,H.cur*(lateS?3.5:4.2));
+      if(e>=(loose3?55:59)||(code.length===2&&L.toCall*15<=p.stack))return ["call"];return passive(i);}}
   if(useLive(p)&&REC_KEYS.indexOf(liveKey(p))>=0){
     var lk=liveKey(p),PT={station:48,limper:52.5,whale:46.5}[lk]-(homeLate()?3:0)-(p.tilt>0?5:0),rsz=bb*((T.casino?6:5)+limpers);
     if(H.raises===0){if(L.toCall===0)return e>=63&&Math.random()<0.5?raiseTo(i,rsz):["check"];
@@ -1027,6 +1035,7 @@ var LP={
   weekend:{callBase:[2.5,3.0,3.2],sens:1.0,chase:0.45,betS:3.8,raiseS:6,trap:0.2,honest:0.6,cbet:0.56,bluff:0.08,rbluff:0.01,semi:0.06,drawBet:0.35,probe:0.12},
   tag:    {callBase:[2.6,3.1,3.4],sens:1.1,chase:0.35,betS:3.6,raiseS:6,trap:0.15,honest:0.3,cbet:0.6,bluff:0.12,rbluff:0.012,semi:0.1,drawBet:0.45,probe:0.1},
   lag:    {callBase:[2.3,2.8,3.0],sens:0.9,chase:0.45,betS:3.2,raiseS:5.5,trap:0.2,honest:0.15,cbet:0.68,bluff:0.2,rbluff:0.025,semi:0.16,drawBet:0.6,probe:0.15},
+  shark:  {callBase:[2.4,2.9,3.1],sens:1.0,chase:0.4,betS:3.2,raiseS:5.5,trap:0.2,honest:0.1,cbet:0.7,bluff:0.2,rbluff:0.03,semi:0.15,drawBet:0.55,probe:0.15},
   maniac: {callBase:[1.7,2.1,2.2],sens:0.45,chase:0.9,betS:2,raiseS:5,trap:0.05,honest:0.45,cbet:0.78,bluff:0.32,rbluff:0.045,semi:0.22,drawBet:0.75,probe:0.4}
 };
 var REC_KEYS=["station","limper","whale"];
@@ -1066,6 +1075,14 @@ function liveBet(i,p,P,S,pot,kind){var f;
   return raiseTo(i,Math.max(T.bb,Math.round(pot*f)));}
 function liveBotPost(i){
   var p=T.players[i],s=H.s[i],P=liveProf(p),L=legal(i),nOpp=live().length-1,pot=potTotal(),r=Math.random(),st=H.street;
+  if(P.k==="shark"&&live().indexOf(0)>=0&&!T.players[0].human){var A=sharkRead();
+    if(A.cf>0.55)P.cbet=0.92;if(A.vp>0.35){P.bluff*=0.4;P.betS-=0.5;P.rbluff*=0.5;}
+    if(A.rvFold>0.55&&st===3&&nOpp===1){P.bluff=Math.max(P.bluff,0.45);P.rbluff=Math.max(P.rbluff,0.18);}
+    if(A.rvN>=6&&A.rvFold<0.2&&st===3){P.bluff*=0.3;P.rbluff=0.005;}}
+  var sharkVsRec=false,recBet=false;
+  if(P.k==="shark"){var opps=live().filter(function(j){return j!==i;}),nRec=opps.filter(function(j){return j!==0&&REC_KEYS.indexOf(liveKey(T.players[j]))>=0;}).length;
+    if(nRec>0&&nRec>=opps.length-(live().indexOf(0)>=0?1:0)){sharkVsRec=true;P.bluff*=0.2;P.rbluff=0.003;P.semi*=0.4;P.cbet*=nOpp>=2?0.5:0.75;P.betS=2.9;P.probe=0.35;}
+    if(H.lastAgg>0&&H.lastAgg!==i&&REC_KEYS.indexOf(liveKey(T.players[H.lastAgg]))>=0)recBet=true;}
   var hi=hcInfo(s.cards,H.board),S=hi.S+(Math.random()*0.4-0.2);
   p._cls=S>=5.5?"strong":hi.outs>=8&&S<4?"draw":S<2?"weak":"medium";
   if(L.toCall===0){
@@ -1083,6 +1100,7 @@ function liveBotPost(i){
   var betFrac=Math.min(2,L.toCall/Math.max(1,pot-L.toCall)),facingRaise=H.raises>=2;
   var need=P.callBase[st-1]+P.sens*betFrac+(facingRaise?1.3*(H.raises-1):0)+(nOpp>=2?0.2:0);
   if(H.lastAgg===0)need+=liveMem(i);
+  if(recBet){var bz=H.bsize&&H.bsize[H.lastAgg];need+=0.5+0.4*betFrac+(bz&&bz.st===st&&bz.f>=0.72?0.8:0);}
   if(L.canRaise&&S>=P.raiseS+(facingRaise?1:0)&&r<0.75){if(st<3&&Math.random()<P.trap*0.6)return ["call"];return raiseTo(i,H.cur*(2.6+Math.random()*0.6));}
   if(L.canRaise&&!facingRaise&&st<3&&hi.outs>=8&&r<P.semi)return raiseTo(i,H.cur*2.8);
   if(L.canRaise&&!facingRaise&&nOpp===1&&S<2&&r<(st===3?P.rbluff:P.bluff*0.2))return raiseTo(i,H.cur*2.7);
@@ -1970,7 +1988,8 @@ function recordDecision(d){
     var rec={code:A.code,st:H.street,act:d[0],to:d[1]||0,toCall:A.L.toCall,pot:A.pot,need:A.need,eq:A.eq,advice:A.advice,why:A.why,raises:H.raises,pos:A.pos,nOpp:A.opp.length,canRaise:A.L.canRaise,board:H.board.slice()};
     rec.leak=classify(rec);var G=gradeDec(rec);rec.sev=G.sev;rec.loss=G.loss;rec.triv=G.trivial;rec.best=G.best;
     if(G.sev===0)rec.leak=null;else if(!rec.leak)rec.leak=rec.toCall>0&&rec.act==="raise"?"raise_no_odds":"off_line";
-    var lu=liveUnitOf(rec);if(lu)cpush(lu,"l",rec.sev===0);
+    var lu=liveUnitOf(rec);if(lu)cpush(lu,"l",rec.sev===0);liveUnitsExtra(rec).forEach(function(x){cpush(x[0],"l",x[1]);});
+    if(T.live&&rec.st===3&&rec.toCall>0){T.heroRv=T.heroRv||{face:0,fold:0};T.heroRv.face++;if(rec.act==="fold")T.heroRv.fold++;}
     H.dec=H.dec||[];H.dec.push(rec);if(!rec.leak)addXP(1);if(rec.leak)addRedo(rec);sessDecision(rec);
     if(rec.act==="fold"&&rec.toCall>0&&rec.eq<rec.need)mission("goodfold");if(rec.act==="fold"&&rec.st===3&&rec.advice==="Fold")mission("riverfold");
     if(rec.st===0&&rec.act==="raise"&&rec.raises===1&&H.preAgg>0){var opn=T.players[H.preAgg];if(opn&&(["station","limper","whale","maniac"].indexOf(opn.arch)>=0||opn.cid==="moonshot"))mission("3bloose");}
@@ -2461,7 +2480,7 @@ function styleLong(p){var st=styleOf(p),sk=p.skill,base={beginner:38,regular:22,
   var call=sticky?"Calls down with weak pairs, so bluffing them doesn't work.":folds?"Folds to big bets, so well-timed bluffs work.":"";
   var trap=st.trap>=0.3?"Sometimes checks very strong hands to trap. Respect a check-raise.":"";
   var beat=sticky||sk==="beginner"?"Bet your good hands bigger and more often, and skip the bluffs.":bl&&aggr?"Call down more with top pair, and let them bet into you.":folds?"Bet when they check, and fold to their raises.":"Play solid: value bet good hands and respect their raises.";
-  if(p.arch&&ARCH[p.arch]){beat=ARCH[p.arch].tip;plays="<b>"+ARCH[p.arch].n+".</b> "+plays;}
+  if(p.arch&&ARCH[p.arch]&&!(p.arch==="shark"&&!T.sharkQuizDone)){beat=ARCH[p.arch].tip;plays="<b>"+ARCH[p.arch].n+".</b> "+plays;}
   return "<div>"+plays+"</div><div><b>When they bet:</b> "+bets+"</div><div><b>When they raise:</b> "+raises+"</div><div>"+[blf,call,trap].filter(Boolean).join(" ")+"</div><div><b>How to beat them:</b> "+beat+"</div>";}
 /* ===== call or fold guide ===== */
 var GUIDE_ROWS=[["Monster","Two pair, a set, a straight, a flush, or better"],["Top pair, good kicker","Or an overpair (a pocket pair above the board)"],["Top pair, weak kicker",""],["Middle or bottom pair",""],["Big draw","8 or more outs: open-ended straight or flush draw"],["Small draw","4 outs: gutshot"],["Nothing","No pair, no real draw"]];
@@ -2521,6 +2540,7 @@ var ARCH={
   maniac:{n:"Maniac",skill:"tough",st:{loose:14,agg:1.8,bluff:2.0,sticky:0.06,trap:0.05,sizing:"big",tilt:0.6},tip:"Raises and bluffs constantly. Call down lighter with good hands and let them bet into you."},
   lag:{n:"Loose-aggressive pro",skill:"tough",st:{loose:5,agg:1.45,bluff:1.4,sticky:0.02,trap:0.25,sizing:"polar",tilt:0.2},tip:"Wide and aggressive, but thoughtful. Big bets are very strong or nothing, so pick your spots with strong hands."},
   weekend:{n:"Weekend regular",skill:"regular",st:{loose:0,agg:1.0,bluff:0.7,sticky:-0.05,trap:0.15,sizing:"std",tilt:0.25},tip:"Knows the basics and plays standard sizes, but folds to pressure. Bet scary turns and rivers when they check to you."},
+  shark:{n:"Shark",skill:"tough",st:{loose:3,agg:1.35,bluff:1.1,sticky:0.02,trap:0.2,sizing:"polar",tilt:0.05},tip:"A strong regular who watches you. Raises late, reraises light, and bets scary cards. Avoid big pots without a strong hand."},
   whale:{n:"Gambler",skill:"beginner",st:{loose:16,agg:1.1,bluff:1.0,sticky:0.14,trap:0,sizing:"big",tilt:0.7},tip:"Plays almost every hand for big pots. Wait for good hands and let them pay you."}
 };
 var ARCH_ORDER=["station","limper","nit","weekend","tag","maniac","lag","whale"];
@@ -2635,8 +2655,8 @@ var V3_LOOSE=["AA","KK","QQ","JJ","TT","AKs","AKo","AQs","AQo","AJs","KQs"],V3_T
 function live3Decide(code,looseOpp,pos,deep){var pair=code.length===2,s=code[2]==="s",hi=code[0],lo=code[1],late=["CO","BTN","BB"].indexOf(pos)>=0;
   if((looseOpp?V3_LOOSE:V3_TIGHT).indexOf(code)>=0)return "Reraise";
   if(pair)return deep>=(looseOpp?12:15)?"Call":"Fold";
-  if(looseOpp){if(s&&hi==="A")return "Call";if(s&&"KQJT".indexOf(hi)>=0&&"QJT9".indexOf(lo)>=0&&hi!==lo)return "Call";
-    if(s&&late&&["T9s","98s","87s","76s","65s","54s"].indexOf(code)>=0)return "Call";return "Fold";}
+  if(looseOpp){if(s&&hi==="A")return deep>=12||"KQJT".indexOf(lo)>=0?"Call":"Fold";if(s&&"KQJT".indexOf(hi)>=0&&"QJT9".indexOf(lo)>=0&&hi!==lo)return "Call";
+    if(s&&late&&["T9s","98s","87s","76s","65s","54s"].indexOf(code)>=0)return deep>=20?"Call":"Fold";return "Fold";}
   if(["AQs","AJs","KQs"].indexOf(code)>=0)return "Call";
   if(s&&(pos==="BTN"||pos==="BB")&&["KJs","QJs","JTs","T9s","98s","87s"].indexOf(code)>=0&&deep>=15)return "Call";
   return "Fold";}
@@ -2659,6 +2679,10 @@ function liveAdvice(code,pos,opp,L,hs){
   if(H.street===1&&H.preAgg===0&&L.toCall===0&&opp.length>=2){var hi=hcInfo(hs.cards,H.board);
     if(hi.S>=4||hi.outs>=8)return ["Bet","You have "+HC_NAME[hi.c]+(hi.outs>=8&&hi.S<4?" ("+hi.outs+" outs)":"")+" with "+opp.length+" opponents. Bet about two thirds of the pot. In multiway pots, bet the hands that are good or can get good."];
     return ["Check","You have "+HC_NAME[hi.c]+" against "+opp.length+" players. Someone usually has a piece of the flop, so a bluff rarely works. Check and play the turn."];}
+  if(H.street===3&&L.toCall===0&&opp.length===1){var h5=hcInfo(hs.cards,H.board),k5=liveKey(T.players[opp[0]]),w5=(ARCH[k5]&&ARCH[k5].n||"player").toLowerCase(),a5=thinDecide(h5.S,k5);
+    return [a5,thinWhy(a5,h5.c,k5,w5)+(a5==="Bet"&&h5.S>=4.5?" Size: "+sizeDecide(h5.S,k5).toLowerCase()+" of the pot.":"")];}
+  if(H.street>=2&&L.toCall>0&&H.raises>=2&&H.lastAgg>0){var h6=hcInfo(hs.cards,H.board),k6=liveKey(T.players[H.lastAgg]),w6=(ARCH[k6]&&ARCH[k6].n||"player").toLowerCase(),a6=raiseDecide(h6.S,k6);
+    if(a6==="Raise"&&!L.canRaise)a6="Call";return [a6,raiseWhy(a6,h6.c,k6,w6)];}
   if(H.street>0&&L.toCall>0){var bt=H.lastAgg>0?H.lastAgg:-1;if(bt>0){var rd=sizeRead(bt);if(rd)return ["__read",rd];}}
   return null;}
 /* course progress: the last 40 drill answers and the last 40 matching live decisions per unit */
@@ -2667,7 +2691,10 @@ var COURSE=[
  {id:"u2",t:"Raise the limpers",d:"limp",les:"Limpers usually have weak hands and call too much. Raise strong hands to 5 big blinds plus 1 per limper, add 1 more out of position. Small pairs and suited connectors can limp behind for a cheap multiway flop. Fold the rest."},
  {id:"u3",t:"Reraise for value",d:"v3",les:"Against loose players, reraise good hands big (TT+, AQ+, AJs, KQs) because they call with worse. Against rocks and regulars, reraise only QQ+ and AK, call pairs to hit sets when stacks are deep, and fold the rest."},
  {id:"u4",t:"Bet the flop in multiway pots",d:"mw",les:"With two or more callers, someone usually hits. Bet top pair or better and big draws, about two thirds of the pot. Check everything else. Your ace-high bluff only works heads up."},
- {id:"u5",t:"Thin value bets",soon:1},{id:"u6",t:"Fold one pair to a raise",soon:1},{id:"u7",t:"Size up against stations",soon:1},{id:"u8",t:"Deep stacks",soon:1}];
+ {id:"u5",t:"Thin value bets",d:"thin",les:"Most of your profit against loose players comes from river bets with medium hands. Against stations and limp-callers, bet middle pair or better when checked to, because they call with worse. Against rocks and regulars, bet only top pair with a good kicker or better."},
+ {id:"u6",t:"Fold one pair to a raise",d:"fold1",les:"Recreational players almost never raise the turn or river as a bluff. When one raises, they have two pair or better. Fold top pair and overpairs. Only call against maniacs, aggressive pros, and sharks."},
+ {id:"u7",t:"Size up against stations",d:"size",les:"Stations decide to call based on their own hand, not your bet size. Bet two thirds of the pot with good hands and the full pot with very strong ones. Against tighter players, bet smaller so their worse hands still call."},
+ {id:"u8",t:"Deep stacks",d:"deep",les:"Live stacks run 100 to 300 big blinds. Small pairs need about 15 times the raise behind to call and hit a set. Suited connectors need about 20 times, in position. Shorter than that, fold them."}];
 function course(){S.course=S.course||{};COURSE.forEach(function(u){S.course[u.id]=S.course[u.id]||{d:[],l:[]};});return S.course;}
 function cpush(u,kind,ok){var c=course()[u];if(!c)return;c[kind].push(ok?1:0);if(c[kind].length>40)c[kind].shift();save();}
 function cpct(a){return a.length?Math.round(a.reduce(function(x,y){return x+y;},0)/a.length*100):0;}
@@ -2675,9 +2702,17 @@ function cpass(a){return a.length>=40&&cpct(a)>=85;}
 function liveUnitOf(rec){if(!T||!T.live||T.mode!=="cash")return null;
   if(rec.st===0&&rec.raises===0&&rec.pos!=="BB")return liveLimpers()?"u2":"u1";
   if(rec.st===0&&rec.raises===1&&H.preAgg>0)return "u3";
-  if(rec.st===1&&H.preAgg===0&&rec.toCall===0&&rec.nOpp>=2)return "u4";return null;}
-function courseHTML(){var C=course(),done=COURSE.filter(function(u){return !u.soon&&cpass(C[u.id].d)&&cpass(C[u.id].l);}).length;
-  return "<div class='panel glass'><div class='evtop'><div><div class='venue'>Live $1/$2 and home games</div><h2>TAG course</h2></div><div class='tier'>"+done+"/4</div></div>"+
+  if(rec.st===1&&H.preAgg===0&&rec.toCall===0&&rec.nOpp>=2)return "u4";
+  if(rec.st===3&&rec.toCall===0&&rec.nOpp===1)return "u5";
+  if(rec.st>=2&&rec.toCall>0&&H.raises>=2)return "u6";
+  return null;}
+function liveUnitsExtra(rec){var out=[];if(!T||!T.live||T.mode!=="cash")return out;
+  if(rec.st===0&&rec.raises===1&&H.preAgg>0&&speculative(rec.code))out.push(["u8",rec.sev===0]);
+  if(rec.st>=2&&rec.toCall===0&&rec.act==="raise"&&rec.nOpp===1){var hi=hcInfo(H.s[0].cards,H.board);if(hi.S>=4.5){var opp=live().filter(function(j){return j!==0;})[0],k=liveKey(T.players[opp]),f=(rec.to||0)/Math.max(1,rec.pot),want=sizeDecide(hi.S,k),got=f<0.45?"One third":f<=0.85?"Two thirds":"Pot";out.push(["u7",want===got]);}}
+  return out;}
+function courseHTML(){var C=course(),done=COURSE.filter(function(u){return !u.soon&&cpass(C[u.id].d)&&cpass(C[u.id].l);}).length,LKb=(S.leaks||{}).by||{},topLk=Object.keys(LKb).filter(function(k){return LEAK_UNIT[k];}).sort(function(a,b){return LKb[b]-LKb[a];})[0];
+  return "<div class='panel glass'><div class='evtop'><div><div class='venue'>Live $1/$2 and home games</div><h2>TAG course</h2></div><div class='tier'>"+done+"/8</div></div>"+
+  (topLk?"<div class='tool' style='margin:6px 0'><div class='k'>Your biggest leak</div><div class='v' style='font-size:.9rem'><b>"+LEAKS[topLk][0]+"</b> ("+LKb[topLk]+"\u00d7). Redo <b>"+unitName(LEAK_UNIT[topLk])+"</b>.</div></div>":"")+
   "<p class='muted' style='font-size:.85rem'>Each unit has a lesson, a drill, and a live test. Pass a unit with 85% over your last 40 drill answers and your last 40 matching decisions at the Casino $1/$2 or Home Game Night tables.</p>"+
   COURSE.map(function(u,k){if(u.soon)return "<div class='cunit soon'><div class='cnum'>"+(k+1)+"</div><div><b>"+u.t+"</b><div class='muted' style='font-size:.8rem'>Coming in the next update</div></div></div>";
     var c=C[u.id],pd=cpass(c.d),pl=cpass(c.l);
@@ -2685,7 +2720,7 @@ function courseHTML(){var C=course(),done=COURSE.filter(function(u){return !u.so
       "<details><summary class='muted' style='font-size:.8rem'>Lesson</summary><p style='font-size:.88rem;margin:6px 0'>"+u.les+"</p></details>"+
       "<div class='cbars'>"+cbar("Drill",c.d,pd)+cbar("Live",c.l,pl)+"</div></div><button class='btn ghost pill' data-cd='"+u.d+"'>Drill</button></div>";}).join("")+"</div>";}
 function cbar(lbl,a,ok){var pc=cpct(a);return "<div class='cbar'><span>"+lbl+"</span><i><b style='width:"+(a.length/40*100)+"%;background:"+(ok?"var(--good)":pc>=85?"var(--accent)":"#8a8a8a")+"'></b></i><span>"+a.length+"/40 \u00b7 "+(a.length?pc+"%":"\u2013")+"</span></div>";}
-function wireCourse(){var B=$("l-body");if(!B)return;B.querySelectorAll("[data-cd]").forEach(function(b){b.onclick=function(){({open9:open9Drill,limp:limpDrill,v3:value3Drill,mw:mwCbetDrill})[b.dataset.cd]();};});}
+function wireCourse(){var B=$("l-body");if(!B)return;B.querySelectorAll("[data-cd]").forEach(function(b){b.onclick=function(){({open9:open9Drill,limp:limpDrill,v3:value3Drill,mw:mwCbetDrill,thin:thinDrill,fold1:foldDrill,size:sizeDrill,deep:deepDrill})[b.dataset.cd]();};});}
 /* unit 1 drill: open or fold, nine-handed */
 var OPEN9_POS=["UTG","UTG1","UTG2","MP","HJ","CO","BTN","SB"];
 function drillHand(pred){var deck=shuffle(Array.from({length:52},function(_,i){return i;})),h;for(var t=0;t<40;t++){h=[deck[2*t],deck[2*t+1]];if(!pred||pred(codeOf(h)))break;}return h;}
@@ -2709,6 +2744,51 @@ function mwCbetDrill(){var deck=shuffle(Array.from({length:52},function(_,i){ret
     el.querySelectorAll("[data-o]").forEach(function(b){b.onclick=function(){var ok=b.dataset.o===ans;dstat("mw",ok);cpush("u4","d",ok);
       el.querySelector("#dq").innerHTML="<div class='dres "+(ok?"ok":"no")+"'>"+(ok?"Right.":"Best play: "+ans+".")+"</div><p style='font-size:.92rem'>You have "+HC_NAME[hi.c]+(hi.outs>=8?" with "+hi.outs+" outs":"")+". "+(ans==="Bet"?"Bet about $"+Math.round(pot*0.66)+". With "+n+" opponents, bet hands that are good now or have big draws, and they will call with worse.":"With "+(n+1)+" players in, someone usually has a pair. A bluff here rarely works, so check and see the turn.")+"</p><div class='row'><button class='btn primary' id='dn'>Next hand</button><button class='btn ghost' id='dx'>Done</button></div>";
       el.querySelector("#dn").onclick=mwCbetDrill;el.querySelector("#dx").onclick=drillClose;};});});}
+/* ===== TAG course units 5 to 8 ===== */
+var REC_OR_LOOSE=["station","limper","whale"];
+function thinDecide(S,k){if(k==="maniac")return S>=4.5?"Bet":"Check";return S>=(REC_OR_LOOSE.indexOf(k)>=0?3:4.5)?"Bet":"Check";}
+function thinWhy(ans,hc,k,who){var rec=REC_OR_LOOSE.indexOf(k)>=0;
+  if(ans==="Bet")return rec?"You have "+HC_NAME[hc]+". A "+who+" calls the river with worse pairs and missed draws, so bet about half the pot. Checking here gives away the money you came for.":"You have "+HC_NAME[hc]+", strong enough that a "+who+" calls with worse. Bet for value.";
+  return k==="maniac"?"You have "+HC_NAME[hc]+". A maniac bluffs a lot, so check and let them bet into you, then call.":rec?"With "+HC_NAME[hc]+" you rarely get called by worse, even from a "+who+". Check and show it down.":"A "+who+" only calls the river with hands that beat "+HC_NAME[hc]+". Check and take the free showdown.";}
+function raiseDecide(S,k){var wild=["maniac","lag","shark"].indexOf(k)>=0;if(S>=7)return "Raise";if(S>=5.5)return "Call";if(wild&&S>=4.5)return "Call";return "Fold";}
+function raiseWhy(ans,hc,k,who){var wild=["maniac","lag","shark"].indexOf(k)>=0;
+  if(ans==="Raise")return "You have "+HC_NAME[hc]+". That beats almost everything a "+who+" raises with. Raise again.";
+  if(ans==="Call")return wild?"A "+who+" raises with bluffs and worse hands often enough that "+HC_NAME[hc]+" is worth a call.":"With "+HC_NAME[hc]+" you beat the top-pair hands they sometimes raise with. Call, but don't reraise.";
+  return "A "+who+" almost never raises the turn or river as a bluff. Their raise means two pair or better, and "+HC_NAME[hc]+" is beat. Fold, even though it hurts.";}
+function sizeDecide(S,k){var rec=REC_OR_LOOSE.indexOf(k)>=0;return rec?(S>=6?"Pot":"Two thirds"):(S>=6?"Two thirds":"One third");}
+function sizeWhy(ans,hc,k,who){var rec=REC_OR_LOOSE.indexOf(k)>=0;
+  return rec?"A "+who+" decides to call based on their hand, not your bet size. With "+HC_NAME[hc]+", bet "+ans.toLowerCase()+" of the pot. Bigger bets win more from players who call anyway.":"A "+who+" folds more when you bet big. With "+HC_NAME[hc]+", bet "+ans.toLowerCase()+" of the pot so their worse hands still call.";}
+function speculative(code){var pair=code.length===2;if(pair)return R.indexOf(code[0])>=R.indexOf("9");if(code[2]!=="s")return false;if(code[0]==="A")return R.indexOf(code[1])>=R.indexOf("9");var g=R.indexOf(code[1])-R.indexOf(code[0]);return g===1&&R.indexOf(code[0])>=R.indexOf("T");}
+/* unit 5 drill: thin value on the river */
+function riverSpot(minS,maxS){for(var t=0;t<200;t++){var d=shuffle(Array.from({length:52},function(_,i){return i;})),h=[d[0],d[1]],b=d.slice(2,7),hi=hcInfo(h,b);if(hi.S>=minS&&hi.S<=maxS)return {h:h,b:b,hi:hi};}return null;}
+function thinDrill(){var k=pick(["station","station","limper","whale","nit","weekend","tag","maniac"]),who=ARCH[k].n.toLowerCase(),sp=riverSpot(2,5.3),ans=thinDecide(sp.hi.S,k),pot=pick([40,60,80,110]);
+  courseDrill("Bet the river?","Casino $1/$2. On the river a <b>"+who+"</b> checks to you. The pot is $"+pot+".",ARCH[k].tip,sp.h,sp.b,["Check","Bet"],ans,function(){return thinWhy(ans,sp.hi.c,k,who);},"thin","u5",thinDrill);}
+/* unit 6 drill: one pair against a raise */
+function foldDrill(){var k=pick(["station","limper","nit","weekend","tag","whale","maniac","lag"]),who=ARCH[k].n.toLowerCase(),sp=riverSpot(4,7.5),ans=raiseDecide(sp.hi.S,k),bet=pick([30,40,55]);
+  courseDrill("They raised you","Casino $1/$2. You bet $"+bet+" on the river and a <b>"+who+"</b> raises to $"+(bet*3)+".",ARCH[k].tip,sp.h,sp.b,["Fold","Call","Raise"],ans,function(){return raiseWhy(ans,sp.hi.c,k,who);},"fold1","u6",foldDrill);}
+/* unit 7 drill: sizing value bets */
+function sizeDrill(){var k=pick(["station","station","whale","limper","nit","weekend","tag"]),who=ARCH[k].n.toLowerCase(),sp=riverSpot(4.5,8),ans=sizeDecide(sp.hi.S,k),pot=pick([40,60,90]);
+  courseDrill("How much?","Casino $1/$2. A <b>"+who+"</b> checks to you on the river. The pot is $"+pot+". You're betting for value.",ARCH[k].tip,sp.h,sp.b,["One third","Two thirds","Pot"],ans,function(){return sizeWhy(ans,sp.hi.c,k,who);},"size","u7",sizeDrill);}
+/* unit 8 drill: deep stacks and implied odds */
+function deepDrill(){var lo=Math.random()<0.6,k=lo?pick(["station","limper","whale"]):pick(["nit","weekend","tag"]),who=ARCH[k].n.toLowerCase(),hpos=pick(["CO","BTN","BB","HJ","MP"]),raise=pick([10,12,15]),stack=pick([60,100,150,200,300,400]),deep=Math.round(stack/raise);
+  var h=drillHand(function(c){return speculative(c);}),code=codeOf(h),ans=live3Decide(code,lo,hpos,deep);
+  courseDrill("Deep enough to call?","Casino $1/$2. A <b>"+who+"</b> raises to $"+raise+". You're in <b>"+hpos+"</b>. You both have $"+stack+", about "+deep+" times the raise.",ARCH[k].tip,h,null,["Fold","Call","Reraise"],ans,function(){return live3Why(ans,code,lo,who,deep)+(ans==="Fold"&&deep<(code.length===2?15:20)?" At only "+deep+" times the raise, you can't win enough when you hit to pay for all the misses.":"");},"deep","u8",deepDrill);}
+function courseDrill(title,setup,tip,h,board,opts,ans,why,key,unit,next){
+  drillOpen("<h2>"+title+"</h2><div class='muted' style='font-size:.85rem'>"+setup+"</div><div class='muted' style='font-size:.8rem;margin-top:4px'>"+tip+"</div><div style='margin:8px 0'><div class='lbl'>Your hand</div>"+cardsRow(h,"lg")+(board?"<div class='lbl'>Board</div>"+cardsRow(board,"sm"):"")+"</div><div id='dq'><div class='dq'>What do you do?</div>"+opts.map(function(o){return "<button class='btn ghost dopt' data-o='"+o+"'>"+o+"</button>";}).join("")+"</div>",function(el){
+    el.querySelectorAll("[data-o]").forEach(function(b){b.onclick=function(){var ok=b.dataset.o===ans;dstat(key,ok);cpush(unit,"d",ok);
+      el.querySelector("#dq").innerHTML="<div class='dres "+(ok?"ok":"no")+"'>"+(ok?"Right.":"Best play: "+ans+".")+"</div><p style='font-size:.92rem'>"+why()+"</p><div class='row'><button class='btn primary' id='dn'>Next hand</button><button class='btn ghost' id='dx'>Done</button></div>";
+      el.querySelector("#dn").onclick=next;el.querySelector("#dx").onclick=drillClose;};});});}
+/* leaks point to the unit that fixes them */
+var LEAK_UNIT={fold_chart:"u1",open_loose:"u1",limp:"u2",call_light_pre:"u3",fold_strong_pre:"u3",bluff_multi:"u4",missed_value:"u5",call_no_odds:"u6",missed_raise:"u7"};
+function unitName(u){var k=COURSE.findIndex(function(x){return x.id===u;});return k<0?"":"Unit "+(k+1)+": "+COURSE[k].t;}
+/* ===== the shark seat ===== */
+function sharkCount(){var v=S.settings.sharks;return v===undefined?1:v;}
+function sharkRead(){var im=heroImage(),rv=T.heroRv||{face:0,fold:0};
+  return {cf:im.conf?im.cf:0.45,vp:im.conf?im.vp:0.25,rvFold:rv.face>=6?rv.fold/rv.face:0.35,rvN:rv.face};}
+function sharkQuiz(){if(!T||!T.live||T.sharkQuizDone||T.mode!=="cash")return;var sh=T.players.filter(function(p){return p.arch==="shark"&&p.stack>0;});if(!sh.length)return;
+  T.sharkQuizDone=true;var bots=T.players.filter(function(p){return !p.hero&&!p.human&&p.stack>0;});
+  showModal("<h2>Spot the shark</h2><p>"+(sh.length>1?"Two players at this table are strong regulars who are watching you. Thirty hands in, pick one of them.":"One player at this table is a strong regular who is watching you. Thirty hands in, who is it?")+"</p>",bots.map(function(p){return [p.name,function(){var ok=p.arch==="shark",S2=S.sharkQ=S.sharkQ||{n:0,ok:0};S2.n++;if(ok)S2.ok++;save();
+      setTimeout(function(){showModal("<h2>"+(ok?"Good read.":"It was "+sh.map(function(q){return q.name;}).join(" and ")+".")+"</h2><p>Sharks raise from late seats, reraise more than anyone else, bet when the board changes, and rarely limp. Their bet sizes don't tell you their hand. Avoid big pots with them unless you're strong, and let them fight the weak players.</p><p class='muted' style='font-size:.85rem'>Your shark reads: "+S2.ok+" of "+S2.n+".</p>",[["Back to the table",function(){},"brass"]]);},50);},"ghost"];}).concat([["Not sure yet",function(){},"ghost"]]));}
 /* table math */
 var CHIPV=[[100,"#1a1a1a","#fff"],[25,"#2e8b57","#fff"],[5,"#c8102e","#fff"],[1,"#f2f2f2","#333"]];
 function chipStacks(amt){var h="<div class='cstacks'>";CHIPV.forEach(function(d){var n=Math.floor(amt/d[0]);amt-=n*d[0];while(n>0){var k=Math.min(n,10);n-=k;h+="<div class='cstack'>";for(var i=0;i<k;i++)h+="<i style='background:"+d[1]+";bottom:"+(i*5)+"px'></i>";h+="</div>";}});return h+"</div>";}
@@ -3518,6 +3598,7 @@ function makeCash(st){
   var n=st.seats||6,ak=st.arch?shuffle(st.arch):null;for(var i=0;i<n-1;i++){var b=ak?archBot(ak[i%ak.length],st.buy,taken):newBot(skill,st.buy,taken);taken.push(b.name);ps.push(b);}
   if(st.cast){shuffle(CLUB_IDS.slice()).slice(0,st.cast).forEach(function(id,k){var c=castById(id);ps[k+1]={name:c.short,cid:c.id,skill:c.skill,stack:st.buy,hero:false,out:false};});}
   else if(st.id!=="micro"&&!st.arch)maybeRival(ps);
+  if((st.home||st.casino)&&!st.cast){var sc=sharkCount(),idx=shuffle(ps.map(function(_,k){return k;}).slice(1));for(var z=0;z<sc&&z<idx.length;z++){var nm2=ps[idx[z]].name;ps[idx[z]]=archBot("shark",st.buy,taken);ps[idx[z]].name=nm2;}}
   return {mode:"cash",stake:st.id,skill:skill,players:ps,button:rnd(n),sb:st.sb,bb:st.bb,buy:st.buy,level:0,handNo:0,home:!!st.home,casino:!!st.casino,live:!!(st.home||st.casino)};
 }
 function stageField(ev,s){var f=ev.field;for(var i=0;i<s;i++)f=f*ev.stages[i]/6;return Math.round(f);}
@@ -3677,6 +3758,7 @@ function renderSettings(){
     [["coach","After-hand coach","Shows your biggest mistake when a hand ends."],["hud","Opponent stats on seats","How often each player plays and raises, shown under their name."],["tilt3d","3D table","Tilts the felt like you're sitting at it."],["season","Seasonal decorations","Holiday touches during the right weeks of the year."],["sound","Sounds","Card, chip, and win sounds."],["haptics","Vibration","Buzz on your turn and when you win, on phones that support it."],["fx2","Chip animations","Bets slide into the pot."]].map(function(x){return "<div class='toggle' style='border-top:0;margin-top:0'><div><b>"+x[1]+"</b><div class='muted' style='font-size:.85rem'>"+x[2]+"</div></div><button class='switch' role='switch' data-sw='"+x[0]+"' aria-checked='"+(!!S.settings[x[0]])+"' aria-label='"+x[1]+"'></button></div>";}).join("")+
     "<div class='lbl'>Shot clock (all tables)</div><div class='seg' id='l-clock'><button data-v='0'>Off</button><button data-v='30'>30 sec</button><button data-v='15'>15 sec</button></div></div>"+
     "<div class='panel glass'><h2>Live mode</h2><p class='muted' style='font-size:.85rem'>Applies to Home Game Night on the Cash tab: nine-handed, loose, with straddles and big raises.</p>"+
+    "<div class='lbl' style='margin-top:0'>Sharks per table (Casino $1/$2 and Home Game Night)</div><div class='seg' id='l-sharks'><button data-v='0'>None</button><button data-v='1'>One</button><button data-v='2'>Two</button></div><p class='muted' style='font-size:.8rem'>Strong regulars who adapt to how you play. Takes effect at your next new table.</p>"+
     [["liveChips","Pot as chips","Show the pot as chip stacks so you count it yourself. Tap the pot to check your count."],["liveHelp","Allow helpers","Lets the Tools panel give advice in live mode. Off is closer to a real game."]].map(function(x){return "<div class='toggle' style='border-top:0;margin-top:0'><div><b>"+x[1]+"</b><div class='muted' style='font-size:.85rem'>"+x[2]+"</div></div><button class='switch' role='switch' data-sw='"+x[0]+"' aria-checked='"+(!!S.settings[x[0]])+"' aria-label='"+x[1]+"'></button></div>";}).join("")+(S.liveStats&&S.liveStats.peeks?"<p class='muted' style='font-size:.82rem'>Pot checks so far: "+S.liveStats.peeks+"</p>":"")+"</div>"+
     "<div class='panel glass'><h2>Backup and transfer</h2><p class='muted' style='font-size:.85rem'>Move your bankroll, stats, career, and settings to another copy of the game, like the home screen app on your phone. Copy the save code here, then paste it into the other copy.</p>"+
     "<div class='row'><button class='btn primary' id='bk-copy'>Show save code</button>"+(window.self===window.top?"<button class='btn ghost' id='bk-file'>Download backup</button>":"")+"</div>"+
@@ -3685,6 +3767,7 @@ function renderSettings(){
     "<div class='panel glass'><h2>Start over</h2><p class='muted'>Resets bankroll to $1,000 and clears stats, levels, achievements, trophies, and any game in progress. Your look stays, but exclusive unlocks are locked again.</p><div class='row'><button class='btn danger' id='l-reset'>Reset everything</button></div></div>";
   $("l-body").innerHTML=h;
   seg("l-skill","skill");seg("l-speed","speed");$("l-skill-desc").textContent=DESC[S.settings.skill];
+  $("l-sharks").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",String(sharkCount())===b.dataset.v?"true":"false");b.onclick=function(){S.settings.sharks=+b.dataset.v;save();renderLobby();};});
   $("l-clock").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",String(S.settings.clock)===b.dataset.v?"true":"false");b.onclick=function(){S.settings.clock=+b.dataset.v;save();renderLobby();};});
   $("l-body").querySelectorAll("[data-sw]").forEach(function(b){b.onclick=function(){var k=b.dataset.sw;S.settings[k]=!S.settings[k];save();if(k==="sound")ac();renderLobby();};});
   $("l-style").onclick=openLook;
