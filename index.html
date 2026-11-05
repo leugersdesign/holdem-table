@@ -707,8 +707,10 @@ var SKILL_LABEL={beginner:"Beginner",regular:"Regular",tough:"Tough",mixed:"Mixe
 var LEVELS=[[10,20],[15,30],[25,50],[50,100],[75,150],[100,200],[150,300],[200,400],[300,600],[500,1000],[800,1600],[1000,2000],[1500,3000],[2500,5000]];
 var T=null,H=null,TOKEN=0,SNAP=null;
 function newBot(skill,stack,taken){var nm;do{nm=pick(NAMES);}while(taken&&taken.indexOf(nm)>=0);
-  var sk=Array.isArray(skill)?pick(skill):skill==="mixed"?pick(SKILLS):skill;
+  var sk=diffSkill(Array.isArray(skill)?pick(skill):skill==="mixed"?pick(SKILLS):skill);
   return {name:nm,skill:sk,stack:stack,hero:false,out:false};}
+function difficulty(){return S.settings.difficulty||"realistic";}
+function diffSkill(sk){var d=difficulty();if(d==="relaxed")return sk==="tough"?"regular":sk;if(d==="brutal")return sk==="beginner"?"regular":sk==="regular"?"tough":sk;return sk;}
 function namesAt(){return T.players.map(function(p){return p.name;});}
 function seated(){var a=[];T.players.forEach(function(p,i){if(!p.out&&p.stack>0)a.push(i);});return a;}
 function nextIn(i,list){var n=T.players.length;for(var k=1;k<=n;k++){var j=(i+k)%n;if(list.indexOf(j)>=0)return j;}return -1;}
@@ -1088,6 +1090,9 @@ function liveKey(p){if(!p)return "tag";if(p.arch&&LP[p.arch])return p.arch;var s
 function liveProf(p){var k=liveKey(p),P=Object.assign({k:k},LP[k]);P.callBase=P.callBase.slice();
   if(p.tilt>0){P.callBase=P.callBase.map(function(x){return x-0.9;});P.bluff+=0.15;P.rbluff+=0.02;P.chase=1;P.honest=Math.min(P.honest,0.5);P.tilted=true;}
   if(homeLate()&&["station","limper","whale","maniac"].indexOf(k)>=0){P.callBase=P.callBase.map(function(x){return x-0.3;});P.bluff+=0.03;P.chase=Math.min(1,P.chase+0.1);}
+  var dd=difficulty();
+  if(dd==="relaxed"){P.callBase=P.callBase.map(function(x){return x+0.5;});P.sens+=0.3;P.chase*=0.6;P.bluff*=0.7;P.rbluff*=0.5;P.semi*=0.6;P.trap*=0.5;P.honest=Math.min(1,P.honest+0.15);}
+  else if(dd==="brutal"){P.honest*=0.5;P.bluff*=1.4;P.rbluff*=1.8;P.semi*=1.3;P.trap=Math.min(0.45,P.trap+0.1);if(REC_KEYS.indexOf(k)<0)P.callBase=P.callBase.map(function(x){return x-0.2;});}
   return P;}
 function homeLate(){return !!(T&&T.home&&T.mode==="cash"&&T.handNo>=60);}
 /* how a player labels their own hand: what they think they have, not their equity */
@@ -1118,9 +1123,9 @@ function liveBet(i,p,P,S,pot,kind){var f;
   return raiseTo(i,Math.max(T.bb,Math.round(pot*f)));}
 function liveBotPost(i){
   var p=T.players[i],s=H.s[i],P=liveProf(p),L=legal(i),nOpp=live().length-1,pot=potTotal(),r=Math.random(),st=H.street;
-  if(P.k==="shark"&&live().indexOf(0)>=0&&!T.players[0].human){var A=sharkRead();
-    if(A.cf>0.55)P.cbet=0.92;if(A.vp>0.35){P.bluff*=0.4;P.betS-=0.5;P.rbluff*=0.5;}
-    if(A.rvFold>0.55&&st===3&&nOpp===1){P.bluff=Math.max(P.bluff,0.45);P.rbluff=Math.max(P.rbluff,0.18);}
+  if(P.k==="shark"&&live().indexOf(0)>=0&&!T.players[0].human&&difficulty()!=="relaxed"){var A=sharkRead(),br=difficulty()==="brutal";
+    if(A.cf>(br?0.5:0.55))P.cbet=0.92;if(A.vp>(br?0.32:0.35)){P.bluff*=0.4;P.betS-=0.5;P.rbluff*=0.5;}
+    if(A.rvFold>(br?0.5:0.55)&&st===3&&nOpp===1){P.bluff=Math.max(P.bluff,br?0.55:0.45);P.rbluff=Math.max(P.rbluff,br?0.24:0.18);}
     if(A.rvN>=6&&A.rvFold<0.2&&st===3){P.bluff*=0.3;P.rbluff=0.005;}}
   var sharkVsRec=false,recBet=false;
   if(P.k==="shark"){var opps=live().filter(function(j){return j!==i;}),nRec=opps.filter(function(j){return j!==0&&REC_KEYS.indexOf(liveKey(T.players[j]))>=0;}).length;
@@ -2866,8 +2871,8 @@ var LEAK_UNIT={fold_chart:"u1",open_loose:"u1",limp:"u2",call_light_pre:"u3",fol
 function unitName(u){var k=COURSE.findIndex(function(x){return x.id===u;});return k<0?"":"Unit "+(k+1)+": "+COURSE[k].t;}
 /* ===== the shark seat ===== */
 function sharkCount(){var v=S.settings.sharks;return v===undefined?1:v;}
-function sharkRead(){var im=heroImage(),rv=T.heroRv||{face:0,fold:0};
-  return {cf:im.conf?im.cf:0.45,vp:im.conf?im.vp:0.25,rvFold:rv.face>=6?rv.fold/rv.face:0.35,rvN:rv.face};}
+function sharkRead(){var im=heroImage(),rv=T.heroRv||{face:0,fold:0},mn=difficulty()==="brutal"?4:6;
+  return {cf:im.conf?im.cf:0.45,vp:im.conf?im.vp:0.25,rvFold:rv.face>=mn?rv.fold/rv.face:0.35,rvN:rv.face};}
 function sharkQuiz(){if(!T||!T.live||T.sharkQuizDone||T.mode!=="cash")return;var sh=T.players.filter(function(p){return p.arch==="shark"&&p.stack>0;});if(!sh.length)return;
   T.sharkQuizDone=true;var bots=T.players.filter(function(p){return !p.hero&&!p.human&&p.stack>0;});
   showModal("<h2>Spot the shark</h2><p>"+(sh.length>1?"Two players at this table are strong regulars who are watching you. Thirty hands in, pick one of them.":"One player at this table is a strong regular who is watching you. Thirty hands in, who is it?")+"</p>",bots.map(function(p){return [p.name,function(){var ok=p.arch==="shark",S2=S.sharkQ=S.sharkQ||{n:0,ok:0};S2.n++;if(ok)S2.ok++;save();
@@ -2900,7 +2905,7 @@ function dwBotPost(i){var p=DW.players[i],s=DWH.s[i],P=liveProf(p),L=dwLegal(i),
   if(e2>=0.85&&L.canRaise&&r<0.65)return dwRaise(i,DWH.cur*2.8);
   if(L.canRaise&&oppWeak&&nOpp===1&&e2<0.3&&r<P.rbluff*3)return dwRaise(i,DWH.cur*2.7);
   var bettor=DWH.lastAgg,bd=bettor>=0&&DWH.s[bettor]?DWH.s[bettor].drew:3,bf=L.toCall/Math.max(1,pot-L.toCall);
-  var margin=(rec?0.1:0.2)+(bd<=1?0.08:0)+Math.min(0.15,bf*0.12)+callAdj;
+  var margin=(rec?0.1:0.2)+(bd<=1?0.08:0)+Math.min(0.15,bf*0.12)+callAdj+(difficulty()==="relaxed"?0.08:difficulty()==="brutal"?-0.04:0);
   if(e2>=need+margin)return ["call"];
   if(rec&&mine>=0.45&&bf<=0.5&&r<P.chase*0.25)return ["call"];
   return ["fold"];}
@@ -3938,7 +3943,8 @@ function renderSettings(){
     [["flatArt","Simple character art","Flat colors instead of shaded illustrations. Faster on older phones."],["gradeLive","Grade each decision","After every action in cash games, a chip under your stack shows whether your play matched the model. Tap a chip for the reason."],["coach","After-hand coach","Shows your biggest mistake when a hand ends."],["hud","Opponent stats on seats","How often each player plays and raises, shown under their name."],["tilt3d","3D table","Tilts the felt like you're sitting at it."],["season","Seasonal decorations","Holiday touches during the right weeks of the year."],["sound","Sounds","Card, chip, and win sounds."],["haptics","Vibration","Buzz on your turn and when you win, on phones that support it."],["fx2","Chip animations","Bets slide into the pot."]].map(function(x){return "<div class='toggle' style='border-top:0;margin-top:0'><div><b>"+x[1]+"</b><div class='muted' style='font-size:.85rem'>"+x[2]+"</div></div><button class='switch' role='switch' data-sw='"+x[0]+"' aria-checked='"+(!!S.settings[x[0]])+"' aria-label='"+x[1]+"'></button></div>";}).join("")+
     "<div class='lbl'>Shot clock (all tables)</div><div class='seg' id='l-clock'><button data-v='0'>Off</button><button data-v='30'>30 sec</button><button data-v='15'>15 sec</button></div></div>"+
     "<div class='panel glass'><h2>Live mode</h2><p class='muted' style='font-size:.85rem'>Applies to Home Game Night on the Cash tab: nine-handed, loose, with straddles and big raises.</p>"+
-    "<div class='lbl' style='margin-top:0'>Sharks per table (Casino $1/$2 and Home Game Night)</div><div class='seg' id='l-sharks'><button data-v='0'>None</button><button data-v='1'>One</button><button data-v='2'>Two</button></div><p class='muted' style='font-size:.8rem'>Strong regulars who adapt to how you play. Takes effect at your next new table.</p>"+
+    "<div class='lbl' style='margin-top:0'>Difficulty</div><div class='seg' id='l-diff'><button data-v='relaxed'>Relaxed</button><button data-v='realistic'>Realistic</button><button data-v='brutal'>Brutal</button></div><p class='muted' style='font-size:.8rem' id='l-diffdesc'></p>"+
+    "<div class='lbl'>Sharks per table (Casino $1/$2 and Home Game Night)</div><div class='seg' id='l-sharks'><button data-v='0'>None</button><button data-v='1'>One</button><button data-v='2'>Two</button></div><p class='muted' style='font-size:.8rem'>Strong regulars who adapt to how you play. Takes effect at your next new table.</p>"+
     [["liveChips","Pot as chips","Show the pot as chip stacks so you count it yourself. Tap the pot to check your count."],["liveHelp","Allow helpers","Lets the Tools panel give advice in live mode. Off is closer to a real game."]].map(function(x){return "<div class='toggle' style='border-top:0;margin-top:0'><div><b>"+x[1]+"</b><div class='muted' style='font-size:.85rem'>"+x[2]+"</div></div><button class='switch' role='switch' data-sw='"+x[0]+"' aria-checked='"+(!!S.settings[x[0]])+"' aria-label='"+x[1]+"'></button></div>";}).join("")+(S.liveStats&&S.liveStats.peeks?"<p class='muted' style='font-size:.82rem'>Pot checks so far: "+S.liveStats.peeks+"</p>":"")+"</div>"+
     "<div class='panel glass'><h2>Backup and transfer</h2><p class='muted' style='font-size:.85rem'>Move your bankroll, stats, career, and settings to another copy of the game, like the home screen app on your phone. Copy the save code here, then paste it into the other copy.</p>"+
     "<div class='row'><button class='btn primary' id='bk-copy'>Show save code</button>"+(window.self===window.top?"<button class='btn ghost' id='bk-file'>Download backup</button>":"")+"</div>"+
@@ -3947,6 +3953,9 @@ function renderSettings(){
     "<div class='panel glass'><h2>Start over</h2><p class='muted'>Resets bankroll to $1,000 and clears stats, levels, achievements, trophies, and any game in progress. Your look stays, but exclusive unlocks are locked again.</p><div class='row'><button class='btn danger' id='l-reset'>Reset everything</button></div></div>";
   $("l-body").innerHTML=h;
   seg("l-skill","skill");seg("l-speed","speed");$("l-skill-desc").textContent=DESC[S.settings.skill];
+  var DIFFD={relaxed:"Bots fold more, bluff less, and bet sizes are easy to read. Sharks don't adapt to you. Tough tournament players play like regulars.",realistic:"Plays like real low-stakes games: stations call down, recreational players rarely bluff, sharks adapt to your leaks.",brutal:"Bet sizes tell you less, everyone bluffs and traps more, sharks adapt faster and harder, and tournament fields get tougher."};
+  $("l-diffdesc").textContent=DIFFD[difficulty()];
+  $("l-diff").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",difficulty()===b.dataset.v?"true":"false");b.onclick=function(){S.settings.difficulty=b.dataset.v;save();renderLobby();toast(b.textContent+" difficulty. Bot skill levels change at your next new table.");};});
   $("l-sharks").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",String(sharkCount())===b.dataset.v?"true":"false");b.onclick=function(){S.settings.sharks=+b.dataset.v;save();renderLobby();};});
   $("l-clock").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",String(S.settings.clock)===b.dataset.v?"true":"false");b.onclick=function(){S.settings.clock=+b.dataset.v;save();renderLobby();};});
   $("l-body").querySelectorAll("[data-sw]").forEach(function(b){b.onclick=function(){var k=b.dataset.sw;S.settings[k]=!S.settings[k];save();if(k==="sound")ac();renderLobby();};});
