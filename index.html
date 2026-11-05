@@ -297,6 +297,9 @@ section#draw .felt{margin-top:6px}
 .tmbl{display:flex;flex-wrap:wrap;gap:6px}
 .tmbl .mini{margin:0}
 .tmbl .mini[aria-pressed="true"]{background:var(--text);color:var(--solid);border-color:var(--text)}
+.ctabs{margin:0 0 12px;position:static}
+#l-tabs button{flex:1 1 0;padding:10px 6px;min-width:0;font-size:.92rem}
+@media (max-width:384px){#l-tabs button{padding:10px 3px;font-size:.84rem;letter-spacing:-.01em}}
 .ctbl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .ctbl button{padding:8px 4px;border-radius:10px;border:1px solid var(--line);background:transparent;color:inherit;font:inherit;font-size:.8rem;font-weight:700;cursor:pointer}
 .ctbl button[aria-pressed="true"]{background:var(--text);color:var(--solid);border-color:var(--text)}
@@ -554,7 +557,7 @@ details{margin:8px 0}details summary{cursor:pointer;padding:4px 0}
       <h1>Hold'em Table</h1>
     </header>
     <div class="panel glass prof" id="l-prof"></div>
-    <div class="seg ltabs" id="l-tabs"><button data-v="circuit">Circuit</button><button data-v="cash">Cash</button><button data-v="draw">Draw</button><button data-v="challenge">Challenge</button><button data-v="home">Home game</button><button data-v="train">Train</button><button data-v="real">Real game</button><button data-v="career">Career</button><button data-v="settings">Settings</button></div>
+    <div class="seg ltabs" id="l-tabs"><button data-v="circuit">Circuit</button><button data-v="cash">Cash</button><button data-v="draw">Draw</button><button data-v="career">Career</button><button data-v="settings">Settings</button></div>
     <div id="l-body"></div>
   </section>
 
@@ -4067,14 +4070,26 @@ function renderCashTab(){
   $("l-body").querySelectorAll("[data-sit]").forEach(function(b){b.onclick=function(){sitCash(b.dataset.sit,false);};});
   $("l-body").querySelectorAll("[data-res]").forEach(function(b){b.onclick=function(){sitCash(b.dataset.res,true);};});
 }
+var CTAB="overview";
 function renderCareer(){
-  var c=car(),h=rankPanelHTML();
-  h+="<div class='panel glass'><h2>Trophy case</h2>"+(c.trophies.length?"<div class='trophies'>"+c.trophies.map(function(t){return "<div class='trophy'><div class='cup'>\ud83c\udfc6</div><div><b>"+t.n+"</b><div class='muted' style='font-size:.82rem'>"+money(t.prize)+" \u00b7 "+t.date+"</div></div></div>";}).join("")+"</div>":"<p class='muted'>Win an event to put your first trophy here.</p>")+"</div>";
-  h+=renderRivals();
-  h+="<div class='panel glass'><h2>Achievements</h2><p class='muted' style='font-size:.85rem'>"+Object.keys(c.ach).length+" of "+ACH.length+" unlocked. Each one is worth 100 XP, and some unlock exclusive table looks.</p><div class='achgrid'>"+ACH.map(function(a){var on=!!c.ach[a[0]],rw=rewardFor(a[0]);return "<div class='ach"+(on?" on":"")+"'><div class='ai'>"+(on?"\u2605":"\u2606")+"</div><div><b>"+a[1]+"</b><div class='muted' style='font-size:.8rem'>"+a[2]+(rw?" \u00b7 Unlocks "+rw:"")+"</div></div></div>";}).join("")+"</div></div>";
+  var c=car(),tabs=[["overview","Overview"],["course","Course"],["drills","Drills"],["charts","Charts"],["progress","Progress"],["rivals","Rivals"],["ach","Achievements"],["record","Record"]];
+  var bar="<div class='seg ltabs ctabs' id='c-tabs'>"+tabs.map(function(t){return "<button data-c='"+t[0]+"' aria-pressed='"+(CTAB===t[0])+"'>"+t[1]+"</button>";}).join("")+"</div>";
+  var wire=function(){$("l-body").querySelectorAll("#c-tabs [data-c]").forEach(function(b){b.onclick=function(){CTAB=b.dataset.c;renderCareer();};});};
+  var TG={course:["TAG course"],drills:["Drills","Daily puzzles"],charts:["Call or fold guide","Push or fold charts"],progress:["Session history","Missions","Leak finder","Reads","Hand review"]};
+  if(CTAB==="train")CTAB="course";
+  if(TG[CTAB]){renderTrainTab();var keep=TG[CTAB];
+    Array.prototype.forEach.call($("l-body").children,function(el){var hd=el.querySelector("h2");var t=hd?hd.textContent.trim():"";var ok=keep.some(function(k){return t.indexOf(k)===0;});if(!ok)el.style.display="none";});
+    $("l-body").insertAdjacentHTML("afterbegin",bar);wire();var ab=$("c-tabs").querySelector("[aria-pressed=true]");if(ab)ab.scrollIntoView({inline:"center",block:"nearest"});return;}
+  var h="";
+  if(CTAB==="overview"){h+=rankPanelHTML();
+  h+="<div class='panel glass'><h2>Trophy case</h2>"+(c.trophies.length?"<div class='trophies'>"+c.trophies.map(function(t){return "<div class='trophy'><div class='cup'>\ud83c\udfc6</div><div><b>"+t.n+"</b><div class='muted' style='font-size:.82rem'>"+money(t.prize)+" \u00b7 "+t.date+"</div></div></div>";}).join("")+"</div>":"<p class='muted'>Win an event to put your first trophy here.</p>")+"</div>";}
+  else if(CTAB==="rivals"){h+=renderRivals();}
+  else if(CTAB==="ach"){
+  h+="<div class='panel glass'><h2>Achievements</h2><p class='muted' style='font-size:.85rem'>"+Object.keys(c.ach).length+" of "+ACH.length+" unlocked. Each one is worth 100 XP, and some unlock exclusive table looks.</p><div class='achgrid'>"+ACH.map(function(a){var on=!!c.ach[a[0]],rw=rewardFor(a[0]);return "<div class='ach"+(on?" on":"")+"'><div class='ai'>"+(on?"\u2605":"\u2606")+"</div><div><b>"+a[1]+"</b><div class='muted' style='font-size:.8rem'>"+a[2]+(rw?" \u00b7 Unlocks "+rw:"")+"</div></div></div>";}).join("")+"</div></div>";}
+  else{
   h+="<div class='panel glass'><h2>Circuit record</h2><table class='st'>"+EVENTS.filter(function(e){return !e.hidden;}).map(function(e){var r=c.events[e.id];return "<tr><td>"+e.n+"</td><td>"+(r&&r.entries?(r.wins?r.wins+" won":r.cashes?"best "+ordinal(r.best):"best "+ordinal(r.best))+" \u00b7 "+r.entries+" played":"not played")+"</td></tr>";}).join("")+"</table></div>";
-  h+="<div class='panel glass'><h2>Stats</h2><div id='l-stats'></div></div>";
-  $("l-body").innerHTML=h;renderStats();if($("pr-go"))$("pr-go").onclick=doPrestige;
+  h+="<div class='panel glass'><h2>Stats</h2><div id='l-stats'></div></div>";}
+  $("l-body").innerHTML=bar+h;wire();if($("l-stats"))renderStats();if($("pr-go"))$("pr-go").onclick=doPrestige;
 }
 function renderStats(){
   var c=S.stats.cash,t=S.stats.tour;
