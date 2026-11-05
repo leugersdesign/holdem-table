@@ -3325,6 +3325,7 @@ var ART={
  micro:["repeating-linear-gradient(0deg,rgba(255,255,255,.18) 0 10px,transparent 10px 20px),repeating-linear-gradient(90deg,rgba(255,255,255,.18) 0 10px,transparent 10px 20px),#b8322a","house"],
  casino12:["radial-gradient(circle at 25% 25%,#e8b923 0 3px,transparent 4px) 0 0/20px 20px,radial-gradient(circle at 75% 75%,#3a8a5a 0 3px,transparent 4px) 0 0/20px 20px,#6a1424","slots"],
  challenge:["linear-gradient(180deg,#1f4d33,#0b1f15)","chips"],
+ hs4:["radial-gradient(ellipse at 50% 0%,#c0202a,#3a0610 75%)","lantern"],hs5:["radial-gradient(ellipse at 50% 10%,#6a4a1a,#0a0604 75%)","diamond"],hs6:["linear-gradient(180deg,#6aa8d8,#2a4a6a 60%,#0e1a2a)","mountain"],hs7:["radial-gradient(ellipse at 50% 100%,#ff5a1a,#3a0a04 60%,#050101)","volcano"],hs8:["radial-gradient(circle at 70% 30%,#1a2a5a,#02030a 70%)","planet"],hs9:["linear-gradient(180deg,#0a1430,#1a2a5a 60%,#e88a3a)","tower"],
  hs1:["linear-gradient(180deg,#0b0b0b,#3a2a0a 60%,#e8b923)","diamond"],hs2:["linear-gradient(180deg,#4aa3d8,#0f3f6a)","yacht"],hs3:["radial-gradient(ellipse at 50% 20%,#5a3a0a,#0b0905 70%)","crown"],
  macau:["radial-gradient(ellipse at 50% 0%,#c0202a,#3a0610 75%)","lantern"],alpine:["linear-gradient(180deg,#6aa8d8,#2a4a6a 60%,#0e1a2a)","mountain"],orbital:["radial-gradient(circle at 70% 30%,#1a2a5a,#02030a 70%)","planet"],lair:["radial-gradient(ellipse at 50% 100%,#ff5a1a,#3a0a04 60%,#050101)","volcano"],onedrop:["linear-gradient(180deg,#0a1430,#1a2a5a 60%,#e88a3a)","tower"],
  hr1:["linear-gradient(135deg,#0b0b0b,#2a2410 50%,#0b0b0b)","diamond"],hr2:["radial-gradient(ellipse at 50% 20%,#6a1a3a,#0b0508 70%)","crown"]
@@ -3718,7 +3719,13 @@ var STAKES=[
  {id:"nose",n:"$100/$200",sb:100,bb:200,buy:20000,req:16,skill:["tough"],venue:"The Fountain Room, high limit",look:{table:"royal",atm:"monte"}},
  {id:"hs1",n:"Penthouse $200/$400",sb:200,bb:400,buy:40000,req:17,pass:"p1",cast:3,skill:["tough"],venue:"A private penthouse game above the Strip",look:{table:"onyx",atm:"penthouse"}},
  {id:"hs2",n:"Yacht $500/$1,000",sb:500,bb:1000,buy:100000,req:19,pass:"p2",cast:4,skill:["tough"],venue:"A superyacht anchored off the Riviera",look:{table:"royal",atm:"monte"}},
- {id:"hs3",n:"The Big Game $1,000/$2,000",sb:1000,bb:2000,buy:200000,req:21,pass:"p3",cast:5,skill:["tough"],venue:"The private game every high roller talks about",look:{table:"onyx",atm:"penthouse"}}
+ {id:"hs3",n:"The Big Game $1,000/$2,000",sb:1000,bb:2000,buy:200000,req:21,pass:"p3",cast:5,skill:["tough"],venue:"The private game every high roller talks about",look:{table:"onyx",atm:"penthouse"}},
+ {id:"hs4",n:"Macau VIP $2,000/$4,000",sb:2000,bb:4000,buy:400000,req:15,skill:["tough","regular"],arch:["whale","whale","shark","lag","tag"],seats:6,venue:"A private VIP room at the Lotus Palace. Two whales, one shark.",look:{table:"macau",atm:"macau"}},
+ {id:"hs5",n:"Speakeasy $5,000/$10,000",sb:5000,bb:10000,buy:1000000,req:15,skill:["tough","regular"],arch:["whale","maniac","shark","tag","lag"],seats:6,venue:"Behind a bookcase, password only. A maniac and a whale keep it wild.",look:{table:"jade",atm:"speakeasy"}},
+ {id:"hs6",n:"Alpine Chalet $10,000/$20,000",sb:10000,bb:20000,buy:2000000,req:16,skill:["tough"],arch:["whale","shark","shark","lag","tag"],seats:6,venue:"A ski-in chalet game after the lifts close. Two sharks now.",look:{table:"ice",atm:"alpine"}},
+ {id:"hs7",n:"Volcano Lair $25,000/$50,000",sb:25000,bb:50000,buy:5000000,req:17,skill:["tough"],arch:["whale","maniac","shark","shark","lag"],seats:6,venue:"An island game for people who own islands.",look:{table:"obsidian",atm:"lair"}},
+ {id:"hs8",n:"Orbital $50,000/$100,000",sb:50000,bb:100000,buy:10000000,req:18,skill:["tough"],arch:["whale","shark","shark","shark","lag"],seats:6,venue:"The highest game there is, 400 km up. One whale, three sharks.",look:{table:"orbit",atm:"orbital"}},
+ {id:"hs9",n:"Sky Tower $100,000/$200,000",sb:100000,bb:200000,buy:20000000,req:19,skill:["tough"],arch:["whale","whale","shark","shark","shark"],seats:6,venue:"The 160th floor. Billionaire whales and the best players alive.",look:{table:"jade",atm:"skytower"}}
 ];
 STAKES[4].venue="Private high roller suite";
 var ACH=[
