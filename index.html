@@ -257,6 +257,25 @@ input,select{padding:10px 12px;border-radius:12px;border:1px solid var(--line);b
 .dwcoach{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;border-radius:14px;padding:6px 10px;margin-bottom:8px;font-size:.82rem}
 .dwcoach .mini{margin:0}
 .dwcoach #dw-bht{flex-basis:100%;font-size:.86rem}
+/* draw: fixed sizes so nothing jumps between states */
+section#draw .felt{margin-top:6px}
+#draw .dwstreet{height:16px;line-height:16px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#draw .pot{height:50px;justify-content:flex-end;overflow:hidden;margin-top:4px}
+#draw .status{height:2.4em;min-height:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+#draw .hinfo .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#draw .hinfo .act{min-height:1.2em}
+.gcrow{flex-wrap:nowrap;overflow:hidden;height:22px}
+#dw-gc:empty{display:flex}
+.gflash{flex:1 1 auto;min-width:0}
+.gcb{flex:none}
+#dw-controls{min-height:140px;position:sticky}
+#dw-controls .actions .btn:disabled{opacity:.4;background:rgba(255,255,255,.18)}
+#dw-controls .waiting{min-height:120px;display:flex;align-items:center;justify-content:center}
+#dw-controls .coach{position:absolute;left:0;right:0;bottom:calc(100% - 6px);z-index:6;margin:0;max-height:52vh;overflow:auto;box-shadow:0 -8px 30px rgba(0,0,0,.35)}
+#dw-rz{position:absolute;left:0;right:0;bottom:calc(100% - 6px);z-index:6}
+#dw-rz .raisebox{margin:0;box-shadow:0 -8px 30px rgba(0,0,0,.35)}
+.dwcoach{min-height:34px}
+.dwcoach #dw-bht{max-height:5.6em;overflow:auto}
 .potchips{display:inline-flex;gap:3px;align-items:flex-end;justify-content:center;min-height:34px;flex-wrap:wrap;max-width:220px}
 .potchips .stk{position:relative;width:18px;height:34px;display:inline-block}
 .potchips i{position:absolute;left:0;width:18px;height:7px;border-radius:50%;box-shadow:0 1px 0 rgba(0,0,0,.45),inset 0 0 0 1.5px rgba(255,255,255,.55)}
@@ -2446,6 +2465,11 @@ function rangeCard(r){
     "<div style='display:flex;height:10px;border-radius:5px;overflow:hidden;margin:5px 0'>"+bar.map(function(b){return "<i style='width:"+(mx[b[0]]*100).toFixed(1)+"%;background:"+b[2]+"'></i>";}).join("")+"</div>"+
     "<div style='font-size:.85rem'>"+bar.map(function(b){return "<span style='color:"+b[2]+"'>\u25cf</span> "+b[1]+" "+Math.round(mx[b[0]]*100)+"%";}).join(" \u00b7 ")+"</div>"+
     "<div style='font-size:.88rem;margin-top:3px'>Hands that beat you right now: <b>"+Math.round(mx.beats*100)+"%</b> of what they likely hold.</div></div>";}
+/* how much of its raw equity a hand actually wins after the flop */
+function rkv(ch){return 12-R.indexOf(ch);}
+function realizeF(code,oop){var pair=code.length===2,su=code[2]==="s",hi=rkv(code[0]),lo=rkv(code[1]),gap=hi-lo,r;
+  if(pair)r=0.86;else if(su)r=(hi===12||gap<=2)?0.86:0.78;else r=lo>=8?0.78:hi===12?0.68:0.55;
+  return oop?r*0.86:r;}
 function adviseHero(full){
   var hs=H.s[0],L=legal(0),pot=potTotal(),need=L.toCall>0?L.toCall/(pot+L.toCall):0,code=codeOf(hs.cards),pos=H.pos[0],ck=chartKey(pos);
   var opp=live().filter(function(i){return i!==0;}),nO=Math.max(1,Math.min(opp.length,4)),bettor=H.lastAgg>0&&L.toCall>0?H.lastAgg:-1;
@@ -2469,10 +2493,14 @@ function adviseHero(full){
       else{advice=L.toCall===0?"Check":"Fold";why=code+" isn't in your "+ck+" opening chart.";}
     }else if(H.raises===1&&H.preAgg>0&&VSOPEN[chartKey(H.pos[H.preAgg])]){
       var opP=chartKey(H.pos[H.preAgg]),ev=VSOPEN[opP][code],bb=pos==="BB",behind=H.seats.filter(function(j){return j!==0&&!H.s[j].folded&&!H.s[j].acted;}).length;
-      var real=bb?0.75:0.9,thr=need/real+(bb?0:0.03*Math.min(behind,3));eqUse=ev/100;
-      if(premium||ev>=57){advice="Reraise";why=code+" has about "+ev+"% equity against a "+opP+" opening range. That's strong enough to 3-bet to about 3 times their raise.";}
-      else if(ev/100>=thr){advice="Call";why="Against a "+opP+" opening range, "+code+" has about "+ev+"% equity. The price needs "+p1(need)+", and about "+p1(thr)+" once you allow for "+(bb?"playing the hand out of position":"players still to act behind you")+".";}
-      else{advice=L.toCall===0?"Check":"Fold";why="Against a "+opP+" opening range, "+code+" has only about "+ev+"% equity. You need about "+p1(thr)+" here"+(bb?", allowing for playing out of position":", allowing for players still to act")+".";}
+      var callers=H.seats.filter(function(j){return j!==0&&j!==H.preAgg&&!H.s[j].folded&&H.s[j].tot>=H.cur;}).length,oop=bb||pos==="SB";
+      var junkO=code.length===3&&code[2]==="o"&&rkv(code[1])<8&&code[0]!=="A",real=realizeF(code,oop),evM=ev/100*Math.pow(junkO?0.75:code.length===2||code[2]==="s"?0.88:0.82,callers);
+      var thr=need/real+(bb?0:0.03*Math.min(behind,3)),lateOp=["CO","BTN","SB"].indexOf(opP)>=0;eqUse=evM;
+      var mw=callers?" With "+callers+" caller"+(callers>1?"s":"")+" already in, your share of the pot drops to about "+p1(evM)+".":"";
+      if(premium||ev>=57){advice="Reraise";why=code+" has about "+ev+"% equity against a "+opP+" opening range. That's strong enough to 3-bet to about "+(callers?"4 times their raise plus 1 raise per caller":"3 times their raise")+".";}
+      else if((junkO&&!(bb&&lateOp&&callers===0))||(code[2]==="o"&&code[0]==="A"&&rkv(code[1])<8&&(callers>0||!lateOp))){advice=L.toCall===0?"Check":"Fold";why=code+" is a weak offsuit hand. Against a raise it makes second-best pairs and wins less than its raw equity suggests"+(callers?", and with callers in it's even worse":"")+". Fold it, even with a good price.";}
+      else if(evM>=thr){advice="Call";why="Against a "+opP+" opening range, "+code+" has about "+ev+"% equity."+mw+" The price needs "+p1(need)+", and about "+p1(thr)+" once you allow for how well this kind of hand plays "+(oop?"out of position":"after the flop")+".";}
+      else{advice=L.toCall===0?"Check":"Fold";why="Against a "+opP+" opening range, "+code+" has about "+ev+"% equity."+mw+" A hand like this needs about "+p1(thr)+" here, allowing for how it plays "+(oop?"out of position":"after the flop")+".";}
     }else{
       if(premium&&["AA","KK"].indexOf(code)>=0){advice="Reraise";why="Aces or kings. Get the money in.";}
       else if(eqV!==null&&eqV>=need+0.04&&(premium||EQ[code]>=63)){advice="Call";why="This is a reraised pot, so their range is strong. Your equity against it is "+p1(eqV)+", above the "+p1(need)+" you need.";}
@@ -3432,9 +3460,9 @@ function dwControls(){var c=$("dw-controls");if(!DWH)return c.innerHTML="";
     $("dw-go").onclick=function(){dwDoDraw(0,Object.keys(DW_SEL).map(Number));};return;}
   var L=dwLegal(0),pot=dwPot();
   var CA=dwAdvice(0);
-  c.innerHTML="<div class='dwcoach glass'><button class='mini' id='dw-bh' aria-expanded='false'>Coach</button><span id='dw-bhs' class='muted'>Tap for the model's play</span><div id='dw-bht' hidden><b>Model: "+dwLabel(CA.a,L)+(CA.a==="raise"?dwSizeTxt(CA,L,pot):"")+".</b> "+CA.why+"</div></div><div class='actions'><button class='btn ghost' id='dw-f'"+(L.toCall?"":" disabled")+">Fold</button>"+(L.toCall?"<button class='btn primary' id='dw-c'>Call "+money(Math.min(L.toCall,DW.players[0].stack))+"</button>":"<button class='btn primary' id='dw-c2'>Check</button>")+(L.canRaise?"<button class='btn b-raise' id='dw-r'>"+(DWH.cur>0?"Raise":"Bet")+"</button>":"")+"</div><div id='dw-rz' hidden></div>"+(L.noOpen?"<div class='muted' style='font-size:.8rem;text-align:center;margin-top:4px'>You need jacks or better to open the betting.</div>":"")+(L.toCall?"<div class='muted' style='font-size:.8rem;text-align:center;margin-top:4px'>Pot odds: you need to win "+p1(L.toCall/(pot+L.toCall))+" to call.</div>":"");
+  c.innerHTML="<div class='dwcoach glass'><button class='mini' id='dw-bh' aria-expanded='false'>Coach</button><span id='dw-bhs' class='muted'>"+(L.noOpen?"Jacks or better to open":L.toCall?"Pot odds: win "+p1(L.toCall/(pot+L.toCall))+" to call":"Tap for the model's play")+"</span><div id='dw-bht' hidden><b>Model: "+dwLabel(CA.a,L)+(CA.a==="raise"?dwSizeTxt(CA,L,pot):"")+".</b> "+CA.why+"</div></div><div class='actions'><button class='btn ghost' id='dw-f'"+(L.toCall?"":" disabled")+">Fold</button>"+(L.toCall?"<button class='btn primary' id='dw-c'>Call "+money(Math.min(L.toCall,DW.players[0].stack))+"</button>":"<button class='btn primary' id='dw-c2'>Check</button>")+(L.canRaise?"<button class='btn b-raise' id='dw-r'>"+(DWH.cur>0?"Raise":"Bet")+"</button>":"")+"</div><div id='dw-rz' hidden></div>";
   $("dw-f").onclick=function(){if(L.toCall)dwAct(0,"fold");};if($("dw-c"))$("dw-c").onclick=function(){dwAct(0,"call");};if($("dw-c2"))$("dw-c2").onclick=function(){dwAct(0,"check");};
-  $("dw-bh").onclick=function(){var t=$("dw-bht");t.hidden=!t.hidden;$("dw-bhs").hidden=!t.hidden;$("dw-bh").setAttribute("aria-expanded",String(!t.hidden));if(!t.hidden)setTimeout(function(){window.scrollTo({top:document.documentElement.scrollHeight,behavior:"smooth"});},30);};
+  $("dw-bh").onclick=function(){var t=$("dw-bht");t.hidden=!t.hidden;$("dw-bhs").hidden=!t.hidden;$("dw-bh").setAttribute("aria-expanded",String(!t.hidden));};
   if($("dw-r"))$("dw-r").onclick=function(){var rz=$("dw-rz"),bb=DW.bb,pp=pot+L.toCall,pre;
     if(DWH.street===0&&DWH.raises===0){var lm=dwLimpers();pre=[["3 BB",bb*(3+lm)],["4 BB",bb*(4+lm)],["Pot",DWH.cur+pp],["All in",L.maxTo]];}
     else if(DWH.cur>0)pre=[["2.5x",DWH.cur*2.5],["3x",DWH.cur*3],["Pot",DWH.cur+pp],["All in",L.maxTo]];
@@ -3446,7 +3474,7 @@ function dwControls(){var c=$("dw-controls");if(!DWH)return c.innerHTML="";
     var sl=$("dw-sl"),upd=function(){sl.value=amt;$("dw-amt").textContent=money(amt)+(amt>=L.maxTo?" (all in)":"");$("dw-amt2").textContent=(amt/bb).toFixed(1).replace(".0","")+" big blinds \u00b7 "+Math.round((amt-(DWH.s[0].sb||0))/Math.max(1,pot)*100)+"% of the pot \u00b7 pot after: "+money(pot+amt-(DWH.s[0].sb||0));};upd();
     sl.oninput=function(){var v=+sl.value;amt=v>=L.maxTo-bb/2?L.maxTo:v;upd();};
     rz.querySelectorAll("[data-pv]").forEach(function(b){b.onclick=function(){amt=+b.dataset.pv;upd();};});$("dw-ok").onclick=function(){dwAct(0,"raise",amt);};
-    setTimeout(function(){window.scrollTo({top:document.documentElement.scrollHeight,behavior:"smooth"});},30);};}
+};}
 function dwFastFinish(){var sp=S.settings.speed;S.settings.speed="fast";var tok=DWH.id;var iv=setInterval(function(){if(!DWH||DWH.id!==tok||DWH.done){clearInterval(iv);S.settings.speed=sp;}},200);}
 /* lobby tab */
 function renderDrawTab(){var st=dwStats(),here=S.draw;
