@@ -166,6 +166,13 @@ table.st td:last-child{text-align:right;font-weight:700}
 .dot.beginner{background:var(--beg)}.dot.regular{background:var(--reg)}.dot.tough{background:var(--tgh)}
 .log{font-size:.85rem;color:var(--muted);max-height:180px;overflow-y:auto;margin:0;padding-left:1.2em}
 .modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:12;background:var(--solid);color:var(--text);border-radius:22px;padding:20px;width:min(92vw,400px);box-shadow:0 20px 50px rgba(0,0,0,.35)}
+#atm,#season{overflow:hidden}
+html,body{overflow-x:clip}
+.modal{overflow-x:hidden;box-sizing:border-box}
+.modal *{min-width:0}
+.modal select,.modal input[type=range]{max-width:100%}
+.ctbl button{white-space:normal;overflow-wrap:anywhere}
+.ctseats label{grid-template-columns:56px minmax(0,1fr)}
 .modal{max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}
 .modal p{margin:8px 0 14px}
 
@@ -290,7 +297,7 @@ section#draw .felt{margin-top:6px}
 .tmbl{display:flex;flex-wrap:wrap;gap:6px}
 .tmbl .mini{margin:0}
 .tmbl .mini[aria-pressed="true"]{background:var(--text);color:var(--solid);border-color:var(--text)}
-.ctbl{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ctbl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .ctbl button{padding:8px 4px;border-radius:10px;border:1px solid var(--line);background:transparent;color:inherit;font:inherit;font-size:.8rem;font-weight:700;cursor:pointer}
 .ctbl button[aria-pressed="true"]{background:var(--text);color:var(--solid);border-color:var(--text)}
 .ctbl button:disabled{opacity:.35;cursor:not-allowed}
@@ -2941,6 +2948,7 @@ function dwGcRender(){var el=$("dw-gc");if(!el)return;if(S.settings.gradeLive===
   gcStrip(el,DWH.dec,function(d){return dwStName(d.st);},DWH.gcAt,function(d){gcDetail(d,dwStName(d.st,true));});}
 /* ===== custom table builder ===== */
 var CUSTOM_BLINDS=[[1,2],[2,5],[5,10],[10,20],[25,50],[50,100],[100,200],[200,400],[500,1000],[1000,2000],[2000,4000],[5000,10000],[10000,20000],[25000,50000],[50000,100000],[100000,200000],[250000,500000],[500000,1000000]];
+function blindTxt(v){return v>=1000000?"$"+(v/1000000)+"M":v>=1000?"$"+(v/1000)+"K":"$"+v;}
 var CUSTOM_TYPES=["station","limper","whale","maniac","nit","weekend","tag","lag","shark"];
 function castList(){var out=[];Object.keys(THEMES).forEach(function(k){(THEMES[k].cast||[]).forEach(function(c){if(!out.some(function(x){return x.id===c.id;}))out.push({id:c.id,short:c.short,name:c.name});});});return out;}
 function customCfg(){var c=S.customCfg||{};
@@ -2959,7 +2967,7 @@ function openCustom(){var c=customCfg();
   var b=CUSTOM_BLINDS[c.bi],maxDepth=Math.max(40,Math.min(300,Math.floor(S.bankroll/b[1]/10)*10));if(c.depth>maxDepth)c.depth=maxDepth;
   var buy=b[1]*c.depth,rk=customRisk(buy),seated=!!S.cash,afford=S.bankroll>=buy&&maxBi>=0;
   var html="<h2>Custom table</h2>"+
-    "<div class='lbl'>Blinds</div><div class='ctbl'>"+CUSTOM_BLINDS.map(function(x,i){var ok=S.bankroll>=x[1]*40;return "<button data-bi='"+i+"' aria-pressed='"+(i===c.bi)+"'"+(ok?"":" disabled title='Needs "+money(x[1]*40)+"'")+">$"+x[0].toLocaleString()+"/$"+x[1].toLocaleString()+"</button>";}).join("")+"</div>"+
+    "<div class='lbl'>Blinds</div><div class='ctbl'>"+CUSTOM_BLINDS.map(function(x,i){var ok=S.bankroll>=x[1]*40;return "<button data-bi='"+i+"' aria-pressed='"+(i===c.bi)+"'"+(ok?"":" disabled title='Needs "+money(x[1]*40)+"'")+">"+blindTxt(x[0])+"/"+blindTxt(x[1])+"</button>";}).join("")+"</div>"+
     "<div class='lbl'>Starting stack: <b id='ct-dv'>"+c.depth+" big blinds</b></div><input type='range' id='ct-depth' min='40' max='"+maxDepth+"' step='10' value='"+c.depth+"' style='width:100%;accent-color:var(--accent)'>"+
     "<div class='ctbuy'><span>Buy-in <b id='ct-buy'>"+money(buy)+"</b></span><span id='ct-risk' style='color:"+rk[1]+"'>"+rk[0]+" \u00b7 "+Math.round(buy/Math.max(1,S.bankroll)*100)+"% of your "+money(S.bankroll)+"</span></div>"+
     "<div class='lbl'>Players at the table</div><div class='seg' id='ct-seats'>"+[2,3,4,5,6,7,8,9].map(function(n){return "<button data-v='"+n+"' aria-pressed='"+(n===c.seats)+"'>"+n+"</button>";}).join("")+"</div>"+
@@ -3034,7 +3042,7 @@ var GAME_BLINDS=[[1,2],[2,5],[5,10],[10,20],[25,50],[50,100],[100,200],[200,400]
 function openTableMenu(game){var inDraw=game==="draw",cur=inDraw?[DW.sb,DW.bb]:[T.sb,T.bb],mid=inDraw?(DWH&&!DWH.done):(H&&!H.done),canSwitch=inDraw||T.mode==="cash";
   var html="<h2>Table options</h2>"+
     (canSwitch?"<div class='lbl'>Game</div><div class='seg' id='tm-game'><button data-v='holdem' aria-pressed='"+!inDraw+"'>Hold'em</button><button data-v='draw' aria-pressed='"+inDraw+"'>5-card draw</button></div><p class='muted' style='font-size:.78rem;margin:4px 0 0'>Same players, same stacks."+(!inDraw&&T.players.length>6?" Draw seats 6, so seats 7 and up sit out and keep their chips until you switch back.":"")+(mid?" Switches after this hand.":"")+"</p>":"")+
-    ((inDraw||T.mode==="cash")?"<div class='lbl'>Blinds</div><div class='tmbl'>"+GAME_BLINDS.map(function(b){var on=b[0]===cur[0]&&b[1]===cur[1];return "<button class='mini' data-bl='"+b[0]+","+b[1]+"' aria-pressed='"+on+"'>$"+b[0].toLocaleString()+"/$"+b[1].toLocaleString()+"</button>";}).join("")+"</div><p class='muted' style='font-size:.78rem;margin:4px 0 0'>Changes start "+(mid?"next hand":"now")+". Stacks stay the same.</p>":"")+
+    ((inDraw||T.mode==="cash")?"<div class='lbl'>Blinds</div><div class='tmbl'>"+GAME_BLINDS.map(function(b){var on=b[0]===cur[0]&&b[1]===cur[1];return "<button class='mini' data-bl='"+b[0]+","+b[1]+"' aria-pressed='"+on+"'>"+blindTxt(b[0])+"/"+blindTxt(b[1])+"</button>";}).join("")+"</div><p class='muted' style='font-size:.78rem;margin:4px 0 0'>Changes start "+(mid?"next hand":"now")+". Stacks stay the same.</p>":"")+
     (!inDraw?"<div class='lbl'>Run it twice</div><div class='seg' id='tm-rit'><button data-v='ask'>Ask me</button><button data-v='always'>Always</button><button data-v='never'>Never</button></div><p class='muted' style='font-size:.78rem;margin:4px 0 0'>When you're all in before the river, opponents may ask to run it twice, and you can ask them.</p>":"");
   var btns=inDraw?[["Draw guide",function(){dwHelp();},"ghost"],["Done",function(){},"brass"]]:[["Table style",function(){openLook();},"ghost"],["Done",function(){},"brass"]];
   showModal(html,btns);var M=$("modal");
