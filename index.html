@@ -276,6 +276,13 @@ section#draw .felt{margin-top:6px}
 #dw-rz .raisebox{margin:0;box-shadow:0 -8px 30px rgba(0,0,0,.35)}
 .dwcoach{min-height:34px}
 .dwcoach #dw-bht{max-height:5.6em;overflow:auto}
+.ctsel{width:100%;padding:9px 10px;border-radius:12px;border:1px solid var(--line);background:var(--solid,#fff);color:inherit;font:inherit;font-size:.9rem}
+.ctbuy{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.85rem;margin-top:4px}
+.ctquick{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.ctquick .mini{margin:0}
+.ctseats{display:grid;gap:6px}
+.ctseats label{display:grid;grid-template-columns:56px 1fr;align-items:center;gap:8px;font-size:.82rem;color:var(--muted);font-weight:700}
+#modal .seg{flex-wrap:wrap}
 .potchips{display:inline-flex;gap:3px;align-items:flex-end;justify-content:center;min-height:34px;flex-wrap:wrap;max-width:220px}
 .potchips .stk{position:relative;width:18px;height:34px;display:inline-block}
 .potchips i{position:absolute;left:0;width:18px;height:7px;border-radius:50%;box-shadow:0 1px 0 rgba(0,0,0,.45),inset 0 0 0 1.5px rgba(255,255,255,.55)}
@@ -2913,6 +2920,48 @@ function dwBotPost(i){var p=DW.players[i],s=DWH.s[i],P=liveProf(p),L=dwLegal(i),
 function dwSev(lb,same){return same?0:lb<0.2?0:lb<1?1:lb<3?2:3;}
 function dwGcRender(){var el=$("dw-gc");if(!el)return;if(S.settings.gradeLive===false||!DWH||!DWH.dec||!DWH.dec.length){setHTML(el,"none","");return;}
   gcStrip(el,DWH.dec,function(d){return dwStName(d.st);},DWH.gcAt,function(d){gcDetail(d,dwStName(d.st,true));});}
+/* ===== custom table builder ===== */
+var CUSTOM_BLINDS=[[1,2],[2,5],[5,10],[10,20],[25,50],[50,100],[100,200],[200,400],[500,1000],[1000,2000],[2000,4000],[5000,10000],[10000,20000],[25000,50000],[50000,100000],[100000,200000],[250000,500000],[500000,1000000]];
+var CUSTOM_TYPES=["station","limper","whale","maniac","nit","weekend","tag","lag","shark"];
+function castList(){var out=[];Object.keys(THEMES).forEach(function(k){(THEMES[k].cast||[]).forEach(function(c){if(!out.some(function(x){return x.id===c.id;}))out.push({id:c.id,short:c.short,name:c.name});});});return out;}
+function customCfg(){var c=S.customCfg||{};
+  if(!c.spec){c={bi:1,depth:100,seats:6,style:"casino",spec:["random","random","random","random","random","random","random","random"],table:"classic",atm:"vegas"};}
+  S.customCfg=c;return c;}
+function customStake(){var c=customCfg(),b=CUSTOM_BLINDS[c.bi]||CUSTOM_BLINDS[0],spec=c.spec.slice(0,c.seats-1),arch=spec.filter(function(x){return x!=="random"&&x.indexOf("cast:")!==0;});
+  return {id:"custom",n:"Custom $"+b[0].toLocaleString()+"/$"+b[1].toLocaleString(),sb:b[0],bb:b[1],buy:b[1]*c.depth,req:0,skill:["regular","tough","beginner"],seats:c.seats,spec:spec,
+    arch:arch.length?arch:CUSTOM_TYPES,casino:c.style==="casino"&&c.seats>=7,home:c.style==="home",venue:"Your custom table",look:{table:c.table,atm:c.atm}};}
+function customRisk(buy){var r=buy/Math.max(1,S.bankroll);return r<=0.05?["Comfortable","#2e8b57"]:r<=0.2?["Aggressive","#d9a420"]:r<=0.5?["Risky","#e07a2a"]:["Most of your roll","#c8102e"];}
+function customSeatOpt(v){var cl=castList();
+  return "<option value='random'"+(v==="random"?" selected":"")+">Random type</option><optgroup label='Player types'>"+CUSTOM_TYPES.map(function(k){return "<option value='"+k+"'"+(v===k?" selected":"")+">"+ARCH[k].n+"</option>";}).join("")+"</optgroup><optgroup label='Characters'>"+
+    cl.map(function(c){var key="cast:"+c.id;return "<option value='"+key+"'"+(v===key?" selected":"")+">"+c.short+"</option>";}).join("")+"</optgroup>";}
+function openCustom(){var c=customCfg();
+  var maxBi=-1;CUSTOM_BLINDS.forEach(function(b,i){if(S.bankroll>=b[1]*40)maxBi=i;});
+  if(c.bi>maxBi)c.bi=Math.max(0,maxBi);
+  var b=CUSTOM_BLINDS[c.bi],maxDepth=Math.max(40,Math.min(300,Math.floor(S.bankroll/b[1]/10)*10));if(c.depth>maxDepth)c.depth=maxDepth;
+  var buy=b[1]*c.depth,rk=customRisk(buy),seated=!!S.cash,afford=S.bankroll>=buy&&maxBi>=0;
+  var html="<h2>Custom table</h2>"+
+    "<div class='lbl'>Blinds</div><select id='ct-bi' class='ctsel'>"+CUSTOM_BLINDS.map(function(x,i){var ok=S.bankroll>=x[1]*40;return "<option value='"+i+"'"+(i===c.bi?" selected":"")+(ok?"":" disabled")+">$"+x[0].toLocaleString()+" / $"+x[1].toLocaleString()+(ok?"":"  (need "+money(x[1]*40)+")")+"</option>";}).join("")+"</select>"+
+    "<div class='lbl'>Starting stack: <b id='ct-dv'>"+c.depth+" big blinds</b></div><input type='range' id='ct-depth' min='40' max='"+maxDepth+"' step='10' value='"+c.depth+"' style='width:100%;accent-color:var(--accent)'>"+
+    "<div class='ctbuy'><span>Buy-in <b id='ct-buy'>"+money(buy)+"</b></span><span id='ct-risk' style='color:"+rk[1]+"'>"+rk[0]+" \u00b7 "+Math.round(buy/Math.max(1,S.bankroll)*100)+"% of your "+money(S.bankroll)+"</span></div>"+
+    "<div class='lbl'>Players at the table</div><div class='seg' id='ct-seats'>"+[2,3,4,5,6,7,8,9].map(function(n){return "<button data-v='"+n+"' aria-pressed='"+(n===c.seats)+"'>"+n+"</button>";}).join("")+"</div>"+
+    "<div class='lbl'>Game style</div><div class='seg' id='ct-style'>"+[["casino","Casino"],["home","Home game"],["online","Online"]].map(function(x){return "<button data-v='"+x[0]+"' aria-pressed='"+(x[0]===c.style)+"'>"+x[1]+"</button>";}).join("")+"</div>"+
+    "<p class='muted' style='font-size:.78rem;margin:4px 0 0'>"+(c.style==="home"?"Straddles, rebuys, and the night gets looser as it goes.":c.style==="casino"?"Live casino play: big raises, limpers, and nine-handed live coaching at 7+ players.":"Standard online-style play.")+"</p>"+
+    "<div class='lbl'>Opponents</div><div class='ctquick'><button class='mini' data-q='random'>All random</button><button class='mini' data-q='soft'>Soft</button><button class='mini' data-q='mixed'>Mixed</button><button class='mini' data-q='tough'>Tough</button></div>"+
+    "<div class='ctseats'>"+c.spec.slice(0,c.seats-1).map(function(v,i){return "<label><span>Seat "+(i+2)+"</span><select data-si='"+i+"' class='ctsel'>"+customSeatOpt(v)+"</select></label>";}).join("")+"</div>"+
+    "<div class='lbl'>Table</div><select id='ct-table' class='ctsel'>"+TABLES.map(function(t){return "<option value='"+t.id+"'"+(t.id===c.table?" selected":"")+">"+t.n+"</option>";}).join("")+"</select>"+
+    "<div class='lbl'>Room</div><select id='ct-atm' class='ctsel'>"+ATMOS.map(function(a){return "<option value='"+a.id+"'"+(a.id===c.atm?" selected":"")+">"+a.n+"</option>";}).join("")+"</select>";
+  var go=seated?[["You're seated at "+STK(S.cash.stake).n+". Leave it first.",function(){},"ghost"]]:afford?[["Sit down, buy in "+money(buy),function(){S.bankroll-=buy;S.cash=makeCash(customStake());save();T=S.cash;enterTable();},"brass"]]:[["Not enough bankroll for this table",function(){},"ghost"]];
+  showModal(html,go.concat([["Cancel",function(){},"ghost"]]));
+  var M=$("modal"),re=function(){var sc=M.scrollTop;save();setTimeout(function(){openCustom();$("modal").scrollTop=sc;},0);};
+  M.querySelector("#ct-bi").onchange=function(){c.bi=+this.value;re();};
+  M.querySelector("#ct-depth").oninput=function(){c.depth=+this.value;var bb=CUSTOM_BLINDS[c.bi][1],by=bb*c.depth,r=customRisk(by);M.querySelector("#ct-dv").textContent=c.depth+" big blinds";M.querySelector("#ct-buy").textContent=money(by);var rr=M.querySelector("#ct-risk");rr.style.color=r[1];rr.textContent=r[0]+" \u00b7 "+Math.round(by/Math.max(1,S.bankroll)*100)+"% of your "+money(S.bankroll);};
+  M.querySelector("#ct-depth").onchange=function(){c.depth=+this.value;re();};
+  M.querySelectorAll("#ct-seats button").forEach(function(x){x.onclick=function(){c.seats=+x.dataset.v;re();};});
+  M.querySelectorAll("#ct-style button").forEach(function(x){x.onclick=function(){c.style=x.dataset.v;re();};});
+  M.querySelectorAll("[data-si]").forEach(function(sel){sel.onchange=function(){c.spec[+sel.dataset.si]=sel.value;save();};});
+  M.querySelectorAll("[data-q]").forEach(function(x){x.onclick=function(){var q=x.dataset.q,pool={soft:["station","station","limper","limper","whale","whale","maniac","weekend"],mixed:["station","limper","whale","weekend","nit","tag","maniac","shark"],tough:["shark","shark","lag","tag","tag","weekend","shark","lag"]}[q];
+    c.spec=c.spec.map(function(_,i){return q==="random"?"random":pool[i%pool.length];});if(q!=="random")c.spec=shuffle(c.spec);re();};});
+  M.querySelector("#ct-table").onchange=function(){c.table=this.value;save();};M.querySelector("#ct-atm").onchange=function(){c.atm=this.value;save();};}
 /* table math */
 var CHIPV=[[100,"#1a1a1a","#fff"],[25,"#2e8b57","#fff"],[5,"#c8102e","#fff"],[1,"#f2f2f2","#333"]];
 function chipStacks(amt){return "<div class='cstacks'>"+chipHTML(amt,"lg")+"</div>"+chipKey(amt);}
@@ -3744,7 +3793,7 @@ var ACH=[
 ];
 EVENTS.splice(1,0,seasonalEvent());
 function EV(id){for(var i=0;i<EVENTS.length;i++)if(EVENTS[i].id===id)return EVENTS[i];return EVENTS[EVENTS.length-1];}
-function STK(id){for(var i=0;i<STAKES.length;i++)if(STAKES[i].id===id)return STAKES[i];return STAKES[0];}
+function STK(id){if(id==="custom")return customStake();for(var i=0;i<STAKES.length;i++)if(STAKES[i].id===id)return STAKES[i];return STAKES[0];}
 function achName(id){for(var i=0;i<ACH.length;i++)if(ACH[i][0]===id)return ACH[i][1];var m=/^p(\d+)$/.exec(id);if(m)return "reaching "+prestigeName(+m[1]);return id;}
 function car(){S.car=S.car||{xp:0,ach:{},events:{},trophies:[],daily:{date:"",used:false,count:0}};return S.car;}
 var RANKS=[[1,"Rookie"],[3,"Regular"],[5,"Grinder"],[8,"Shark"],[12,"Pro"],[16,"High Roller"],[20,"Champion"],[25,"Legend"],[30,"Road Gambler"],[35,"Rounder"],[40,"Card Sharp"],[45,"Whale Hunter"],[50,"Silver Bracelet"],[55,"Gold Bracelet"],[60,"High Stakes Regular"],[65,"Big Game Hunter"],[70,"Ice Cold"],[75,"The Professor"],[80,"Hall of Famer"],[85,"Living Legend"],[90,"Card Room Royalty"],[95,"Poker Immortal"],[100,"The House"]];
@@ -3780,10 +3829,12 @@ function ordinal(n){var s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||
 /* ===== tables, events, flow ===== */
 function makeCash(st){
   var skill=st.skill==="user"?S.settings.skill:st.skill,ps=[{name:"You",hero:true,stack:st.buy,out:false,skill:"hero"}],taken=["You"];
-  var n=st.seats||6,ak=st.arch?shuffle(st.arch):null;for(var i=0;i<n-1;i++){var b=ak?archBot(ak[i%ak.length],st.buy,taken):newBot(skill,st.buy,taken);taken.push(b.name);ps.push(b);}
+  var n=st.seats||6,ak=st.arch?shuffle(st.arch):null;
+  if(st.spec){st.spec.forEach(function(v){var b;if(v.indexOf("cast:")===0){var cc=castById(v.slice(5));b=cc?{name:cc.short,cid:cc.id,skill:cc.skill,stack:st.buy,hero:false,out:false}:archBot(pick(CUSTOM_TYPES),st.buy,taken);}else b=archBot(v==="random"?pick(CUSTOM_TYPES):v,st.buy,taken);taken.push(b.name);ps.push(b);});}
+  else for(var i=0;i<n-1;i++){var b=ak?archBot(ak[i%ak.length],st.buy,taken):newBot(skill,st.buy,taken);taken.push(b.name);ps.push(b);}
   if(st.cast){shuffle(CLUB_IDS.slice()).slice(0,st.cast).forEach(function(id,k){var c=castById(id);ps[k+1]={name:c.short,cid:c.id,skill:c.skill,stack:st.buy,hero:false,out:false};});}
   else if(st.id!=="micro"&&!st.arch)maybeRival(ps);
-  if((st.home||st.casino)&&!st.cast){var sc=sharkCount(),idx=shuffle(ps.map(function(_,k){return k;}).slice(1));for(var z=0;z<sc&&z<idx.length;z++){var nm2=ps[idx[z]].name;ps[idx[z]]=archBot("shark",st.buy,taken);ps[idx[z]].name=nm2;}}
+  if((st.home||st.casino)&&!st.cast&&!st.spec){var sc=sharkCount(),idx=shuffle(ps.map(function(_,k){return k;}).slice(1));for(var z=0;z<sc&&z<idx.length;z++){var nm2=ps[idx[z]].name;ps[idx[z]]=archBot("shark",st.buy,taken);ps[idx[z]].name=nm2;}}
   return {mode:"cash",stake:st.id,skill:skill,players:ps,button:rnd(n),sb:st.sb,bb:st.bb,buy:st.buy,level:0,handNo:0,home:!!st.home,casino:!!st.casino,live:!!(st.home||st.casino)};
 }
 function stageField(ev,s){var f=ev.field;for(var i=0;i<s;i++)f=f*ev.stages[i]/6;return Math.round(f);}
@@ -3901,9 +3952,13 @@ function renderCashTab(){
     else if(lock)btn="<div class='lock'>\ud83d\udd12 "+lock+"</div>";
     else btn="<button class='btn primary' data-sit='"+st.id+"'>Sit down, buy in "+money(st.buy)+"</button>";
     h+="<div class='panel glass ev"+(lock&&!here?" locked":"")+"'>"+evArt(st.id,st.n)+"<div class='evtop'><div><div class='venue'>"+st.venue+"</div><h2>"+st.n+" No-Limit</h2></div><div class='tier'>"+(st.buy/st.bb)+" bb</div></div>"+
-      "<div class='evmeta'>"+(st.cast?st.cast+" members of the High Rollers' Club, plus tough regulars":st.arch?"Players: "+ARCH_ORDER.filter(function(k){return st.arch.indexOf(k)>=0;}).map(function(k){var c=st.arch.filter(function(x){return x===k;}).length;return (c>1?c+" ":"")+ARCH[k].n.toLowerCase()+(c>1?"s":"");}).join(", "):st.skill==="user"?"Opponents set in Settings: "+dots(S.settings.skill):dots(st.skill))+"</div><div class='row'>"+btn+"</div></div>";
+      "<div class='evmeta'>"+(st.cast?st.cast+" members of the High Rollers' Club, plus tough regulars":st.arch?"Players: "+ARCH_ORDER.concat(["shark"]).filter(function(k){return st.arch.indexOf(k)>=0;}).map(function(k){var c=st.arch.filter(function(x){return x===k;}).length;return (c>1?c+" ":"")+ARCH[k].n.toLowerCase()+(c>1?"s":"");}).join(", "):st.skill==="user"?"Opponents set in Settings: "+dots(S.settings.skill):dots(st.skill))+"</div><div class='row'>"+btn+"</div></div>";
   });
-  $("l-body").innerHTML="<div class='carhead'><h3>Cash games</h3><span>Swipe for more \u2192</span></div><div class='carousel'>"+h+"</div>";
+  var cz=S.cash&&S.cash.stake==="custom";
+  var ch="<div class='panel glass'><div class='evtop'><div><div class='venue'>Your blinds, your stack, your opponents</div><h2>Custom table</h2></div></div><p class='muted' style='font-size:.85rem;margin:4px 0 8px'>Pick blinds your bankroll can cover, your stack depth, how many players, who sits in each seat, and the room.</p>"+
+    (cz?"<button class='btn brass' id='ct-res'>Resume, "+money(S.cash.players[0].stack)+" in chips</button>":"<button class='btn primary' id='ct-open'>Build a table</button>")+"</div>";
+  $("l-body").innerHTML=ch+"<div class='carhead'><h3>Cash games</h3><span>Swipe for more \u2192</span></div><div class='carousel'>"+h+"</div>";
+  if($("ct-open"))$("ct-open").onclick=openCustom;if($("ct-res"))$("ct-res").onclick=function(){sitCash("custom",true);};
   $("l-body").querySelectorAll("[data-sit]").forEach(function(b){b.onclick=function(){sitCash(b.dataset.sit,false);};});
   $("l-body").querySelectorAll("[data-res]").forEach(function(b){b.onclick=function(){sitCash(b.dataset.res,true);};});
 }
