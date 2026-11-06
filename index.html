@@ -643,6 +643,10 @@ details{margin:8px 0}details summary{cursor:pointer;padding:4px 0}
 <script>
 (function(){
 "use strict";
+/* all game randomness goes through RNG(). It is Math.random unless a test seeds it, so real play is unchanged. */
+var RNG=Math.random,SEEDED=false;
+function seedRNG(seed){if(seed===null||seed===undefined){RNG=Math.random;SEEDED=false;return;}var a=seed>>>0;SEEDED=true;
+  RNG=function(){a=(a+0x6D2B79F5)|0;var t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
 var R="AKQJT98765432",SU=["s","h","d","c"],SYM={s:"\u2660",h:"\u2665",d:"\u2666",c:"\u2663"},P13=371293;
 var EQ={"AA":85.2,"AKs":66.7,"AQs":66.3,"AJs":65.6,"ATs":64.2,"A9s":62.1,"A8s":61.8,"A7s":61.3,"A6s":60.7,"A5s":60.5,"A4s":59.0,"A3s":58.6,"A2s":57.2,"AKo":65.3,"KK":81.9,"KQs":63.3,"KJs":62.2,"KTs":61.3,"K9s":60.3,"K8s":58.6,"K7s":57.3,"K6s":56.4,"K5s":55.8,"K4s":55.0,"K3s":54.0,"K2s":53.2,"AQo":65.2,"KQo":60.7,"QQ":80.4,"QJs":60.2,"QTs":59.7,"Q9s":57.4,"Q8s":56.3,"Q7s":54.4,"Q6s":52.8,"Q5s":52.8,"Q4s":51.6,"Q3s":51.4,"Q2s":50.4,"AJo":63.5,"KJo":60.1,"QJo":57.6,"JJ":77.6,"JTs":57.7,"J9s":55.4,"J8s":53.5,"J7s":52.3,"J6s":50.6,"J5s":50.1,"J4s":49.0,"J3s":48.2,"J2s":47.5,"ATo":62.5,"KTo":59.8,"QTo":56.9,"JTo":55.0,"TT":74.9,"T9s":54.1,"T8s":52.1,"T7s":50.1,"T6s":49.5,"T5s":47.5,"T4s":46.2,"T3s":45.4,"T2s":45.2,"A9o":60.6,"K9o":57.4,"Q9o":55.5,"J9o":53.2,"T9o":51.7,"99":72.0,"98s":50.4,"97s":49.5,"96s":47.8,"95s":45.4,"94s":43.9,"93s":43.3,"92s":41.7,"A8o":59.9,"K8o":56.0,"Q8o":54.2,"J8o":51.4,"T8o":49.8,"98o":47.7,"88":69.5,"87s":48.0,"86s":46.4,"85s":44.3,"84s":42.5,"83s":40.9,"82s":40.2,"A7o":59.0,"K7o":55.0,"Q7o":51.8,"J7o":49.8,"T7o":47.7,"97o":46.6,"87o":44.5,"77":66.7,"76s":45.4,"75s":44.0,"74s":41.6,"73s":40.6,"72s":38.2,"A6o":57.2,"K6o":54.2,"Q6o":50.5,"J6o":47.9,"T6o":45.9,"96o":44.3,"86o":43.8,"76o":42.3,"66":63.0,"65s":43.1,"64s":41.4,"63s":39.6,"62s":37.7,"A5o":57.6,"K5o":52.8,"Q5o":49.6,"J5o":46.8,"T5o":43.8,"95o":42.7,"85o":41.1,"75o":40.6,"65o":39.9,"55":60.0,"54s":41.5,"53s":40.1,"52s":37.9,"A4o":55.9,"K4o":52.8,"Q4o":49.0,"J4o":46.0,"T4o":44.7,"94o":40.6,"84o":39.5,"74o":38.3,"64o":37.6,"54o":38.8,"44":56.9,"43s":38.3,"42s":37.1,"A3o":56.0,"K3o":51.8,"Q3o":48.6,"J3o":45.4,"T3o":42.3,"93o":40.3,"83o":37.5,"73o":36.7,"63o":35.8,"53o":36.3,"43o":35.3,"33":53.7,"32s":36.2,"A2o":55.0,"K2o":50.6,"Q2o":47.5,"J2o":43.7,"T2o":41.5,"92o":39.1,"82o":36.3,"72o":34.9,"62o":34.2,"52o":34.0,"42o":33.9,"32o":31.9,"22":50.5};
 var RANGES={
@@ -661,7 +665,7 @@ var LIVE9={UTG:"66+,ATs+,KJs+,QJs,JTs,AQo+",UTG1:"55+,ATs+,KTs+,QTs+,JTs,AJo+,KQ
   BTN:"22+,A2s+,K2s+,Q5s+,J7s+,T7s+,96s+,85s+,75s+,64s+,54s,A2o+,K8o+,Q9o+,J9o+,T9o",SB:"22+,A2s+,K5s+,Q8s+,J8s+,T8s+,97s+,87s,76s,65s,A7o+,KTo+,QTo+,JTo"};
 var SETS9={},LIVE9_PCT={};Object.keys(LIVE9).forEach(function(p){SETS9[p]=expand(LIVE9[p]);var n=0;Object.keys(SETS9[p]).forEach(function(c){n+=c.length===2?6:c[2]==="s"?4:12;});LIVE9_PCT[p]=Math.round(n/1326*100);});
 function liveOpen(pos,code){var s=SETS9[pos]||SETS9[{UTG:"UTG"}[pos]||"MP"];return !!(s&&s[code]);}
-function rnd(n){return Math.floor(Math.random()*n);}
+function rnd(n){return Math.floor(RNG()*n);}
 function pick(a){return a[rnd(a.length)];}
 function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rnd(i+1),t=a[i];a[i]=a[j];a[j]=t;}return a;}
 var $=function(id){return document.getElementById(id);};
@@ -769,8 +773,8 @@ function startHand(){
   if(T.mode==="cash"){
     if(T.pass)T.players.forEach(function(p){if((p.hero||p.human)&&p.stack<=0){p.stack=T.buy;p.buyins=(p.buyins||1)+1;toast(p.name+" rebuys for "+money(T.buy)+".");}});
     T.players.forEach(function(p,i){if(!p.hero&&!p.human&&p.stack<=0&&STK(T.stake).cast){var seated=T.players.map(function(q){return q.cid;}),free=CLUB_IDS.filter(function(id){return seated.indexOf(id)<0;});if(free.length){var c=castById(pick(free));T.players[i]={name:c.short,cid:c.id,skill:c.skill,stack:T.buy,hero:false,out:false};}}});
-    if(T.home)T.players.forEach(function(p,i){if(!p.hero&&!p.human&&p.stack<=0&&!p.cid&&Math.random()<0.7&&(p.rebuys||0)<3){p.stack=T.buy;p.rebuys=(p.rebuys||0)+1;p.tilt=Math.max(p.tilt||0,3+rnd(5));toast(p.name+" rebuys for "+money(T.buy)+" and looks annoyed.");}});
-    if(T.live&&!T.noLeave&&T.handNo>=40&&Math.random()<0.02){var gone=T.players.map(function(p,i){return i;}).filter(function(i){var q=T.players[i];return i!==0&&!q.hero&&!q.human&&!q.cid&&q.stack>0;});
+    if(T.home)T.players.forEach(function(p,i){if(!p.hero&&!p.human&&p.stack<=0&&!p.cid&&RNG()<0.7&&(p.rebuys||0)<3){p.stack=T.buy;p.rebuys=(p.rebuys||0)+1;p.tilt=Math.max(p.tilt||0,3+rnd(5));toast(p.name+" rebuys for "+money(T.buy)+" and looks annoyed.");}});
+    if(T.live&&!T.noLeave&&T.handNo>=40&&RNG()<0.02){var gone=T.players.map(function(p,i){return i;}).filter(function(i){var q=T.players[i];return i!==0&&!q.hero&&!q.human&&!q.cid&&q.stack>0;});
       if(gone.length){var gi=pick(gone),old=T.players[gi],stB=STK(T.stake).arch,nb2=stB?archBot(pick(stB),T.buy||200,namesAt()):newBot(T.skill,T.buy||200,namesAt());T.players[gi]=nb2;toast(old.name+" cashes out. "+nb2.name+" takes the seat.");}}
     if(T.home&&T.handNo===60)toast("Two hours in. The drinks are flowing, and the loose players are getting looser.");
     T.players.forEach(function(p,i){if(!p.hero&&!p.human&&p.stack<=0){var stA=STK(T.stake).arch,nb=stA?archBot(pick(stA),T.buy||200,namesAt()):newBot(T.skill,T.buy||200,namesAt());T.players[i]=nb;}});
@@ -795,7 +799,7 @@ function startHand(){
   put(sbI,T.sb);H.s[sbI].label="SB";put(bbI,T.bb);H.s[bbI].label="BB";
   H.cur=T.bb;H.minR=T.bb;
   H.toAct=nextIn(bbI,act);
-  if(T.home&&act.length>=4&&Math.random()<0.3){var stI=nextIn(bbI,act);if(stI!==0&&T.players[stI].stack>4*T.bb){put(stI,2*T.bb);H.s[stI].label="Straddle";H.cur=2*T.bb;H.minR=2*T.bb;H.toAct=nextIn(stI,act);H.straddle=stI;}}
+  if(T.home&&act.length>=4&&RNG()<0.3){var stI=nextIn(bbI,act);if(stI!==0&&T.players[stI].stack>4*T.bb){put(stI,2*T.bb);H.s[stI].label="Straddle";H.cur=2*T.bb;H.minR=2*T.bb;H.toAct=nextIn(stI,act);H.straddle=stI;}}
   sfx("deal");if(!T._g){T._g=true;setTimeout(greetRivals,700);}else chatterStart();
   if(H.straddle!==undefined)H.log.push(T.players[H.straddle].name+" straddles "+chips(2*T.bb)+".");
   logLine("Hand "+(T.handNo+1)+(T.mode==="tour"?" (blinds "+T.sb+"/"+T.bb+")":"")+". "+T.players[H.button].name+" has the button.");
@@ -827,7 +831,7 @@ function loop(){
 }
 function act(i,a,to){
   var s=H.s[i],p=T.players[i],nm=p.hero?"You":p.name,txt;
-  H.hist=H.hist||[];H.hist.push({i:i,st:H.street,a:(a==="fold"||a==="check"||a==="call")?a:(H.cur===0?"bet":"raise"),toCall:Math.max(0,H.cur-s.sb),pot:potTotal(),nOpp:live().length-1,raises:H.raises});
+  H.hist=H.hist||[];H.hist.push({i:i,st:H.street,a:(a==="fold"||a==="check"||a==="call")?a:(H.cur===0?"bet":"raise"),toCall:Math.max(0,H.cur-s.sb),pot:potTotal(),nOpp:live().length-1,raises:H.raises,la:H.lastAgg,lf:H.lastBetF||0});
   if(a==="fold"){s.folded=true;s.label="Fold";txt=nm+(p.hero?" fold.":" folds.");}
   else if(a==="check"){s.label="Check";txt=nm+(p.hero?" check.":" checks.");}
   else if(a==="call"){var amt=put(i,H.cur-s.sb);s.label=s.allin?"All in":"Call";txt=nm+(p.hero?" call ":" calls ")+chips(amt)+(s.allin?", all in.":".");
@@ -835,6 +839,7 @@ function act(i,a,to){
   else{ /* raise or bet to `to` */
     to=Math.min(to,s.sb+p.stack);
     var wasBet=H.cur===0;
+    if(wasBet){var he=H.hist[H.hist.length-1];if(he&&he.pot>0){he.f=to/he.pot;H.lastBetF=he.f;}}
     put(i,to-s.sb);
     if(to>H.cur){var inc=to-H.cur;if(inc>=H.minR){H.minR=inc;H.seats.forEach(function(j){if(j!==i)H.s[j].acted=false;});}H.cur=to;H.raises++;H.lastAgg=i;if(H.street===0)H.preAgg=i;}
     s.label=s.allin?"All in":(wasBet?"Bet":"Raise");
@@ -844,7 +849,7 @@ function act(i,a,to){
   s.acted=true;
   logLine(txt);sfx(a==="fold"?"fold":a==="check"?"check":"chip");
   if(s.allin&&a!=="fold"&&!p.hero)say(i,"allin");
-  if(a==="fold"&&!p.hero&&!H.chatted&&H.cur>=4*T.bb&&Math.random()<0.08){H.chatted=true;sayText(i,chatLine(p,"fold"));}
+  if(a==="fold"&&!p.hero&&!H.chatted&&H.cur>=4*T.bb&&RNG()<0.08){H.chatted=true;sayText(i,chatLine(p,"fold"));}
   H.toAct=(i+1)%T.players.length;
   render();
   setTimeout(loop,H.skip?0:120);
@@ -852,7 +857,7 @@ function act(i,a,to){
 function endStreet(){
   try{flyChips(SEAT_EL.slice(1).map(function(el){return el&&el.querySelector(".bet");}),$("g-pot"));}catch(e){}
   H.seats.forEach(function(i){var s=H.s[i];s.sb=0;s.acted=false;if(!s.folded&&!s.allin)s.label="";});
-  H.cur=0;H.minR=T.bb;H.raises=0;H.lastAgg=-1;
+  H.cur=0;H.minR=T.bb;H.raises=0;H.lastAgg=-1;H.lastBetF=0;
   if(H.street===3)return showdown();
   var actors=live().filter(canAct);
   if(actors.length<=1&&H.ritState===undefined&&T.mode==="cash"&&!T.pass&&live().length>=2&&live().indexOf(0)>=0){H.ritState="asking";render();var rtok=H.id;
@@ -874,7 +879,7 @@ function refund(){
   if(who.length===1){var d=top-second;H.s[who[0]].tot-=d;T.players[who[0]].stack+=d;}
 }
 function winUncontested(){
-  refund();var w=live()[0],pot=potTotal();T.players[w].stack+=pot;
+  refund();var w=live()[0],pot0=potTotal(),rk=rakeOf(pot0,H.board.length>=3),pot=pot0-rk;T.players[w].stack+=pot;H.rake=rk;T.rakePaid=(T.rakePaid||0)+rk;
   H.winners={};H.winners[w]=pot;
   logLine((T.players[w].hero?"You win ":T.players[w].name+" wins ")+chips(pot)+".");
   endHand(false);
@@ -885,9 +890,10 @@ function showdown(){
   lv.forEach(function(i){vals[i]=evaluate(H.s[i].cards.concat(H.board));});
   if(rit){H.board2=H.board.slice(0,H.ritFrom);while(H.board2.length<5){H.deck.pop();H.board2.push(H.deck.pop());}vals2={};lv.forEach(function(i){vals2[i]=evaluate(H.s[i].cards.concat(H.board2));});}
   var levels=lv.map(function(i){return H.s[i].tot;}).filter(function(v,k,a){return a.indexOf(v)===k;}).sort(function(a,b){return a-b;});
-  var prev=0;H.winners={};
+  var prev=0;H.winners={};var rkLeft=rakeOf(potTotal(),H.board.length>=3);H.rake=rkLeft;T.rakePaid=(T.rakePaid||0)+rkLeft;
   levels.forEach(function(L){
     var amt=0;H.seats.forEach(function(i){var t=H.s[i].tot;amt+=Math.max(0,Math.min(t,L)-Math.min(t,prev));});
+    var cut=Math.min(rkLeft,amt);amt-=cut;rkLeft-=cut; /* rake comes out of the main pot first, then side pots */
     var elig=lv.filter(function(i){return H.s[i].tot>=L;}),parts=rit?[[vals,Math.floor(amt/2)],[vals2,amt-Math.floor(amt/2)]]:[[vals,amt]];
     parts.forEach(function(pr){var vv=pr[0],am=pr[1],best=-1;elig.forEach(function(i){if(vv[i]>best)best=vv[i];});
       var ws=elig.filter(function(i){return vv[i]===best;}),share=Math.floor(am/ws.length),rem=am-share*ws.length;
@@ -945,7 +951,7 @@ function endHand(sd){
     if(T.players[0].out)over=true;else if(adv===0&&remaining===1)over=true;else if(adv>0&&remaining<=adv)cleared=true;
   }
   if(over||cleared)T.over=true;
-  H.seats.forEach(function(i){if(i===0)return;var q=T.players[i],loss=H.s[i].tot-((H.winners||{})[i]||0);if(loss>=40*T.bb&&Math.random()<styleOf(q).tilt){q.tilt=4+rnd(5);if(T.live)sayText(i,pick(["Unreal. Deal.","I want that back.","Every time.","Just deal the cards."]),2600);}});
+  H.seats.forEach(function(i){if(i===0)return;var q=T.players[i],loss=H.s[i].tot-((H.winners||{})[i]||0);if(loss>=40*T.bb&&RNG()<styleOf(q).tilt){q.tilt=4+rnd(5);if(T.live)sayText(i,pick(["Unreal. Deal.","I want that back.","Every time.","Just deal the cards."]),2600);}});
   Object.keys(H.winners||{}).forEach(function(w){w=+w;if(w!==0)say(w,"win");});
   chatterEnd();
   if(T.mode==="tour")H.seats.forEach(function(i){if(i!==0&&T.players[i].out&&H.s[i].tot>0&&T.players[i].stack<=0)say(i,"bust");});
@@ -960,7 +966,7 @@ function endHand(sd){
 
 
 /* ===== fair dealing, deck seal, luck check ===== */
-function rndC(n){if(window.crypto&&crypto.getRandomValues){var a=new Uint32Array(1),lim=4294967296-(4294967296%n);do{crypto.getRandomValues(a);}while(a[0]>=lim);return a[0]%n;}return rnd(n);}
+function rndC(n){if(!SEEDED&&window.crypto&&crypto.getRandomValues){var a=new Uint32Array(1),lim=4294967296-(4294967296%n);do{crypto.getRandomValues(a);}while(a[0]>=lim);return a[0]%n;}return rnd(n);}
 function cshuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rndC(i+1),t=a[i];a[i]=a[j];a[j]=t;}return a;}
 function hex(buf){return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,"0");}).join("");}
 function cardCode(c){return rankCh(c)+suitCh(c);}
@@ -1017,7 +1023,7 @@ function styleText(p){var st=styleOf(p),a=[];
   if(st.trap>=0.3)a.push("slowplays big hands");
   a.push(st.sizing==="small"?"bets small":st.sizing==="big"?"bets big":st.sizing==="polar"?"big bets mean very strong or nothing":"standard bet sizes");
   return a.join(", ")+".";}
-function betSize(p,pot,big){var z=eff(p).sizing,b=z==="small"?0.33+Math.random()*0.17:z==="big"?0.8+Math.random()*0.4:z==="polar"?(big?0.9+Math.random()*0.4:0.3+Math.random()*0.1):0.5+Math.random()*0.25;return pot*b;}
+function betSize(p,pot,big){var z=eff(p).sizing,b=z==="small"?0.33+RNG()*0.17:z==="big"?0.8+RNG()*0.4:z==="polar"?(big?0.9+RNG()*0.4:0.3+RNG()*0.1):0.5+RNG()*0.25;return pot*b;}
 function legal(i){var s=H.s[i],p=T.players[i],toCall=Math.max(0,H.cur-s.sb),max=s.sb+p.stack;
   var minTo=H.cur===0?Math.min(T.bb,max):Math.min(H.cur+H.minR,max);
   return {toCall:Math.min(toCall,p.stack),canRaise:max>H.cur&&live().filter(canAct).length>1,minTo:minTo,maxTo:max};}
@@ -1029,7 +1035,7 @@ function passive(i){return legal(i).toCall>0?["fold"]:["check"];}
 function botAct(i){var d=H.street===0?botPre(i):botPost(i);act(i,d[0],d[1]);}
 function inChart(pos,code){if(pos==="BB"||!pos)return false;if(T&&T.live&&SETS9[pos])return !!SETS9[pos][code];return !!SETS[chartKey(pos)][code];}
 function botPre(i){
-  var p=T.players[i],s=H.s[i],code=codeOf(s.cards),e=EQ[code]+(Math.random()*4-2),L=legal(i),bb=T.bb,sk=p.skill,pos=H.pos[i],E=eff(p);
+  var p=T.players[i],s=H.s[i],code=codeOf(s.cards),e=EQ[code]+(RNG()*4-2),L=legal(i),bb=T.bb,sk=p.skill,pos=H.pos[i],E=eff(p);
   var limpers=H.seats.filter(function(j){return j!==i&&j!==H.bbI&&j!==H.sbI&&H.s[j].tot>=bb&&!H.s[j].folded;}).length;
   var premium=["AA","KK","QQ","AKs","AKo"].indexOf(code)>=0;
   var stackBB=(p.stack+s.sb)/bb,ip=pos==="BTN"||pos==="CO";
@@ -1037,39 +1043,39 @@ function botPre(i){
   if(useLive(p)&&REC_KEYS.indexOf(liveKey(p))<0)E=Object.assign({},E,{loose:Math.min(E.loose,liveKey(p)==="maniac"?7:2)});
   if(useLive(p)&&liveKey(p)==="shark"){var lateS=["HJ","CO","BTN","SB"].indexOf(pos)>=0;
     if(H.raises===0&&limpers>0){var weakL=H.seats.filter(function(j){return j!==i&&j!==H.bbI&&j!==H.sbI&&H.s[j].tot>0&&REC_KEYS.indexOf(liveKey(T.players[j]))>=0;}).length;
-      if(e>=(weakL?54:58)-(lateS?2:0))return raiseTo(i,bb*(6+limpers));if(e>=50&&lateS&&Math.random()<0.4)return ["call"];return passive(i);}
-    if(H.raises===0&&lateS&&e>=55&&Math.random()<0.85)return raiseTo(i,bb*(T.casino?5:4.5));
+      if(e>=(weakL?54:58)-(lateS?2:0))return raiseTo(i,bb*(6+limpers));if(e>=50&&lateS&&RNG()<0.4)return ["call"];return passive(i);}
+    if(H.raises===0&&lateS&&e>=55&&RNG()<0.85)return raiseTo(i,bb*(T.casino?5:4.5));
     if(H.raises===1&&H.preAgg>=0&&H.preAgg!==i){var opk=liveKey(T.players[H.preAgg]),loose3=LOOSE_KEYS.indexOf(opk)>=0;
-      if(e>=(loose3?60:66)||(lateS&&loose3&&e>=56&&Math.random()<0.45))return raiseTo(i,H.cur*(lateS?3.5:4.2));
+      if(e>=(loose3?60:66)||(lateS&&loose3&&e>=56&&RNG()<0.45))return raiseTo(i,H.cur*(lateS?3.5:4.2));
       if(e>=(loose3?55:59)||(code.length===2&&L.toCall*15<=p.stack))return ["call"];return passive(i);}}
   if(useLive(p)&&REC_KEYS.indexOf(liveKey(p))>=0){
     var lk=liveKey(p),PT={station:48,limper:52.5,whale:46.5}[lk]-(homeLate()?3:0)-(p.tilt>0?5:0),rsz=bb*((T.casino?6:5)+limpers);
-    if(H.raises===0){if(L.toCall===0)return e>=63&&Math.random()<0.5?raiseTo(i,rsz):["check"];
-      if(e>=PT+(Math.random()*3-1.5)){if(e>=64&&Math.random()<(lk==="whale"?0.7:0.4))return raiseTo(i,rsz);return ["call"];}
+    if(H.raises===0){if(L.toCall===0)return e>=63&&RNG()<0.5?raiseTo(i,rsz):["check"];
+      if(e>=PT+(RNG()*3-1.5)){if(e>=64&&RNG()<(lk==="whale"?0.7:0.4))return raiseTo(i,rsz);return ["call"];}
       return pos==="SB"&&e>=PT-4?["call"]:["fold"];}
     var prem2=["AA","KK","QQ","AKs","AKo"].indexOf(code)>=0;
-    if(prem2&&Math.random()>E.trap*0.5)return H.raises===1?raiseTo(i,H.cur*3.8):raiseTo(i,L.maxTo);
+    if(prem2&&RNG()>E.trap*0.5)return H.raises===1?raiseTo(i,H.cur*3.8):raiseTo(i,L.maxTo);
     var limped=s.tot>0&&i!==H.bbI&&i!==H.sbI&&i!==H.straddle;
     var cthr=PT+(limped?-3:2)+(H.raises>=2?14:0)+(L.toCall>(p.stack+s.sb)*0.3?10:0)-(i===H.bbI?4:0);
     return e>=cthr||prem2?["call"]:passive(i);}
   var openSz={small:2.2,std:2.5,big:3.2,polar:3}[E.sizing]*(sk==="beginner"?1.15:1);if(T.home&&sk!=="tough")openSz*=1.9;if(T.casino)openSz*=(sk==="tough"?1.6:2.1);
   if(H.raises===0){
     var thr=(sk==="beginner"?66:sk==="regular"?62:60)-E.loose-(pos==="BTN"?4:pos==="CO"||pos==="SB"?2:0);
-    var open=e>=thr||(sk!=="beginner"&&inChart(pos,code)&&Math.random()<0.7+E.loose/30);
+    var open=e>=thr||(sk!=="beginner"&&inChart(pos,code)&&RNG()<0.7+E.loose/30);
     if(limpers>0)open=e>=thr+2-(E.agg-1)*6;
     if(stackBB<=12&&sk!=="beginner")return e>=60-E.loose*0.5?raiseTo(i,L.maxTo):passive(i);
-    if(open){if(E.agg<0.75&&e<68&&Math.random()<0.6)return L.toCall===0?["check"]:["call"];return raiseTo(i,bb*(openSz+limpers));}
+    if(open){if(E.agg<0.75&&e<68&&RNG()<0.6)return L.toCall===0?["check"]:["call"];return raiseTo(i,bb*(openSz+limpers));}
     if(L.toCall===0)return ["check"];
-    if((T.home||T.casino)&&e>=50-E.loose*0.6&&Math.random()<(sk==="tough"?0.2:0.35))return ["call"];
-    if(e>=(sk==="beginner"?48:54)-E.loose&&(sk==="beginner"||E.agg<0.9)&&Math.random()<0.6+E.sticky*2)return ["call"];
+    if((T.home||T.casino)&&e>=50-E.loose*0.6&&RNG()<(sk==="tough"?0.2:0.35))return ["call"];
+    if(e>=(sk==="beginner"?48:54)-E.loose&&(sk==="beginner"||E.agg<0.9)&&RNG()<0.6+E.sticky*2)return ["call"];
     if(pos==="SB"&&e>=54-E.loose)return ["call"];
     return ["fold"];
   }
   var facing=H.cur/bb;
   if(H.raises===1){
-    var trapIt=premium&&Math.random()<E.trap*0.6;
-    var three=(premium&&!trapIt)||(e>=74-E.loose*0.4&&Math.random()<0.45*E.agg)||(H.preAgg===0&&e>=60&&Math.random()<adaptPre(p).three)||
-      (sk!=="beginner"&&["A5s","A4s","A3s","KJs","QJs","JTs","T9s","98s"].indexOf(code)>=0&&Math.random()<0.08*E.bluff*E.agg);
+    var trapIt=premium&&RNG()<E.trap*0.6;
+    var three=(premium&&!trapIt)||(e>=74-E.loose*0.4&&RNG()<0.45*E.agg)||(H.preAgg===0&&e>=60&&RNG()<adaptPre(p).three)||
+      (sk!=="beginner"&&["A5s","A4s","A3s","KJs","QJs","JTs","T9s","98s"].indexOf(code)>=0&&RNG()<0.08*E.bluff*E.agg);
     if(trapIt)return ["call"];
     if(three)return raiseTo(i,H.cur*({small:2.6,std:3,big:3.6,polar:3.4}[E.sizing])*(ip?1:1.15));
     var th=(sk==="beginner"?46:sk==="regular"?57:54)-E.loose*0.6-E.sticky*40;if(H.preAgg===0)th+=adaptPre(p).th;
@@ -1078,19 +1084,19 @@ function botPre(i){
     if(L.toCall>=(p.stack+s.sb)*0.4)th=Math.max(th,(sk==="beginner"?62:70)-E.loose*0.4);
     return e>=th?["call"]:passive(i);
   }
-  if(code==="AA"||code==="KK")return Math.random()<E.trap*0.5?["call"]:raiseTo(i,L.maxTo);
+  if(code==="AA"||code==="KK")return RNG()<E.trap*0.5?["call"]:raiseTo(i,L.maxTo);
   var th2=(sk==="beginner"?70:67)-E.loose*0.4-E.sticky*30;
-  if(premium||(e>=th2&&Math.random()<0.6))return ["call"];
-  if(sk==="tough"&&E.bluff>1.3&&Math.random()<0.05)return raiseTo(i,L.maxTo);
+  if(premium||(e>=th2&&RNG()<0.6))return ["call"];
+  if(sk==="tough"&&E.bluff>1.3&&RNG()<0.05)return raiseTo(i,L.maxTo);
   return passive(i);
 }
 function botPost(i){if(useLive(T.players[i]))return liveBotPost(i);
   var p=T.players[i],s=H.s[i],pr=PROF[p.skill],E=eff(p),L=legal(i),nOpp=live().length-1;
   var dead={};s.cards.concat(H.board).forEach(function(c){dead[c]=1;});
-  var str=eqRandom(s.cards,H.board,Math.min(nOpp,3),220)+(Math.random()*0.08-0.04);
+  var str=eqRandom(s.cards,H.board,Math.min(nOpp,3),220)+(RNG()*0.08-0.04);
   var outs=H.street<3?drawOuts(s.cards,H.board,dead):0;
   p._cls=str>=0.65?"strong":outs>=8?"draw":str<0.4?"weak":"medium";
-  var pot=potTotal(),r=Math.random(),strong=str>=pr.raise;
+  var pot=potTotal(),r=RNG(),strong=str>=pr.raise;
   var hb=live().indexOf(0)>=0?adaptBluff(p):1;
   if(L.toCall===0){
     if(!L.canRaise)return ["check"];
@@ -1106,7 +1112,7 @@ function botPost(i){if(useLive(T.players[i]))return liveBotPost(i);
   var drawEq=outs?(H.street===1?Math.min(outs*4,60):outs*2)/100:0;
   adj=Math.max(adj,drawEq);if(H.lastAgg===0)adj+=adaptCall(p);
   var rth=pr.raise-(E.agg-1)*0.06+0.05*Math.max(0,H.raises-1);if(H.raises>=2)rth=Math.max(rth,0.92);
-  if(str>=rth&&L.canRaise&&r<0.75){if(Math.random()<E.trap*0.7)return ["call"];return raiseTo(i,H.cur*(2.5+Math.random()*0.7));}
+  if(str>=rth&&L.canRaise&&r<0.75){if(RNG()<E.trap*0.7)return ["call"];return raiseTo(i,H.cur*(2.5+RNG()*0.7));}
   if(outs>=8&&L.canRaise&&H.raises<=1&&r<0.1*E.agg*E.bluff)return raiseTo(i,H.cur*2.8);
   if(nOpp===1&&H.street>=2&&L.canRaise&&H.raises===1&&r<0.035*E.bluff*E.agg)return raiseTo(i,H.cur*2.7);
   if(adj>=need)return ["call"];
@@ -1131,7 +1137,7 @@ var REC_KEYS=["station","limper","whale"];
 function useLive(p){return !!(T&&T.mode==="cash"&&(T.live||(p&&p.arch)));}
 function liveKey(p){if(!p)return "tag";if(p.arch&&LP[p.arch])return p.arch;var st=styleOf(p);
   return p.skill==="beginner"?(st.loose>=7?"station":"limper"):p.skill==="regular"?(st.loose<=-4?"nit":"weekend"):(st.agg>=1.4?(st.bluff>=1.4?"maniac":"lag"):"tag");}
-function liveProf(p){var k=liveKey(p),P=Object.assign({k:k},LP[k]);P.callBase=P.callBase.slice();
+function liveProf(p){var k=liveKey(p),P=Object.assign({k:k},LP[k]);P.callBase=P.callBase.slice();try{P.sizing=eff(p).sizing;}catch(e){P.sizing="std";}
   if(p.tilt>0){P.callBase=P.callBase.map(function(x){return x-0.9;});P.bluff+=0.15;P.rbluff+=0.02;P.chase=1;P.honest=Math.min(P.honest,0.5);P.tilted=true;}
   if(homeLate()&&["station","limper","whale","maniac"].indexOf(k)>=0){P.callBase=P.callBase.map(function(x){return x-0.3;});P.bluff+=0.03;P.chase=Math.min(1,P.chase+0.1);}
   var dd=difficulty();
@@ -1160,7 +1166,7 @@ function liveMem(i){var M=T&&T.mem;if(!M)return opAdj(i);var rec=REC_KEYS.indexO
   if(M.bluff!==undefined&&T.handNo-M.bluff<30)a-=rec?0.9:0.45;
   if(M.mon!==undefined&&T.handNo-M.mon<30)a+=rec?0.5:0.3;return a+opAdj(i);}
 function liveBet(i,p,P,S,pot,kind){var f;
-  if(Math.random()<P.honest)f=S>=6?0.75+Math.random()*0.35:S>=4?0.5+Math.random()*0.2:(kind==="cbet"||kind==="bluff")?0.4+Math.random()*0.2:0.28+Math.random()*0.12;
+  if(RNG()<P.honest)f=S>=6?0.75+RNG()*0.35:S>=4?0.5+RNG()*0.2:(kind==="cbet"||kind==="bluff")?0.4+RNG()*0.2:0.28+RNG()*0.12;
   else f=betSize(p,pot,S>=6||kind==="bluff")/Math.max(1,pot);
   if(P.k==="maniac"||P.tilted)f*=1.25;
   H.bsize=H.bsize||{};H.bsize[i]={S:S,f:f,kind:kind,st:H.street,k:P.k,honest:P.honest};
@@ -1195,18 +1201,16 @@ function liveBotPost(i){
   var p=T.players[i],s=H.s[i],P=liveProfAt(i),L=legal(i),pot=potTotal(),bz=H.bsize&&H.bsize[H.lastAgg];
   var c={toCall:L.toCall,canRaise:L.canRaise,pot:pot,nOpp:live().length-1,st:H.street,isPreAgg:H.preAgg===i,facingRaise:H.raises>=2,raises:H.raises,
     memAdj:H.lastAgg===0?liveMem(i):0,recBet:P._recBet,recBetBig:!!(bz&&bz.st===H.street&&bz.f>=0.72)};
-  var d=liveDecide(P,hcInfo(s.cards,H.board),c,Math.random),S=d[2];
+  var d=liveDecide(P,hcInfo(s.cards,H.board),c,RNG),S=d[2];
   p._cls=S>=5.5?"strong":d[1]==="draw"||d[1]==="semi"?"draw":S<2?"weak":"medium";
   if(d[0]==="check"||d[0]==="call"||d[0]==="fold")return [d[0]];
   if(d[0]==="bet")return liveBet(i,p,P,S,pot,d[1]);
-  return raiseTo(i,H.cur*(d[1]==="strong"?2.6+Math.random()*0.6:d[1]==="semi"?2.8:2.7));}
+  return raiseTo(i,H.cur*(d[1]==="strong"?2.6+RNG()*0.6:d[1]==="semi"?2.8:2.7));}
 /* how likely this exact hand was to take the action we saw, from the same decision rules */
 var QR=(function(){var a=[];for(var k=0;k<64;k++){var f=function(m,o){var v=(k*m+o)%1;return v<0?v+1:v;};a.push([f(0.6180339887,0.11),f(0.4142135624,0.37),f(0.7320508076,0.53),f(0.2360679775,0.79)]);}return a;})();
 var HC_CACHE={};
 var HC_N=0;
 function hcCached(cb,brd){var bk=brd.join(","),m=HC_CACHE[bk];if(!m){if(++HC_N>60){HC_CACHE={};HC_N=1;}m=HC_CACHE[bk]={};}var a=cb[0]<cb[1]?cb[0]:cb[1],b=cb[0]<cb[1]?cb[1]:cb[0],k=a*52+b,v=m[k];if(v)return v;return m[k]=hcInfo(cb,brd);}
-function liveLikeHi(P,e,hi,isPreAgg,memAdj){var c={toCall:e.toCall,canRaise:true,pot:e.pot,nOpp:e.nOpp,st:e.st,isPreAgg:isPreAgg,facingRaise:e.raises>=2,raises:e.raises,memAdj:memAdj||0},n=0;
-  for(var k=0;k<QR.length;k++){var q=QR[k],j=0,d=liveDecide(P,hi,c,function(){return q[j++];});if(d[0]===e.a)n++;}return Math.max(0.004,n/QR.length);}
 var LIKE_MEMO={};
 function liveLike(P,e,cb,brd,isPreAgg,memAdj){var hi=hcCached(cb,brd),mk=(P.k||"")+"|"+hi.S+"|"+hi.outs+"|"+e.st+"|"+e.toCall+"|"+e.pot+"|"+e.nOpp+"|"+e.raises+"|"+e.a+"|"+(isPreAgg?1:0)+"|"+(memAdj||0)+"|"+P.callBase.join(",")+"|"+P.bluff;
   if(LIKE_MEMO[mk]!==undefined)return LIKE_MEMO[mk];if(Object.keys(LIKE_MEMO).length>20000)LIKE_MEMO={};var c={toCall:e.toCall,canRaise:true,pot:e.pot,nOpp:e.nOpp,st:e.st,isPreAgg:isPreAgg,facingRaise:e.raises>=2,raises:e.raises,memAdj:memAdj||0},n=0;
@@ -1338,7 +1342,7 @@ function renderControls(){
   if(clk)startClock();
 }
 function heroDo(d){if(!H||H.done||H.toAct!==0)return;stopClock();recordDecision(d);$("g-controls").innerHTML="<div class='waiting glass'>&nbsp;</div>";act(0,d[0],d[1]);
-  if(d[0]==="raise"&&!H.skip&&Math.random()<0.14){var ro=live().filter(function(j){return j!==0&&!T.players[j].human;});if(ro.length){var rj=pick(ro);setTimeout(function(){if(H&&!H.done)sayText(rj,chatLine(T.players[rj],"react"),2200);},400);}}
+  if(d[0]==="raise"&&!H.skip&&RNG()<0.14){var ro=live().filter(function(j){return j!==0&&!T.players[j].human;});if(ro.length){var rj=pick(ro);setTimeout(function(){if(H&&!H.done)sayText(rj,chatLine(T.players[rj],"react"),2200);},400);}}
   renderControls();}
 function openRaise(L){
   var rb=$("c-rb");if(rb.innerHTML){rb.innerHTML="";return;}
@@ -1403,14 +1407,14 @@ function boardWarn(){
   if(!w.length)w.push("Dry board: big hands are rare here.");return w;
 }
 function eqRandomD(hole,board,nOpp,iters){
-  var used=new Uint8Array(52),w=0,t=0,l=0,share=0,k,c;
+  var used=new Uint8Array(52),w=0,t=0,l=0,share=0,ss2=0,k,c;
   for(var it=0;it<iters;it++){
     used.fill(0);hole.forEach(function(x){used[x]=1;});board.forEach(function(x){used[x]=1;});
     var opp=[];for(k=0;k<nOpp;k++){var h=[];for(var m=0;m<2;m++){do{c=rnd(52);}while(used[c]);used[c]=1;h.push(c);}opp.push(h);}
     var bd=board.slice();while(bd.length<5){do{c=rnd(52);}while(used[c]);used[c]=1;bd.push(c);}
-    var sh=shareAt(bd,hole,opp);share+=sh;if(sh===1)w++;else if(sh>0)t++;else l++;
+    var sh=shareAt(bd,hole,opp);share+=sh;ss2+=sh*sh;if(sh===1)w++;else if(sh>0)t++;else l++;
   }
-  return {eq:share/iters,w:w,t:t,l:l,n:iters};
+  var m=share/iters;return {eq:m,w:w,t:t,l:l,n:iters,se:Math.sqrt(Math.max(0,ss2/iters-m*m)/iters),method:"monte carlo"};
 }
 function eqVsCombosD(hole,board,combos,iters){
   var used=new Uint8Array(52),w=0,t=0,l=0,c;
@@ -2001,7 +2005,7 @@ var DEALERPOS9=[{left:"calc(50% - 11px)",top:"88%"},{left:"27%",top:"64%"},{left
 var AC=null;
 function ac(){if(!S.settings.sound)return null;try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();}catch(e){AC=null;}return AC;}
 function tone(f,d,type,vol,delay){var a=ac();if(!a)return;var t=a.currentTime+(delay||0),o=a.createOscillator(),g=a.createGain();o.type=type||"sine";o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.15,t+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+0.02);}
-function noise(d,vol,hp,delay){var a=ac();if(!a)return;var t=a.currentTime+(delay||0),n=Math.floor(a.sampleRate*d),b=a.createBuffer(1,n,a.sampleRate),ch=b.getChannelData(0);for(var i=0;i<n;i++)ch[i]=(Math.random()*2-1)*(1-i/n);var s=a.createBufferSource();s.buffer=b;var f=a.createBiquadFilter();f.type="highpass";f.frequency.value=hp||2000;var g=a.createGain();g.gain.value=vol||0.12;s.connect(f);f.connect(g);g.connect(a.destination);s.start(t);}
+function noise(d,vol,hp,delay){var a=ac();if(!a)return;var t=a.currentTime+(delay||0),n=Math.floor(a.sampleRate*d),b=a.createBuffer(1,n,a.sampleRate),ch=b.getChannelData(0);for(var i=0;i<n;i++)ch[i]=(RNG()*2-1)*(1-i/n);var s=a.createBufferSource();s.buffer=b;var f=a.createBiquadFilter();f.type="highpass";f.frequency.value=hp||2000;var g=a.createGain();g.gain.value=vol||0.12;s.connect(f);f.connect(g);g.connect(a.destination);s.start(t);}
 function sfx(k){if(!S.settings.sound||(H&&H.skip&&k!=="win"))return;
   if(k==="deal"){noise(0.05,0.12,3000);noise(0.05,0.1,3000,0.08);}
   else if(k==="chip"){tone(2400,0.07,"triangle",0.08);tone(3100,0.06,"triangle",0.06,0.04);}
@@ -2063,7 +2067,7 @@ var CAST_TELL={frankie:"fast_strong",delphine:"none",hogsworth:"hollywood",milli
 function tellOf(p){if(p.cid&&CAST_TELL[p.cid])return CAST_TELL[p.cid];var r=seeded(hashStr(p.name+"~tell"))();
   var t=p.skill==="tough"?(r<0.6?"none":r<0.75?"hollywood":r<0.9?"fast_weak":"draw_snap"):p.skill==="regular"?(r<0.3?"none":r<0.5?"fast_weak":r<0.7?"hollywood":r<0.85?"draw_snap":"fast_strong"):(r<0.15?"none":r<0.4?"fast_strong":r<0.6?"draw_snap":r<0.8?"fast_weak":"hollywood");return t;}
 function tellDelay(p,d,base){
-  var t=tellOf(p),c=p._cls||"medium",agg=d[0]==="raise",j=0.8+Math.random()*0.4;
+  var t=tellOf(p),c=p._cls||"medium",agg=d[0]==="raise",j=0.8+RNG()*0.4;
   if(t==="fast_weak")j*=c==="weak"?0.35:c==="strong"?1.9:1;
   else if(t==="hollywood")j*=(c==="strong"&&agg)?2.4:1;
   else if(t==="draw_snap")j*=(c==="draw"&&d[0]==="call")?0.25:1;
@@ -2077,10 +2081,10 @@ function reads(){S.reads=S.reads||{n:0,ok:0,by:{}};return S.reads;}
 function riv(cid){S.riv=S.riv||{};S.riv[cid]=S.riv[cid]||{hands:0,won:0,lost:0,bluffed:0,beat:0,events:[]};return S.riv[cid];}
 function tableName(){return T.mode==="tour"?EV(T.ev).n:STK(T.stake).venue;}
 function maybeRival(ps,pool){
-  if(Math.random()>0.35)return;
+  if(RNG()>0.35)return;
   var all=[];Object.keys(THEMES).forEach(function(k){THEMES[k].cast.forEach(function(c){all.push(c);});});
   var met=all.filter(function(c){return S.riv&&S.riv[c.id]&&S.riv[c.id].hands>0;});
-  var c=met.length&&Math.random()<0.6?pick(met):pick(all);
+  var c=met.length&&RNG()<0.6?pick(met):pick(all);
   if(ps.some(function(p){return p.cid===c.id||p.name===c.short;}))return;
   var slot=1+rnd(ps.length-1);ps[slot]={name:c.short,cid:c.id,skill:c.skill,stack:ps[slot].stack,hero:false,out:false};
 }
@@ -2431,9 +2435,9 @@ function openAvatar(){
   B.querySelectorAll("[data-keep]").forEach(function(b){b.onclick=function(){S.avLooks[+b.dataset.keep]=JSON.parse(JSON.stringify(A));save();openAvatar();toast("Saved to slot "+(+b.dataset.keep+1));};});
   $("av-undo").onclick=function(){if(!AVUNDO.length)return;S.avatar=JSON.parse(AVUNDO.pop());save();openAvatar();};
   $("av-rand").onclick=function(){AVUNDO.push(JSON.stringify(A));Object.keys(AVOPT).forEach(function(k){var ok=AVOPT[k].filter(function(v){return !avLocked(k,v);});A[k]=pick(ok);});
-    if(Math.random()<0.4)A.hat="none";if(Math.random()<0.5)A.extra="none";if(Math.random()<0.85)A.extra2="none";if(Math.random()<0.6)A.item="none";if(Math.random()<0.6)A.eyewear="none";
-    if(Math.random()<0.8)A.tattoo="none";if(Math.random()<0.7)A.piercing="none";if(Math.random()<0.55)A.pattern="solid";if(Math.random()<0.7)A.browColor="match";if(Math.random()<0.7)A.facialColor="match";
-    Object.keys(AVSLIDE).forEach(function(k){A[k]=Math.random()<0.5?0:Math.round(Math.random()*4-2);});Object.keys(AVTOG).forEach(function(g){A[g]=Math.random()<0.15;});save();openAvatar();};
+    if(RNG()<0.4)A.hat="none";if(RNG()<0.5)A.extra="none";if(RNG()<0.85)A.extra2="none";if(RNG()<0.6)A.item="none";if(RNG()<0.6)A.eyewear="none";
+    if(RNG()<0.8)A.tattoo="none";if(RNG()<0.7)A.piercing="none";if(RNG()<0.55)A.pattern="solid";if(RNG()<0.7)A.browColor="match";if(RNG()<0.7)A.facialColor="match";
+    Object.keys(AVSLIDE).forEach(function(k){A[k]=RNG()<0.5?0:Math.round(RNG()*4-2);});Object.keys(AVTOG).forEach(function(g){A[g]=RNG()<0.15;});save();openAvatar();};
   $("scrim").hidden=false;$("avSheet").hidden=false;
 }
 function closeAvatar(){$("avSheet").hidden=true;if($("modal").hidden&&$("tools").hidden&&$("lookSheet").hidden&&$("playerSheet").hidden)$("scrim").hidden=true;if(!$("lobby").hidden)renderLobby();}
@@ -2447,19 +2451,19 @@ var CAST_CHAT={sterling:["Is anyone here actually solvent?","My assistant is wat
   dino:["Drinks are on the house. Which is me.","I built this room, you know."],ruthie:["You two would make a lovely couple.","I've seen worse bluffs at a wedding."],tex:["Back home we call that a little bet.","Y'all ever seen a real oil well?"],stranger:["This next hand goes out to the lovely dealer.","Hold for applause."],lorraine:["Pulling the lever!","Feels like a jackpot kind of night."]};
 Object.keys(THEMES).forEach(function(k){THEMES[k].cast.forEach(function(c){c.lines.chat=CAST_CHAT[c.id]||[];if(["delphine","millie","margo","juniper","gilda","ruthie","lorraine","mamalu","ada","contessa"].indexOf(c.id)>=0&&c.av)c.av.look="fem";});});
 function sayText(i,t,ms){if(!H||!T||!t)return;H.talk=H.talk||{};H.talk[i]={t:t,until:Date.now()+(H.skip?900:(ms||2800))};render();setTimeout(render,H.skip?950:(ms||2800)+100);}
-function chatLine(p,kind){if(p.human||p.hero)return "";if(p.cid){var c=castById(p.cid);if(kind==="idle"&&c&&c.lines.chat&&c.lines.chat.length)return pick(c.lines.chat);}var ap=p.arch&&ARCH_CHAT[p.arch];if(ap&&ap[kind]&&ap[kind].length&&(kind!=="idle"||Math.random()<0.75))return pick(ap[kind]);var pool=CHAT[p.skill]||CHAT.regular;return pool[kind]?pick(pool[kind]):"";}
-function chatterStart(){if(!H||H.skip||Math.random()>0.2)return;var bots=H.seats.filter(function(i){return i!==0;});if(!bots.length)return;var i=pick(bots);setTimeout(function(){if(H&&!H.done)sayText(i,chatLine(T.players[i],"idle"),3000);},900);}
+function chatLine(p,kind){if(p.human||p.hero)return "";if(p.cid){var c=castById(p.cid);if(kind==="idle"&&c&&c.lines.chat&&c.lines.chat.length)return pick(c.lines.chat);}var ap=p.arch&&ARCH_CHAT[p.arch];if(ap&&ap[kind]&&ap[kind].length&&(kind!=="idle"||RNG()<0.75))return pick(ap[kind]);var pool=CHAT[p.skill]||CHAT.regular;return pool[kind]?pick(pool[kind]):"";}
+function chatterStart(){if(!H||H.skip||RNG()>0.2)return;var bots=H.seats.filter(function(i){return i!==0;});if(!bots.length)return;var i=pick(bots);setTimeout(function(){if(H&&!H.done)sayText(i,chatLine(T.players[i],"idle"),3000);},900);}
 function chatterEnd(){
   if(!H||H.skip||H.chatted)return;var ws=Object.keys(H.winners||{}).map(Number);if(!ws.length)return;var w=ws[0];
   if(H.showdown){var losers=live().filter(function(i){return ws.indexOf(i)<0;});
-    if(w!==0&&!T.players[w].cid&&losers.indexOf(0)>=0&&Math.random()<0.3){H.chatted=true;sayText(w,chatLine(T.players[w],"needle"));return;}
-    var bl=losers.filter(function(i){return i!==0;});if(bl.length&&Math.random()<0.4){var l=pick(bl);H.chatted=true;setTimeout(function(){sayText(l,chatLine(T.players[l],"lose"));},w!==0&&T.players[w].cid?1400:0);return;}
-    if(w!==0&&!T.players[w].cid&&Math.random()<0.3){H.chatted=true;sayText(w,chatLine(T.players[w],"win"));}
-  }else if(w!==0&&Math.random()<0.12){H.chatted=true;sayText(w,chatLine(T.players[w],"win"));}
+    if(w!==0&&!T.players[w].cid&&losers.indexOf(0)>=0&&RNG()<0.3){H.chatted=true;sayText(w,chatLine(T.players[w],"needle"));return;}
+    var bl=losers.filter(function(i){return i!==0;});if(bl.length&&RNG()<0.4){var l=pick(bl);H.chatted=true;setTimeout(function(){sayText(l,chatLine(T.players[l],"lose"));},w!==0&&T.players[w].cid?1400:0);return;}
+    if(w!==0&&!T.players[w].cid&&RNG()<0.3){H.chatted=true;sayText(w,chatLine(T.players[w],"win"));}
+  }else if(w!==0&&RNG()<0.12){H.chatted=true;sayText(w,chatLine(T.players[w],"win"));}
 }
 /* confetti and trophies */
 function confetti(n){if(S.settings.fx===false)return;var L=document.createElement("div");L.className="confetti";document.body.appendChild(L);var cols=["#ffd54a","#e8b923","#c8102e","#2e8b57","#4c8df0","#ffffff","#f0644e"];
-  for(var i=0;i<(n||90);i++){var d=document.createElement("i");d.style.left=(Math.random()*100)+"%";d.style.background=pick(cols);d.style.animationDelay=(Math.random()*0.6)+"s";d.style.animationDuration=(2+Math.random()*1.6)+"s";d.style.transform="rotate("+rnd(360)+"deg)";L.appendChild(d);}
+  for(var i=0;i<(n||90);i++){var d=document.createElement("i");d.style.left=(RNG()*100)+"%";d.style.background=pick(cols);d.style.animationDelay=(RNG()*0.6)+"s";d.style.animationDuration=(2+RNG()*1.6)+"s";d.style.transform="rotate("+rnd(360)+"deg)";L.appendChild(d);}
   setTimeout(function(){L.remove();},4500);}
 function trophySVG(){return "<svg viewBox='0 0 120 120' width='120' height='120' aria-hidden='true'><defs><linearGradient id='tg' x1='0' x2='1'><stop offset='0' stop-color='#b8862b'/><stop offset='.45' stop-color='#ffe08a'/><stop offset='1' stop-color='#b8862b'/></linearGradient></defs><path d='M34 14h52v18c0 20-11 34-26 36-15-2-26-16-26-36z' fill='url(#tg)'/><path d='M34 22H18c0 16 8 26 20 28M86 22h16c0 16-8 26-20 28' fill='none' stroke='url(#tg)' stroke-width='6'/><rect x='52' y='66' width='16' height='18' fill='url(#tg)'/><rect x='36' y='84' width='48' height='10' rx='3' fill='url(#tg)'/><rect x='30' y='94' width='60' height='12' rx='3' fill='#5a3a1a'/><path d='M60 26l4 8 9 1-7 6 2 9-8-5-8 5 2-9-7-6 9-1z' fill='#fff8d8' opacity='.85'/></svg>";}
 /* seasons */
@@ -2468,7 +2472,7 @@ function seasonKey(){if(S.settings.season===false)return "";var d=new Date(),m=d
 var SEASON_FX={halloween:["\ud83e\udd87","\ud83c\udf83","\ud83d\udc7b","\ud83e\udd87"],holiday:["\u2744\ufe0f","\u2744\ufe0f","\ud83c\udf84","\u2728"],newyear:["\ud83c\udf89","\u2728","\ud83e\udd42","\ud83c\udf8a"],valentine:["\u2764\ufe0f","\ud83d\udc95","\ud83c\udf39"],stpat:["\ud83c\udf40","\ud83c\udf40","\u2618\ufe0f"],july4:["\ud83c\udf86","\u2728","\u2b50"]};
 var SEASON_NAME={halloween:"Happy Halloween",holiday:"Happy holidays",newyear:"Happy New Year",valentine:"Happy Valentine's Day",stpat:"Happy St. Patrick's Day",july4:"Happy Fourth of July"};
 function applySeason(){var k=seasonKey(),L=$("season");if(!L)return;L.innerHTML="";if(!k)return;var set=SEASON_FX[k];
-  for(var i=0;i<12;i++){var e=document.createElement("span");e.textContent=set[i%set.length];e.style.left=(Math.random()*96)+"%";e.style.animationDelay=(-Math.random()*20)+"s";e.style.animationDuration=(14+Math.random()*12)+"s";e.style.fontSize=(14+Math.random()*14)+"px";L.appendChild(e);}}
+  for(var i=0;i<12;i++){var e=document.createElement("span");e.textContent=set[i%set.length];e.style.left=(RNG()*96)+"%";e.style.animationDelay=(-RNG()*20)+"s";e.style.animationDuration=(14+RNG()*12)+"s";e.style.fontSize=(14+RNG()*14)+"px";L.appendChild(e);}}
 function seasonalEvent(){var d=new Date(),m=d.getMonth()+1;
   var base={id:"special",tier:0,venue:"Special event",field:6,stages:[0],castMix:true,req:3,xp:120,skill:["regular","tough"]};
   var E=m===10?{n:"Haunted Hold'em",venue:"An abandoned riverboat casino",buy:250,pay:[1000,500],look:{table:"royal",atm:"storm"}}:
@@ -2527,30 +2531,92 @@ function actLike(p,e,c,brd,isPreAgg){
     var adj=str-pr.disc*bf*esc-(e.raises>=2?0.05*(e.raises-1):0)+pr.slack+E.sticky,de=outs?(e.st===1?Math.min(outs*4,60):outs*2)/100:0;adj=Math.max(adj,de);
     return Math.max(0.02,sig(adj-need)*(1-sig(str-rth)*0.75*(1-E.trap*0.7)));}
   return 1;}
-function actionRange(i){
-  H._ar=H._ar||{};var key=i+"|"+H.board.length+"|"+(H.hist||[]).length;if(H._ar[key])return H._ar[key];
-  var dead={};H.s[0].cards.concat(H.board).forEach(function(c){dead[c]=1;});
-  var p=T.players[i],list=[],ws=[];
-  var pw=null;try{pw=pfWeights(i);}catch(e){pw=null;}
-  if(pw)Object.keys(pw).forEach(function(cd){var w0=pw[cd];if(w0<0.002)return;combosOfCode(cd).forEach(function(x){if(!dead[x[0]]&&!dead[x[1]]){list.push(x);ws.push(w0);}});});
+/* ===== bet sizing as evidence: how likely is this size from a hand of this strength? =====
+   Mirrors liveBet: an "honest" bettor sizes by hand strength, the rest sizes by habit. Buckets: <40%, 40-60%, 60-85%, 85%+ of pot. */
+function sizeBucket(f){return f<0.40?0:f<0.60?1:f<0.85?2:3;}
+function sizeAddUniform(out,lo,hi,wt){var edges=[0,0.40,0.60,0.85,99];for(var q=0;q<4;q++){var l=Math.max(lo,edges[q]),h=Math.min(hi,edges[q+1]);if(h>l)out[q]+=wt*(h-l)/(hi-lo);}}
+function sizeProbs(P,S,kind){var m=(P.k==="maniac"||P.tilted)?1.25:1,out=[0,0,0,0],lo,hi,a,b;
+  if(S>=6){lo=0.75;hi=1.10;}else if(S>=4){lo=0.5;hi=0.7;}else if(kind==="cbet"||kind==="bluff"){lo=0.4;hi=0.6;}else{lo=0.28;hi=0.40;}
+  sizeAddUniform(out,lo*m,hi*m,P.honest);
+  var big=S>=6||kind==="bluff",z=P.sizing||"std";
+  if(z==="small"){a=0.33;b=0.50;}else if(z==="big"){a=0.8;b=1.2;}else if(z==="polar"){if(big){a=0.9;b=1.3;}else{a=0.3;b=0.4;}}else{a=0.5;b=0.75;}
+  sizeAddUniform(out,a*m,b*m,1-P.honest);return out;}
+function liveLikeHi(P,e,hi,isPreAgg,memAdj,x){x=x||{};var c={toCall:e.toCall,canRaise:true,pot:e.pot,nOpp:e.nOpp,st:e.st,isPreAgg:isPreAgg,facingRaise:e.raises>=2,raises:e.raises,memAdj:memAdj||0,recBet:!!x.recBet,recBetBig:!!x.recBetBig},n=0,sized=e.a==="bet"&&e.f!=null,bk=sized?sizeBucket(e.f):0;
+  for(var k=0;k<QR.length;k++){var q=QR[k],j=0,d=liveDecide(P,hi,c,function(){return q[j++];});if(d[0]===e.a)n+=sized?sizeProbs(P,d[2],d[1])[bk]:1;}return Math.max(0.004,n/QR.length);}
+/* ===== range model: posterior(h) is proportional to prior(h) * product of P(action | h, context) over the player's actions =====
+   prior: weights from the pre-flop model (already conditioned on pre-flop actions), dead cards removed.
+   likelihood: kept as a log, one term per post-flop action, so it cannot underflow and nothing is pruned.
+   If the posterior collapses to zero (or is not finite), the prior is returned and `collapsed` is set. */
+function priorRange(i){var dead={};H.s[0].cards.concat(H.board).forEach(function(c){dead[c]=1;});var list=[],ws=[],pw=null;
+  try{pw=pfWeights(i);}catch(e){pw=null;}
+  if(pw)Object.keys(pw).forEach(function(cd){var w0=pw[cd];if(!(w0>=0.002))return;combosOfCode(cd).forEach(function(x){if(!dead[x[0]]&&!dead[x[1]]){list.push(x);ws.push(w0);}});});
   else preRangeCodes(i).forEach(function(cd){combosOfCode(cd).forEach(function(x){if(!dead[x[0]]&&!dead[x[1]]){list.push(x);ws.push(1);}});});
-  var hist=(H.hist||[]).filter(function(e){return e.i===i&&e.st>0&&e.a!=="fold";});
-  var LV=useLive(p),PP=LV?liveProfAt(i):null,mem=LV?liveMem(i):0;
-  hist.forEach(function(e){var brd=H.board.slice(0,e.st===1?3:e.st===2?4:5),loc={};for(var k=0;k<list.length;k++){if(ws[k]<=0.0005)continue;
-    if(LV){var hi=hcCached(list[k],brd),ck=hi.S*1000+hi.outs,pr=loc[ck];if(pr===undefined)pr=loc[ck]=liveLikeHi(PP,e,hi,H.preAgg===i,0);ws[k]*=pr;}
-    else ws[k]*=actLike(p,e,list[k],brd,H.preAgg===i);}});
-  var tot=0;ws.forEach(function(w){tot+=w;});if(tot<=0){ws=ws.map(function(){return 1;});tot=ws.length;}
-  return (H._ar[key]={i:i,combos:list,w:ws,tot:tot,hist:hist});}
+  return {combos:list,w:ws};}
+function rangeLogLik(i,combos){var p=T.players[i],hist=(H.hist||[]).filter(function(e){return e.i===i&&e.st>0&&e.a!=="fold";}),LV=useLive(p),PP=LV?liveProfAt(i):null,mem=LV?liveMem(i):0,ll=new Float64Array(combos.length);
+  hist.forEach(function(e){var brd=H.board.slice(0,e.st===1?3:e.st===2?4:5),loc={},ma=(e.la===0)?mem:0,ex=null;
+    if(LV&&PP.k==="shark"&&e.la>0&&e.la!==i&&T.players[e.la]&&REC_KEYS.indexOf(liveKey(T.players[e.la]))>=0)ex={recBet:true,recBetBig:(e.lf||0)>=0.72};
+    for(var k=0;k<combos.length;k++){var pr;
+      if(LV){var hi=hcCached(combos[k],brd),ck=hi.S*1000+hi.outs;pr=loc[ck];if(pr===undefined)pr=loc[ck]=liveLikeHi(PP,e,hi,H.preAgg===i,ma,ex);}
+      else pr=actLike(p,e,combos[k],brd,H.preAgg===i);
+      ll[k]+=Math.log(pr>0?pr:0.004);}});
+  return {ll:ll,hist:hist};}
+function rangePosterior(i){
+  H._ar=H._ar||{};var key=i+"|"+H.board.length+"|"+(H.hist||[]).length;if(H._ar[key])return H._ar[key];
+  var pri=priorRange(i),L=rangeLogLik(i,pri.combos),ll=L.ll,mx=-Infinity,k;
+  for(k=0;k<ll.length;k++)if(pri.w[k]>0&&ll[k]>mx)mx=ll[k];
+  var post=new Array(pri.w.length),tot=0;for(k=0;k<post.length;k++){post[k]=pri.w[k]*Math.exp(ll[k]-(mx===-Infinity?0:mx));tot+=post[k];}
+  var collapsed=false;if(!(tot>0)||!isFinite(tot)){collapsed=true;post=pri.w.slice();tot=0;post.forEach(function(w){tot+=w;});}
+  if(!(tot>0)){post=pri.w.map(function(){return 1;});tot=post.length;}
+  return (H._ar[key]={i:i,combos:pri.combos,w:post,tot:tot,hist:L.hist,prior:pri.w,ll:ll,collapsed:collapsed});}
+function actionRange(i){return rangePosterior(i);}
+/* ===== equity, defined once =====
+   equity = (wins + 0.5 * ties) / valid trials, counting the hero's share of a split pot.
+   Hand-strength percentile (comboPct) is a different quantity: where a hand ranks among all hands on a board.
+   Realization (what share of that equity a hand actually collects after betting) is NOT inferred here; see EV_REAL. */
+var EQ_TRACE=null; /* tests set this to an array to record every sampled opponent tuple */
 function eqVsRangesD(hole,board,R,iters){
-  var cum=R.map(function(r){var c=[],s=0;r.w.forEach(function(w){s+=w;c.push(s);});return c;}),used=new Uint8Array(52),w=0,t=0,l=0,n=0,c;
-  for(var it=0;it<iters;it++){used.fill(0);hole.concat(board).forEach(function(x){used[x]=1;});var hands=[],ok=true;
-    for(var r=0;r<R.length;r++){var tries=0,h;do{var x=Math.random()*R[r].tot,lo=0,hi=cum[r].length-1;while(lo<hi){var m=(lo+hi)>>1;if(cum[r][m]<x)lo=m+1;else hi=m;}h=R[r].combos[lo];tries++;}while((used[h[0]]||used[h[1]])&&tries<15);
-      if(used[h[0]]||used[h[1]]){ok=false;break;}used[h[0]]=used[h[1]]=1;hands.push(h);}
-    if(!ok)continue;
+  /* Joint opponent hands are drawn from P(h1..hk) proportional to the product of each range's weights,
+     over card-disjoint tuples. Method: sequential importance sampling. Each opponent's hand is drawn from
+     its range restricted to cards still available (so no sample is ever rejected), and the trial is weighted by
+     the product of the available range mass A_i, which corrects the joint to the true conditional.
+     A_i comes from inclusion-exclusion over the used cards: mass(combos hitting a used card) =
+     sum of per-card mass minus the weight of combos containing two used cards (a combo has only two cards). */
+  var dead=new Uint8Array(52),k,i,c;hole.concat(board).forEach(function(x){dead[x]=1;});
+  var L=R.map(function(r){var c1=[],c2=[],w=[],cm=new Float64Array(52),pw=new Float64Array(52*52),tot=0;
+    for(var q=0;q<r.combos.length;q++){var cb=r.combos[q],ww=r.w[q];if(!(ww>0)||dead[cb[0]]||dead[cb[1]])continue;c1.push(cb[0]);c2.push(cb[1]);w.push(ww);cm[cb[0]]+=ww;cm[cb[1]]+=ww;
+      var a=cb[0]<cb[1]?cb[0]:cb[1],b=cb[0]<cb[1]?cb[1]:cb[0];pw[a*52+b]+=ww;tot+=ww;}
+    var cum=new Float64Array(w.length),s=0;for(q=0;q<w.length;q++){s+=w[q];cum[q]=s;}
+    return {c1:c1,c2:c2,w:w,cm:cm,pw:pw,tot:tot,cum:cum,n:w.length};});
+  var used=new Uint8Array(52),ul=[],sw=0,swo=0,sw2=0,swo2=0,swoo=0,nv=0,wc=0,tc=0,lc=0,impossible=0,cnt=iters;
+  var heroV=null;
+  for(var it=0;it<iters;it++){
+    used.set(dead);ul.length=0;for(c=0;c<52;c++)if(dead[c])ul.push(c);
+    var W=1,ok=true,hands=[];
+    for(i=0;i<L.length&&ok;i++){var r=L[i];if(r.n===0){ok=false;break;}
+      var A=r.tot,cm=r.cm,pw=r.pw,u,v;
+      for(u=0;u<ul.length;u++)A-=cm[ul[u]];
+      for(u=0;u<ul.length;u++)for(v=u+1;v<ul.length;v++){var a=ul[u]<ul[v]?ul[u]:ul[v],b=ul[u]<ul[v]?ul[v]:ul[u];A+=pw[a*52+b];}
+      /* the used cards of one dead pair can both lie in this opponent's combos, which inclusion-exclusion already added back */
+      if(!(A>1e-12)){ok=false;break;}
+      var pick=-1,tries=0;
+      while(tries<80){var x=RNG()*r.tot,lo=0,hi=r.n-1;while(lo<hi){var m=(lo+hi)>>1;if(r.cum[m]<x)lo=m+1;else hi=m;}
+        if(!used[r.c1[lo]]&&!used[r.c2[lo]]){pick=lo;break;}tries++;}
+      if(pick<0){var t=RNG()*A,acc=0;for(var q=0;q<r.n;q++){if(used[r.c1[q]]||used[r.c2[q]])continue;acc+=r.w[q];if(acc>=t){pick=q;break;}}
+        if(pick<0){for(q=r.n-1;q>=0;q--)if(!used[r.c1[q]]&&!used[r.c2[q]]){pick=q;break;}}}
+      if(pick<0){ok=false;break;}
+      W*=A;used[r.c1[pick]]=used[r.c2[pick]]=1;ul.push(r.c1[pick],r.c2[pick]);hands.push([r.c1[pick],r.c2[pick]]);}
+    if(!ok){impossible++;continue;}
     var bd=board.slice();while(bd.length<5){do{c=rnd(52);}while(used[c]);used[c]=1;bd.push(c);}
-    var me=evaluate(hole.concat(bd)),best=0;hands.forEach(function(h){var v=evaluate(h.concat(bd));if(v>best)best=v;});
-    if(me>best)w++;else if(me===best)t++;else l++;n++;}
-  return {eq:n?(w+t/2)/n:0,w:w,t:t,l:l,n:n};}
+    var me=evaluate(hole.concat(bd)),best=0,tied=0;for(k=0;k<hands.length;k++){var vv=evaluate(hands[k].concat(bd));if(vv>best){best=vv;tied=1;}else if(vv===best)tied++;}
+    if(EQ_TRACE)EQ_TRACE.push({hands:hands,board:bd});
+    /* hero's share of the pot: 1 if best, 1/(1+n) if tied with n opponents, else 0 (a three-way tie is a third, not a half) */
+    var o=me>best?1:me===best?1/(1+tied):0;if(o===1)wc++;else if(o>0)tc++;else lc++;
+    nv++;sw+=W;swo+=W*o;sw2+=W*W;swoo+=W*W*o*o;swo2+=W*W*o;}
+  if(!nv||!(sw>0))return {eq:0,w:0,t:0,l:0,n:0,se:0,ess:0,impossible:impossible,method:"sequential importance sampling"};
+  var eq=swo/sw,
+      /* ratio-estimator standard error: sqrt(sum W^2 (o - eq)^2) / sum W */
+      se=Math.sqrt(Math.max(0,swoo-2*eq*swo2+eq*eq*sw2))/sw;
+  return {eq:eq,w:wc,t:tc,l:lc,n:nv,se:se,ess:sw*sw/sw2,impossible:impossible,method:"sequential importance sampling"};}
 function boardCat(board){var cnt={};board.forEach(function(c){var r=c>>2;cnt[r]=(cnt[r]||0)+1;});var v=Object.keys(cnt).map(function(k){return cnt[k];}).sort(function(a,b){return b-a;});return v[0]>=3?3:v[0]===2&&v[1]===2?2:v[0]===2?1:0;}
 function relCat(ct,bc){if(ct>=4)return 2;var d=ct-bc;return d>=2?2:d===1?1:0;}
 function rangeMix(r){
@@ -2723,7 +2789,7 @@ function drillPre(p,role,vpos){var Lz=p.st.loose,codes=Object.keys(EQ);
 function mkSpot(kind,opt){opt=opt||{};
   for(var tries=0;tries<150;tries++){
     var ak=pick(["station","limper","nit","tag","maniac","lag","whale"]),A=ARCH[ak],p={name:"Villain",skill:A.skill,st:A.st,arch:ak};
-    var role=Math.random()<0.55?"opener":"caller",vpos=pick(["UTG","HJ","CO","BTN"]),hpos=role==="opener"?"BB":pick(["CO","BTN"]);
+    var role=RNG()<0.55?"opener":"caller",vpos=pick(["UTG","HJ","CO","BTN"]),hpos=role==="opener"?"BB":pick(["CO","BTN"]);
     if(role==="caller"){vpos="BB";}
     var heroOOP=role==="opener";
     var deck=shuffle(Array.from({length:52},function(_,i){return i;})),hero=null;
@@ -2736,7 +2802,7 @@ function mkSpot(kind,opt){opt=opt||{};
     var final=null;
     for(var s=1;s<=t;s++){
       var brd=board.slice(0,s===1?3:s===2?4:5),bt=Math.round(pot*pick([0.33,0.5,0.5,0.66,0.75])),last=s===t,pat;
-      if(!last)pat=pick(["xx","vb","vb","hb"]);else pat=opt.river?"vb":kind==="call"?(Math.random()<0.25?"hbr":"vb"):(Math.random()<0.3?"hbr":"vb");
+      if(!last)pat=pick(["xx","vb","vb","hb"]);else pat=opt.river?"vb":kind==="call"?(RNG()<0.25?"hbr":"vb"):(RNG()<0.3?"hbr":"vb");
       if(last&&pat==="vb")bt=Math.round(pot*pick([0.33,0.5,0.66,0.75,1,1.25]));
       var txt=st[s]+" "+brd.slice(s===1?0:brd.length-1).map(cardTxtC).join(" ")+" (pot $"+pot+"): ";
       if(pat==="xx"){hist.push({a:"check",st:s,toCall:0,pot:pot,nOpp:1,raises:0});txt+="Both check.";}
@@ -2882,13 +2948,13 @@ function wireCourse(){var B=$("l-body");if(!B)return;B.querySelectorAll("[data-c
 /* unit 1 drill: open or fold, nine-handed */
 var OPEN9_POS=["UTG","UTG1","UTG2","MP","HJ","CO","BTN","SB"];
 function drillHand(pred){var deck=shuffle(Array.from({length:52},function(_,i){return i;})),h;for(var t=0;t<40;t++){h=[deck[2*t],deck[2*t+1]];if(!pred||pred(codeOf(h)))break;}return h;}
-function open9Drill(){var pos=pick(OPEN9_POS),edge=Math.random()<0.6,h=drillHand(function(c){var e=EQ[c];return !edge||(e>=52&&e<=64);}),code=codeOf(h),ok9=!!SETS9[pos][code],ans=ok9?"Raise":"Fold";
+function open9Drill(){var pos=pick(OPEN9_POS),edge=RNG()<0.6,h=drillHand(function(c){var e=EQ[c];return !edge||(e>=52&&e<=64);}),code=codeOf(h),ok9=!!SETS9[pos][code],ans=ok9?"Raise":"Fold";
   drillOpen("<h2>Open or fold?</h2><div class='muted' style='font-size:.85rem'>Casino $1/$2, nine-handed. Folded to you in <b>"+pos+"</b>. "+(8-OPEN9_POS.indexOf(pos))+" players act after you.</div><div style='margin:8px 0'>"+cardsRow(h,"lg")+"</div><div id='dq'><div class='dq'>What do you do?</div>"+["Fold","Raise"].map(function(o){return "<button class='btn ghost dopt' data-o='"+o+"'>"+o+"</button>";}).join("")+"</div>",function(el){
     el.querySelectorAll("[data-o]").forEach(function(b){b.onclick=function(){var ok=b.dataset.o===ans;dstat("open9",ok);cpush("u1","d",ok);
       el.querySelector("#dq").innerHTML="<div class='dres "+(ok?"ok":"no")+"'>"+(ok?"Right.":"Best play: "+ans+".")+"</div><p style='font-size:.92rem'>"+(ok9?code+" is in the "+pos+" chart. Raise to $8 at $1/$2.":code+" isn't in the "+pos+" chart.")+" From "+pos+" you open about "+LIVE9_PCT[pos]+"% of hands: "+LIVE9[pos].split(",").join(", ")+".</p><div class='row'><button class='btn primary' id='dn'>Next hand</button><button class='btn ghost' id='dx'>Done</button></div>";
       el.querySelector("#dn").onclick=open9Drill;el.querySelector("#dx").onclick=drillClose;};});});}
 /* unit 3 drill: reraise for value against the right players */
-function value3Drill(){var lo=Math.random()<0.55,k=lo?pick(["station","limper","whale","maniac"]):pick(["nit","weekend","tag"]),who=ARCH[k].n,opos=pick(["UTG","MP","HJ","CO"]),hpos=pick(opos==="CO"?["BTN","SB","BB"]:["CO","BTN","BB"]);
+function value3Drill(){var lo=RNG()<0.55,k=lo?pick(["station","limper","whale","maniac"]):pick(["nit","weekend","tag"]),who=ARCH[k].n,opos=pick(["UTG","MP","HJ","CO"]),hpos=pick(opos==="CO"?["BTN","SB","BB"]:["CO","BTN","BB"]);
   var raise=pick([10,12,15]),stack=pick([200,300,400]),deep=Math.round(stack/raise);
   var h=drillHand(function(c){return EQ[c]>=50;}),code=codeOf(h),ans=live3Decide(code,lo,hpos,deep);
   drillOpen("<h2>Reraise, call, or fold?</h2><div class='muted' style='font-size:.85rem'>Casino $1/$2. A <b>"+who.toLowerCase()+"</b> in "+opos+" raises to $"+raise+". Everyone folds to you in <b>"+hpos+"</b>. You both have about $"+stack+".</div><div class='muted' style='font-size:.8rem;margin-top:4px'>"+ARCH[k].tip+"</div><div style='margin:8px 0'>"+cardsRow(h,"lg")+"</div><div id='dq'><div class='dq'>What do you do?</div>"+["Fold","Call","Reraise"].map(function(o){return "<button class='btn ghost dopt' data-o='"+o+"'>"+o+"</button>";}).join("")+"</div>",function(el){
@@ -2928,7 +2994,7 @@ function foldDrill(){var k=pick(["station","limper","nit","weekend","tag","whale
 function sizeDrill(){var k=pick(["station","station","whale","limper","nit","weekend","tag"]),who=ARCH[k].n.toLowerCase(),sp=riverSpot(4.5,8),ans=sizeDecide(sp.hi.S,k),pot=pick([40,60,90]);
   courseDrill("How much?","Casino $1/$2. A <b>"+who+"</b> checks to you on the river. The pot is $"+pot+". You're betting for value.",ARCH[k].tip,sp.h,sp.b,["One third","Two thirds","Pot"],ans,function(){return sizeWhy(ans,sp.hi.c,k,who);},"size","u7",sizeDrill);}
 /* unit 8 drill: deep stacks and implied odds */
-function deepDrill(){var lo=Math.random()<0.6,k=lo?pick(["station","limper","whale"]):pick(["nit","weekend","tag"]),who=ARCH[k].n.toLowerCase(),hpos=pick(["CO","BTN","BB","HJ","MP"]),raise=pick([10,12,15]),stack=pick([60,100,150,200,300,400]),deep=Math.round(stack/raise);
+function deepDrill(){var lo=RNG()<0.6,k=lo?pick(["station","limper","whale"]):pick(["nit","weekend","tag"]),who=ARCH[k].n.toLowerCase(),hpos=pick(["CO","BTN","BB","HJ","MP"]),raise=pick([10,12,15]),stack=pick([60,100,150,200,300,400]),deep=Math.round(stack/raise);
   var h=drillHand(function(c){return speculative(c);}),code=codeOf(h),ans=live3Decide(code,lo,hpos,deep);
   courseDrill("Deep enough to call?","Casino $1/$2. A <b>"+who+"</b> raises to $"+raise+". You're in <b>"+hpos+"</b>. You both have $"+stack+", about "+deep+" times the raise.",ARCH[k].tip,h,null,["Fold","Call","Reraise"],ans,function(){return live3Why(ans,code,lo,who,deep)+(ans==="Fold"&&deep<(code.length===2?15:20)?" At only "+deep+" times the raise, you can't win enough when you hit to pay for all the misses.":"");},"deep","u8",deepDrill);}
 function courseDrill(title,setup,tip,h,board,opts,ans,why,key,unit,next){
@@ -2958,9 +3024,9 @@ function dwSuggest(A,L,pot){var bb=DW.bb;if(A.a!=="raise")return 0;
   return Math.round(pot*(A.bluff?0.5:rec?0.67:0.5));}
 function dwSizeTxt(A,L,pot){var to=dwSuggest(A,L,pot);if(!to)return "";to=Math.max(L.minTo,Math.min(L.maxTo,Math.round(to)));return (DWH.cur>0?" to ":" ")+money(to)+(to>=L.maxTo?" (all in)":"");}
 /* bots after the draw, by player type */
-function dwBetSized(i,P,e2,pot,kind){var f=Math.random()<P.honest?(e2>=0.8?0.75+Math.random()*0.25:kind==="bluff"?0.45+Math.random()*0.2:0.38+Math.random()*0.17):0.55+Math.random()*0.2;
+function dwBetSized(i,P,e2,pot,kind){var f=RNG()<P.honest?(e2>=0.8?0.75+RNG()*0.25:kind==="bluff"?0.45+RNG()*0.2:0.38+RNG()*0.17):0.55+RNG()*0.2;
   if(P.k==="maniac"||P.tilted)f*=1.2;DWH.bsize=DWH.bsize||{};DWH.bsize[i]={f:f,st:DWH.street,k:P.k,honest:P.honest};return dwRaise(i,Math.max(DW.bb,Math.round(pot*f)));}
-function dwBotPost(i){var p=DW.players[i],s=DWH.s[i],P=liveProf(p),L=dwLegal(i),pot=dwPot(),r=Math.random();
+function dwBotPost(i){var p=DW.players[i],s=DWH.s[i],P=liveProf(p),L=dwLegal(i),pot=dwPot(),r=RNG();
   var mine=dwStrength(s.cards),threat=0;dwLive().forEach(function(j){if(j===i)return;var d=DWH.s[j].drew;threat=Math.max(threat,d===0?0.18:d===1?0.06:d===2?0.1:-0.04);});
   var e2=mine-threat*0.6,opp=dwLive().filter(function(j){return j!==i;}),nOpp=opp.length,oppWeak=opp.every(function(j){return DWH.s[j].drew>=2;}),rec=REC_KEYS.indexOf(P.k)>=0;
   if(s.snow)e2=Math.max(e2,0.78);
@@ -3064,7 +3130,7 @@ function opNotes(p){var o=opinion(p),k=(p.arch||liveKey(p)),pick2=function(set){
 function opAdj(i){var p=T.players[i];if(!p||!S.opinion)return 0;var o=S.opinion[opKey(p)];if(!o||o.h<15)return 0;var a=0;if(o.bluff>=2)a-=0.3;if(o.paid>=4&&o.bluff===0)a+=0.25;return a;}
 /* ===== run it twice ===== */
 function ritPref(){return S.settings.rit||"ask";}
-function ritWilling(p,asking){var k=p.arch||liveKey(p);var base={station:0.8,limper:0.75,whale:0.85,maniac:0.6,nit:0.9,weekend:0.7,tag:0.6,lag:0.5,shark:0.4}[k];if(base===undefined)base=0.6;return Math.random()<(asking?base*0.6:base);}
+function ritWilling(p,asking){var k=p.arch||liveKey(p);var base={station:0.8,limper:0.75,whale:0.85,maniac:0.6,nit:0.9,weekend:0.7,tag:0.6,lag:0.5,shark:0.4}[k];if(base===undefined)base=0.6;return RNG()<(asking?base*0.6:base);}
 function ritNegotiate(done){var opp=live().filter(function(j){return j!==0;});if(!opp.length||ritPref()==="never")return done(false);
   var asker=opp.find(function(j){return ritWilling(T.players[j],true);});
   var settle=function(heroWants){if(!heroWants)return done(false);var ok=opp.every(function(j){return j===asker||ritWilling(T.players[j],false);});
@@ -3102,7 +3168,7 @@ function switchToHoldem(){if(!DW)return;var L=linkCfg(),from=L.holdemStake||"lin
   var ps=DW.players.filter(function(p){return !p.empty;}).concat(linkCfg().extra||[]);
   var t=makeCash(STK(from));t.players=ps;t.sb=DW.sb;t.bb=DW.bb;t.button=0;S.cash=t;S.draw=null;
   DW=null;DWH=null;$("draw").hidden=true;save();T=S.cash;toast("Switched to Hold'em. Same players, same stacks.");enterTable();}
-var PFM={"1":{"maniac":{"o":{"EP":[[-0.555,5.254,0.45,0.352,-0.033],[-0.546,7.42,0.099,0.102,-0.068]],"*":[[-0.362,4.599,1.559,0.769,-0.015],[-0.454,7.589,1.324,0.568,0.039]],"MP":[[-0.5,4.212,1.124,0.267,0.426],[3.106,0,0,0,0]],"SB":[[0.547,0,0,0,0],[2.944,0,0,0,0]],"BB":[[1.946,0,0,0,0],[0.571,0,0,0,0]],"LP":[[0.298,0,0,0,0],[3.434,0,0,0,0]]},"3b":{"EP":[[-3.055,1.365,1.193,-1.911,0.715],[-0.588,0,0,0,0]],"*":[[-3.598,1.951,0.754,-1.006,0.309],[1.18,-0.953,-0.892,0.976,-0.195]],"SB":[[-2.345,0,0,0,0],[-1.946,0,0,0,0]],"MP":[[-3.697,1.98,0.966,-0.134,-0.059],[-0.601,0,0,0,0]],"BB":[[-2.228,0,0,0,0],[-1.946,0,0,0,0]],"LP":[[-2.857,1.538,0.686,0.867,-0.263],[0.0,0,0,0,0]]},"r":{"BB":[[4.466,3.227,0.0,0.005,-0.551],[-5.47,2.734,0.0,-0.393,1.31]],"*":[[3.388,4.239,-0.496,0.381,-0.587],[-6.918,3.934,-0.002,-1.718,0.848]],"LP":[[3.29,5.193,-0.125,0.197,-1.06],[-5.389,3.512,-0.698,-1.314,-0.158]],"SB":[[2.996,4.983,-0.024,0.006,-0.01],[-4.794,2.282,-0.043,-0.467,0.733]],"EP":[[2.376,4.301,0.037,0.226,0.773],[-4.155,1.846,1.235,-0.937,-0.712]],"MP":[[3.008,4.096,0.321,0.052,-0.115],[-4.451,0.898,1.368,-0.643,0.932]]},"l":{"SB":[[2.607,6.678,-0.149,0.299,-0.292],[2.066,3.248,0.941,0.277,0.573]],"*":[[1.392,4.035,0.851,-0.246,-0.173],[2.085,5.365,1.259,-0.144,-0.232]],"LP":[[2.297,6.161,0.479,0.235,0.319],[3.864,1.643,1.187,0.063,-0.052]],"MP":[[1.187,7.551,-0.056,-1.195,-0.173],[2.035,5.144,-0.4,0.747,-0.389]],"EP":[[0.899,5.119,0.251,1.279,0.008],[1.397,6.168,0.094,0.97,0.041]],"BB":[[3.501,1.031,0.0,0.222,-0.437],[0.35,5.955,0.0,-0.903,-0.751]]}},"nit":{"r":{"EP":[[-6.714,6.715,1.038,0.72,-0.405],[-5.319,2.04,1.394,-2.452,-1.016]],"*":[[-4.991,5.915,-1.005,0.575,0.189],[-8.575,4.834,0.356,-5.694,-0.739]],"SB":[[-6.478,5.173,1.132,-0.312,0.286],[-2.601,1.873,-2.601,-1.583,0.735]],"LP":[[-7.715,7.507,0.11,0.511,-0.161],[-3.606,3.35,-2.418,-3.248,-1.419]],"MP":[[-6.487,5.699,0.946,-0.273,0.096],[-4.984,2.592,-0.104,-2.457,0.063]],"BB":[[-1.93,7.132,0.0,-0.371,-0.525],[-5.918,2.683,0.0,-1.979,-0.35]]},"o":{"EP":[[-3.84,3.392,0.363,0.361,-0.181],[-4.933,1.374,3.082,0.397,-0.211]],"*":[[-3.619,3.021,0.927,0.15,-0.187],[-4.325,0.628,3.745,0.957,-0.134]],"LP":[[-3.482,2.1,2.588,-0.426,-1.432],[1.488,0,0,0,0]],"MP":[[-3.873,2.529,1.499,-1.494,0.67],[-0.056,0,0,0,0]],"SB":[[-1.022,0,0,0,0],[0.847,0,0,0,0]],"BB":[[1.609,0,0,0,0],[-1.609,0,0,0,0]]},"l":{"BB":[[2.249,-0.531,0.0,1.41,-0.305],[-4.456,1.217,0.0,1.002,-0.862]],"*":[[-1.606,1.357,0.016,0.085,-0.063],[-7.293,3.086,-0.66,1.209,-1.154]],"LP":[[-3.268,3.054,0.105,-0.414,-0.269],[-3.943,2.043,-1.82,2.062,-0.759]],"MP":[[-3.259,2.435,0.409,-0.509,-0.349],[-4.78,2.398,-1.695,1.504,-0.745]],"EP":[[-2.985,2.509,-0.25,-0.009,0.232],[-4.107,1.732,-1.02,1.08,-0.855]],"SB":[[-3.14,3.568,-0.078,-0.675,0.046],[-1.846,0,0,0,0]]},"3b":{"MP":[[-4.206,1.922,-0.513,0.076,0.233],[-1.609,0,0,0,0]],"*":[[-6.08,3.719,-0.085,-2.799,-0.785],[-3.455,1.208,-1.193,-0.417,-0.764]],"SB":[[-3.337,1.694,-0.695,1.145,-0.75],[-1.946,0,0,0,0]],"EP":[[-3.526,2.187,0.314,-2.079,-1.833],[-1.099,0,0,0,0]],"BB":[[-4.089,2.048,0.0,-0.87,0.559],[-1.099,0,0,0,0]],"LP":[[-3.406,2.399,-0.916,-1.113,-0.389],[-3.135,0,0,0,0]]}},"weekend":{"r":{"EP":[[-3.294,7.08,-0.562,1.219,0.085],[-5.528,1.813,1.074,-0.354,-1.346]],"*":[[-2.479,6.356,-0.527,0.735,0.283],[-8.796,5.036,0.558,-5.404,-0.627]],"BB":[[0.862,8.028,0.0,-0.721,1.096],[-5.623,2.815,0.0,-2.456,-0.988]],"LP":[[-4.712,8.894,0.562,0.178,-0.407],[-5.736,3.409,-0.628,-3.197,0.132]],"MP":[[-3.835,8.581,0.771,-0.771,-0.01],[-6.159,2.686,1.073,-2.677,-0.616]],"SB":[[-3.528,6.752,1.37,-0.772,-1.495],[-5.499,3.651,-0.785,-2.527,-0.799]]},"o":{"EP":[[-2.178,2.295,1.194,0.561,0.273],[-6.261,5.148,3.316,-1.207,0.018]],"*":[[-2.075,2.251,1.792,0.46,0.21],[-5.31,3.985,3.983,-0.712,0.119]],"LP":[[-1.391,3.272,2.052,0.653,-0.496],[-2.194,1.739,2.451,0.921,0.161]],"MP":[[-1.986,2.404,1.129,0.739,0.268],[-3.772,1.733,3.793,1.11,0.201]],"SB":[[0.788,0,0,0,0],[0.48,0,0,0,0]],"BB":[[1.099,0,0,0,0],[1.099,0,0,0,0]]},"l":{"SB":[[-1.272,5.414,0.275,-0.808,-0.421],[-4.546,3.445,0.159,-0.525,-0.361]],"*":[[-1.042,1.604,-0.303,0.288,-0.026],[-7.633,5.249,1.775,-1.047,0.283]],"LP":[[-2.049,3.463,-1.134,-0.251,0.532],[-5.18,4.674,0.705,-1.155,0.158]],"MP":[[-1.923,1.918,-0.448,0.621,-0.314],[-4.895,3.265,0.973,0.638,-0.542]],"EP":[[-1.375,1.298,0.435,0.242,-0.352],[-3.618,1.781,2.163,-0.942,-0.084]],"BB":[[1.897,-0.271,0.0,1.377,0.317],[-4.447,2.294,0.0,0.521,0.454]]},"3b":{"EP":[[-4.447,1.988,0.65,-0.649,-1.107],[-2.12,0,0,0,0]],"*":[[-6.54,3.606,0.5,-2.351,-0.494],[-2.595,0,0,0,0]],"LP":[[-3.603,1.953,-0.823,-1.877,-0.011],[-2.197,0,0,0,0]],"BB":[[-3.379,0.969,0.0,-0.792,-1.03],[-1.099,0,0,0,0]],"MP":[[-4.647,2.452,0.461,-1.372,-0.529],[-3.045,0,0,0,0]],"SB":[[-3.334,2.203,-0.41,0.462,-0.079],[-1.466,0,0,0,0]]}},"tag":{"r":{"MP":[[-3.641,8.943,-0.199,0.226,-0.044],[-6.976,3.051,0.995,-2.467,-0.046]],"*":[[-1.635,5.632,-0.343,-0.268,-0.108],[-8.185,4.311,-0.012,-3.368,0.383]],"SB":[[-3.5,8.009,0.246,-0.442,-0.07],[-6.087,3.159,-0.896,-1.636,0.129]],"LP":[[-3.755,8.808,0.29,-0.081,-0.71],[-6.107,3.206,-0.792,-1.342,0.688]],"BB":[[2.343,8.823,0.0,-1.123,0.207],[-6.347,3.226,0.0,-2.331,0.237]],"EP":[[-3.66,8.84,-1.832,-0.166,0.119],[-6.481,2.179,0.693,0.07,0.445]]},"3b":{"LP":[[-4.633,2.837,-0.549,0.049,-1.671],[-1.488,0,0,0,0]],"*":[[-6.012,2.989,0.901,-1.588,-1.159],[-4.572,1.462,-0.716,-0.445,-0.535]],"BB":[[-4.145,2.092,0.0,-1.773,-1.371],[-2.398,0,0,0,0]],"EP":[[-4.776,1.867,1.171,-0.508,-0.38],[-1.904,0,0,0,0]],"SB":[[-4.014,1.789,-0.157,-0.987,-1.088],[-1.299,0,0,0,0]],"MP":[[-4.569,2.257,0.42,-0.792,-1.15],[-3.367,0,0,0,0]]},"l":{"EP":[[-2.76,2.331,0.463,-0.044,0.169],[-5.596,3.574,1.035,-0.208,-0.23]],"*":[[-1.214,1.515,-0.071,0.25,-0.025],[-9.171,6.121,1.787,-0.921,-0.448]],"BB":[[2.892,0.124,0.0,0.901,0.576],[-5.438,2.957,0.0,1.194,-0.958]],"MP":[[-2.398,2.826,-1.453,1.072,0.007],[-6.153,3.673,0.827,0.356,-0.884]],"LP":[[-2.321,3.147,-0.764,0.679,0.204],[-6.285,5.943,0.412,-0.977,-0.461]],"SB":[[-2.469,4.847,1.204,-0.489,-0.361],[-5.509,4.969,-1.243,-0.588,-0.521]]},"o":{"EP":[[-2.325,2.202,1.115,0.465,0.125],[-6.459,3.799,4.386,-0.8,-0.46]],"*":[[-2.165,2.074,1.378,0.133,0.054],[-5.339,2.347,4.745,-0.236,0.204]],"MP":[[-2.278,2.613,0.679,-0.485,-0.057],[-4.801,1.721,4.258,0.462,0.882]],"SB":[[-0.353,4.173,1.093,0.0,-0.474],[-0.083,0,0,0,0]],"LP":[[-2.893,2.121,2.747,0.14,0.309],[-1.925,0.911,2.378,0.557,1.145]],"BB":[[3.97,0,0,0,0],[-1.904,0,0,0,0]]}},"lag":{"3b":{"MP":[[-2.898,0.938,0.427,0.387,-0.789],[0.0,0,0,0,0]],"*":[[-3.437,1.59,-0.084,0.324,0.077],[1.324,-0.32,-1.348,-0.091,0.181]],"SB":[[-2.588,1.006,-0.27,1.052,-0.322],[-0.619,0,0,0,0]],"BB":[[-3.345,1.147,0.0,1.225,0.492],[-1.099,0,0,0,0]],"LP":[[-3.34,2.125,-0.78,0.241,0.083],[0.547,0,0,0,0]],"EP":[[-3.45,1.738,0.2,-0.465,-0.002],[-0.274,0,0,0,0]]},"l":{"MP":[[-2.739,4.312,0.762,1.468,-0.165],[-2.449,5.232,1.187,-1.227,-0.939]],"*":[[-0.449,2.004,0.893,-0.206,-0.38],[-3.769,7.558,1.746,-1.54,-0.691]],"LP":[[-1.682,6.247,0.014,-0.56,-0.369],[-1.425,6.043,0.793,-0.952,-0.424]],"SB":[[-0.872,6.628,-0.428,-0.042,-0.098],[-2.693,5.047,1.003,-0.8,-0.512]],"EP":[[-1.169,2.101,1.193,-0.07,-0.347],[-2.221,5.109,0.592,0.19,-1.117]],"BB":[[5.948,0,0,0,0],[-4.038,5.702,0.0,-0.185,0.334]]},"o":{"EP":[[-2.473,3.794,2.68,-0.065,-0.086],[-5.105,8.102,2.62,-0.184,0.008]],"*":[[-2.203,3.356,2.857,-0.164,-0.221],[-3.763,6.351,5.808,-0.181,0.188]],"MP":[[-2.191,3.043,2.558,-0.031,-0.81],[-2.102,4.104,3.083,0.728,0.149]],"BB":[[2.398,0,0,0,0],[-2.398,0,0,0,0]],"LP":[[-0.979,2.947,2.317,-0.514,0.056],[2.065,0,0,0,0]],"SB":[[0.211,0,0,0,0],[1.224,0,0,0,0]]},"r":{"BB":[[4.006,5.096,0.0,0.152,0.434],[-5.262,2.06,0.0,-0.595,0.413]],"*":[[1.332,5.311,-0.495,0.883,0.399],[-6.425,2.745,0.7,-1.26,0.304]],"SB":[[1.061,6.738,-0.712,0.944,0.907],[-5.128,1.661,-0.107,0.749,0.346]],"LP":[[0.897,6.522,-0.197,0.736,0.157],[-5.543,2.507,0.449,-1.525,0.286]],"MP":[[1.243,8.155,1.667,0.498,0.325],[-5.607,2.072,1.111,-0.485,-0.799]],"EP":[[0.984,5.54,0.037,-0.722,0.689],[-5.374,1.895,0.315,0.802,0.547]]}},"station":{"3b":{"LP":[[-3.321,3.726,-0.766,0.562,-0.069],[-1.986,0,0,0,0]],"*":[[-4.185,5.17,-1.067,0.03,-0.237],[-4.441,2.355,-0.506,-2.907,-1.378]],"EP":[[-3.756,4.281,-0.333,-0.195,0.081],[-3.999,1.09,0.393,-0.675,0.567]],"SB":[[-3.382,2.534,0.956,-0.323,-1.51],[-1.022,0,0,0,0]],"MP":[[-2.852,3.271,0.974,0.555,-0.243],[-1.914,0,0,0,0]],"BB":[[-2.438,4.004,0.0,0.0,-0.845],[-1.363,0,0,0,0]]},"r":{"LP":[[1.022,5.436,0.808,0.951,0.067],[-6.459,3.727,-0.899,-3.381,-1.156]],"*":[[2.143,6.072,-0.314,-0.1,0.074],[-10.602,6.275,-0.058,-7.548,-0.649]],"MP":[[2.242,5.896,0.945,-0.993,-0.329],[-7.345,3.737,0.012,-3.237,-0.205]],"BB":[[3.951,7.755,0.0,0.089,0.194],[-5.844,2.882,0.0,-2.731,-0.485]],"SB":[[1.032,5.808,0.036,-1.214,-0.01],[-5.497,2.665,-0.751,-1.833,-1.261]],"EP":[[3.317,6.016,0.022,0.479,-0.576],[-7.768,3.319,1.587,-3.566,-0.318]]},"o":{"MP":[[2.055,6.054,-0.191,0.489,-0.34],[-5.435,1.615,1.379,-1.123,-0.969]],"*":[[2.355,6.632,-0.191,1.093,-0.042],[-6.153,1.183,3.023,-0.596,-1.421]],"EP":[[2.36,6.722,0.052,0.966,0.011],[-5.56,0.768,3.502,-0.57,-1.726]],"LP":[[1.878,5.198,-0.126,0.225,-0.012],[-4.389,1.243,0.454,0.763,-0.577]],"SB":[[1.847,3.28,0.651,0.0,1.397],[-4.205,0,0,0,0]],"BB":[[2.565,0,0,0,0],[-2.565,0,0,0,0]]},"l":{"EP":[[1.74,4.529,0.035,0.516,-0.051],[-4.434,1.127,2.159,-1.171,-0.934]],"*":[[1.926,3.848,-0.213,1.231,0.001],[-5.26,1.741,0.978,-0.585,-0.68]],"MP":[[1.862,5.896,-0.663,0.488,0.06],[-4.497,1.361,1.38,-0.371,-2.237]],"BB":[[3.358,1.461,0.0,0.219,1.295],[-4.253,1.472,0.0,1.248,0.168]],"LP":[[1.714,5.265,-0.47,0.799,0.655],[-4.219,0.915,0.135,0.857,-1.199]],"SB":[[3.115,3.777,1.249,0.035,-0.824],[-3.999,1.345,0.112,-0.783,0.219]]}},"limper":{"3b":{"SB":[[-3.173,1.236,0.488,0.071,-0.83],[-0.847,0,0,0,0]],"*":[[-4.526,3.636,-0.187,-0.042,0.02],[-4.284,1.792,-0.056,-1.874,-0.469]],"LP":[[-3.355,1.673,-0.312,1.629,-0.807],[-1.099,0,0,0,0]],"BB":[[-3.261,2.623,0.0,0.569,-1.068],[-1.846,0,0,0,0]],"MP":[[-3.976,2.108,1.014,-0.09,1.719],[-1.526,0,0,0,0]],"EP":[[-3.289,3.061,0.841,-0.443,-0.886],[-1.977,0,0,0,0]]},"r":{"LP":[[-0.847,5.993,0.464,-0.823,-0.079],[-5.652,2.963,-1.04,-2.415,0.156]],"*":[[-0.269,6.804,-1.074,-0.034,0.186],[-9.098,4.978,0.325,-5.692,-0.774]],"MP":[[-0.118,5.952,-0.69,-0.173,-0.323],[-5.875,2.078,0.542,-1.57,-1.566]],"BB":[[0.912,6.666,0.0,-1.256,0.226],[-4.925,1.69,0.0,-0.307,-0.021]],"SB":[[-1.908,7.351,-0.414,0.012,-0.557],[-4.384,1.258,-0.675,-0.257,-0.783]],"EP":[[0.722,6.414,0.154,-0.012,0.621],[-6.82,2.852,2.194,-2.746,-1.359]]},"l":{"LP":[[-0.323,6.058,-0.202,0.122,0.291],[-4.711,1.193,-0.296,0.251,1.35]],"*":[[0.091,4.045,0.084,0.033,0.21],[-5.57,1.869,0.541,-0.497,0.693]],"MP":[[-0.338,6.622,-0.822,0.326,0.301],[-5.169,1.332,1.432,-0.374,0.482]],"EP":[[-0.69,5.591,0.517,0.121,0.342],[-4.723,0.492,1.993,0.666,-0.241]],"BB":[[2.941,0.463,0.0,0.367,1.247],[-4.003,2.206,0.0,0.051,-0.883]],"SB":[[1.881,5.123,-0.084,0.082,-0.177],[-3.658,1.28,0.225,-0.432,-0.298]]},"o":{"EP":[[-0.603,6.494,0.353,0.542,-0.057],[-5.023,0.385,2.872,0.433,-0.346]],"*":[[-0.512,6.291,0.04,1.13,-0.123],[-5.363,1.034,1.447,0.595,-0.034]],"LP":[[-1.107,4.964,0.009,0.003,0.494],[-3.192,0.871,-0.401,0.861,-1.07]],"MP":[[-0.094,5.444,1.465,1.027,-1.479],[-4.311,1.059,-0.177,0.68,0.48]],"SB":[[0.251,0,0,0,0],[-3.296,0,0,0,0]],"BB":[[1.526,0,0,0,0],[-1.335,0,0,0,0]]}},"whale":{"3b":{"BB":[[-2.001,1.94,0.0,-0.136,-0.986],[-1.735,0,0,0,0]],"*":[[-2.077,3.235,0.187,-0.119,-0.235],[-5.13,2.295,0.455,-2.582,-0.17]],"LP":[[-2.879,2.538,1.312,0.066,-0.367],[-2.001,0,0,0,0]],"EP":[[-1.461,2.733,1.685,1.529,-0.314],[-4.131,1.186,1.537,-1.714,-0.25]],"SB":[[-1.836,0,0,0,0],[-2.398,0,0,0,0]],"MP":[[-2.071,3.614,0.156,-1.163,0.007],[-2.024,0,0,0,0]]},"r":{"SB":[[2.839,5.689,-0.504,0.171,0.038],[-5.168,2.334,-0.795,-0.785,-0.015]],"*":[[3.518,4.492,-0.935,1.008,-0.094],[-8.937,5.164,-0.058,-5.338,-1.042]],"EP":[[4.912,3.733,0.025,0.096,-0.464],[-6.331,2.145,1.275,-1.247,-1.85]],"BB":[[3.657,4.14,0.0,0.063,0.111],[-5.375,2.618,0.0,-0.869,-0.611]],"LP":[[2.769,4.697,-0.119,0.617,-0.048],[-5.901,3.084,-0.83,-1.648,-0.597]],"MP":[[3.235,4.059,0.616,0.25,-0.12],[-6.374,2.912,1.076,-2.45,-1.091]]},"l":{"LP":[[3.649,5.338,-0.315,0.213,0.275],[-5.203,2.979,-0.005,0.062,-0.583]],"*":[[3.318,4.383,0.271,0.593,0.177],[-6.533,3.411,0.959,-1.421,-0.239]],"MP":[[3.188,5.181,0.78,0.223,0.317],[-5.817,2.243,1.726,-0.796,-0.069]],"EP":[[3.251,4.836,0.018,0.305,0.647],[-5.654,2.438,1.945,-1.468,-0.717]],"SB":[[4.314,4.086,0.81,0.005,-0.144],[-4.468,2.372,0.347,-1.101,-0.808]],"BB":[[3.117,1.282,0.0,0.151,-0.489],[-3.852,2.061,0.0,0.332,-0.014]]},"o":{"MP":[[2.375,4.252,0.404,0.198,-0.665],[-4.516,1.883,1.156,-1.143,0.108]],"*":[[3.388,4.864,-0.215,0.251,-0.086],[-5.952,2.264,1.503,-0.814,0.385]],"EP":[[3.404,4.791,0.03,0.111,0.147],[-5.524,1.984,1.549,-0.527,0.173]],"LP":[[2.789,4.891,0.283,0.105,-0.772],[-3.759,1.01,-0.531,1.357,-0.549]],"BB":[[1.686,0,0,0,0],[-3.296,0,0,0,0]],"SB":[[1.564,0,0,0,0],[-2.054,0,0,0,0]]}},"shark":{"r":{"LP":[[-5.237,5.62,0.661,5.683,0.274],[-2.141,2.528,-2.119,0.714,-0.329]],"*":[[-6.06,7.057,0.459,6.878,-0.033],[-4.556,2.725,-0.167,0.763,0.206]],"MP":[[-5.544,5.933,0.875,5.22,-0.438],[-5.054,2.347,-0.029,1.241,-1.738]],"BB":[[-4.613,5.842,0.0,3.201,-0.434],[-4.643,2.904,0.0,0.08,0.2]],"SB":[[-4.297,4.72,0.85,3.604,-0.064],[-2.111,1.648,-1.08,1.522,1.145]],"EP":[[-4.057,4.503,1.446,3.196,-0.334],[-4.466,2.426,-0.145,0.747,0.005]]},"o":{"LP":[[-1.626,3.906,2.073,0.829,0.892],[0.336,2.23,2.622,-1.798,-0.564]],"*":[[-2.763,4.344,2.883,-0.485,0.259],[-3.467,6.354,5.038,-1.288,0.249]],"EP":[[-3.099,4.646,2.615,-0.132,0.279],[-5.463,8.628,1.379,0.699,0.477]],"MP":[[-2.577,4.094,1.677,-0.325,0.193],[-1.632,4.021,2.115,-0.663,-0.005]],"BB":[[0.452,0,0,0,0],[-0.336,0,0,0,0]],"SB":[[0.392,0,0,0,0],[1.17,0,0,0,0]]},"l":{"MP":[[-2.48,5.297,1.169,-1.354,-0.349],[-0.545,5.18,0.2,0.236,-0.545]],"*":[[-0.562,2.501,0.891,-0.432,-0.302],[-2.177,7.32,1.455,-0.156,-0.469]],"SB":[[-0.623,5.829,-1.082,0.246,0.65],[-0.687,4.61,0.277,0.178,0.115]],"LP":[[-0.908,6.433,0.135,-0.918,-0.422],[-1.061,5.024,1.019,1.139,0.043]],"EP":[[-1.887,3.24,1.661,-0.571,-0.484],[-0.374,4.627,0.41,0.125,0.296]],"BB":[[2.636,0.525,0.0,0.645,0.446],[-3.12,5.839,0.0,0.03,-0.036]]},"3b":{"EP":[[-5.013,1.929,0.729,-0.181,-0.699],[-0.747,0,0,0,0]],"*":[[-6.169,2.79,0.66,0.265,-0.596],[-3.867,1.574,-0.578,-1.221,-0.728]],"BB":[[-4.03,1.305,0.0,1.497,-0.861],[-1.946,0,0,0,0]],"SB":[[-3.564,1.706,-0.335,1.264,-0.917],[-1.299,0,0,0,0]],"MP":[[-4.012,1.651,-0.041,1.142,-1.309],[-1.099,0,0,0,0]],"LP":[[-4.074,2.845,-0.973,-0.272,-0.174],[-3.045,0,0,0,0]]}}},"0":{"tag":{"o":{"EP":[[-5.978,1.186,5.536,0.483,0.195],[6.293,0,0,0,0]],"*":[[-4.158,1.145,3.764,0.653,0.482],[-2.709,1.576,4.796,1.214,1.118]],"MP":[[-5.163,1.529,3.925,0.762,0.853],[4.963,0,0,0,0]],"LP":[[-4.148,1.374,3.675,0.799,1.066],[5.094,0,0,0,0]],"SB":[[-2.037,1.746,2.53,0.223,-0.423],[1.285,0,0,0,0]],"BB":[[4.078,0,0,0,0],[-1.494,0,0,0,0]]},"r":{"LP":[[-6.057,7.278,0.032,-0.444,-0.186],[-4.029,2.043,-0.869,-1.232,-0.184]],"*":[[-4.054,6.246,-1.14,0.324,0.221],[-6.542,3.491,-0.056,-3.219,-0.565]],"BB":[[-1.156,7.603,0.0,0.075,-0.712],[-5.313,2.595,0.0,-1.861,-0.72]],"MP":[[-6.091,6.688,0.644,-0.626,0.326],[-4.741,2.222,-0.755,-0.617,-0.006]],"SB":[[-5.582,6.574,0.207,0.121,0.62],[-2.314,2.082,-2.314,-1.185,-0.602]],"EP":[[-4.863,4.703,1.703,-0.938,-0.636],[-3.519,1.598,0.111,-0.906,-0.915]]},"l":{"MP":[[-6.13,3.58,0.115,0.458,-0.428],[3.555,0,0,0,0]],"*":[[-2.609,1.381,0.479,0.231,-0.341],[-4.739,3.761,1.109,-0.005,-0.261]],"EP":[[-5.84,3.369,0.477,-0.197,-0.003],[3.135,0,0,0,0]],"SB":[[-2.786,4.794,-0.377,-0.13,0.384],[-0.346,0,0,0,0]],"LP":[[-5.567,5.086,-0.349,-0.891,-0.313],[4.317,0,0,0,0]],"BB":[[4.466,0,0,0,0],[-3.002,1.689,0.0,0.26,-1.248]]},"3b":{"LP":[[-3.638,2.462,-0.593,-1.646,-1.037],[-3.135,0,0,0,0]],"*":[[-5.507,3.662,-0.408,-2.798,-1.044],[-2.441,0.103,-0.992,0.476,-0.413]],"SB":[[-3.107,2.39,-0.853,-1.656,-0.892],[-2.398,0,0,0,0]],"EP":[[-2.945,2.239,-1.264,-0.838,-0.65],[-2.054,0,0,0,0]],"MP":[[-3.715,2.006,-0.867,-0.156,-0.336],[-2.708,0,0,0,0]],"BB":[[-3.741,2.081,0.0,-0.71,-1.042],[-2.197,0,0,0,0]]}},"nit":{"o":{"EP":[[-5.425,1.486,3.568,0.678,0.401],[0.944,-0.773,0.944,3.002,-0.144]],"*":[[-5.128,1.156,3.907,0.532,0.373],[-0.694,-0.411,2.325,1.691,-0.013]],"LP":[[-3.662,2.255,2.149,-0.386,0.708],[2.361,0,0,0,0]],"MP":[[-4.32,1.015,2.93,1.196,0.315],[0.719,0,0,0,0]],"SB":[[-1.036,0,0,0,0],[2.398,0,0,0,0]],"BB":[[1.609,0,0,0,0],[-1.609,0,0,0,0]]},"r":{"BB":[[-4.149,4.611,0.0,0.405,0.418],[-1.546,0,0,0,0]],"*":[[-7.44,7.422,-2.98,-0.053,0.093],[-4.711,2.69,0.038,-3.028,-1.09]],"SB":[[-4.423,3.785,-1.505,0.049,-0.646],[-0.236,0,0,0,0]],"LP":[[-5.816,5.123,-1.625,-0.001,0.024],[-0.769,0,0,0,0]],"MP":[[-5.564,3.932,-0.3,-0.15,-0.867],[-0.802,0,0,0,0]],"EP":[[-4.232,2.341,2.673,-0.601,-0.876],[-0.588,0,0,0,0]]},"3b":{"BB":[[-2.024,0,0,0,0],[-1.946,0,0,0,0]],"*":[[-4.144,2.275,-0.469,-0.921,-0.641],[-1.19,0,0,0,0]],"SB":[[-2.565,0,0,0,0],[-1.099,0,0,0,0]],"MP":[[-1.609,0,0,0,0],[-0.336,0,0,0,0]],"LP":[[-4.205,0,0,0,0],[0.0,0,0,0,0]],"EP":[[-0.167,0,0,0,0],[-1.099,0,0,0,0]]},"l":{"BB":[[4.007,0,0,0,0],[-4.007,0,0,0,0]],"*":[[0.602,0.622,-2.397,0.309,-0.504],[-4.043,0,0,0,0]],"SB":[[-2.979,0,0,0,0],[-1.099,0,0,0,0]]}},"weekend":{"o":{"EP":[[-5.332,1.506,5.064,0.73,0.135],[5.342,0,0,0,0]],"*":[[-5.321,1.422,5.602,0.051,-0.07],[0.483,1.284,2.934,0.57,0.154]],"MP":[[-4.23,1.205,4.713,-0.735,0.152],[4.595,0,0,0,0]],"LP":[[-3.495,1.842,3.443,1.397,-0.035],[4.691,0,0,0,0]],"SB":[[-1.467,2.983,1.874,0.0,0.04],[1.526,0,0,0,0]]},"r":{"BB":[[-1.255,5.548,0.0,1.424,-0.292],[-4.198,1.051,0.0,-0.033,-0.942]],"*":[[-4.339,6.331,-1.757,1.572,0.416],[-5.661,2.338,0.235,-1.472,-0.204]],"SB":[[-4.442,4.149,-0.049,0.087,0.953],[-1.099,0,0,0,0]],"LP":[[-5.838,6.215,0.036,0.963,0.154],[-2.761,1.137,-2.262,0.352,-0.666]],"MP":[[-5.412,5.302,0.549,0.578,-0.226],[-3.047,1.487,-0.919,-0.195,-0.149]],"EP":[[-3.057,2.753,1.862,0.291,-0.539],[-3.219,0,0,0,0]]},"3b":{"BB":[[-4.043,0,0,0,0],[0.0,0,0,0,0]],"*":[[-4.618,2.158,-0.189,0.406,-0.606],[-3.296,0,0,0,0]],"MP":[[-2.104,0,0,0,0],[-1.609,0,0,0,0]],"SB":[[-2.001,0,0,0,0],[-1.609,0,0,0,0]],"LP":[[-3.3,1.901,-0.845,-0.545,-0.0],[-2.197,0,0,0,0]],"EP":[[-1.363,0,0,0,0],[-2.398,0,0,0,0]]},"l":{"LP":[[-2.398,0,0,0,0],[0.0,0,0,0,0]],"*":[[0.693,0.889,-1.771,0.689,-0.169],[-3.012,0,0,0,0]],"MP":[[-2.833,0,0,0,0],[0.0,0,0,0,0]],"BB":[[4.111,0,0,0,0],[-4.111,0,0,0,0]],"EP":[[-1.735,0,0,0,0],[1.099,0,0,0,0]],"SB":[[-1.099,0,0,0,0],[0.0,0,0,0,0]]}},"station":{"o":{"MP":[[2.154,7.075,1.216,0.146,-0.672],[-4.54,0.71,0.156,2.016,-0.909]],"*":[[2.508,8.237,0.303,0.494,-0.556],[-5.611,1.198,2.039,-0.526,-0.247]],"EP":[[2.127,7.798,-0.619,0.722,-0.23],[-5.316,1.424,1.847,-1.542,-0.381]],"LP":[[1.48,5.767,0.863,0.189,-0.023],[-3.63,1.06,-0.357,-0.051,-0.147]],"SB":[[0.751,0,0,0,0],[-2.833,0,0,0,0]],"BB":[[1.609,0,0,0,0],[-1.609,0,0,0,0]]},"r":{"EP":[[2.377,5.356,0.15,0.075,0.483],[-5.591,2.225,0.567,-0.759,-2.069]],"*":[[1.369,7.245,-1.015,1.212,0.12],[-8.026,4.662,0.279,-5.525,-1.377]],"BB":[[2.194,5.508,0.0,0.053,-0.681],[-4.023,1.69,0.0,-1.864,-1.743]],"SB":[[-0.029,6.957,0.242,0.169,-0.309],[-3.904,2.317,-0.922,-2.509,0.153]],"MP":[[0.899,6.447,0.579,0.394,0.58],[-5.653,2.785,1.281,-2.643,-0.843]],"LP":[[0.211,7.726,0.127,0.786,0.098],[-4.843,2.589,-0.901,-1.462,-1.321]]},"l":{"LP":[[0.619,0,0,0,0],[-2.565,0,0,0,0]],"*":[[0.351,0,0,0,0],[-3.296,0,0,0,0]],"EP":[[0.251,0,0,0,0],[-2.197,0,0,0,0]],"MP":[[0.0,0,0,0,0],[-1.609,0,0,0,0]],"BB":[[1.099,0,0,0,0],[-1.099,0,0,0,0]],"SB":[[-1.099,0,0,0,0],[0.0,0,0,0,0]]},"3b":{"MP":[[-1.653,0,0,0,0],[-2.197,0,0,0,0]],"*":[[-4.714,4.701,-0.598,0.711,-0.204],[-3.098,0.871,1.024,-1.397,0.126]],"LP":[[-3.33,2.345,-0.211,0.038,-0.213],[-2.197,0,0,0,0]],"BB":[[-1.099,0,0,0,0],[-2.565,0,0,0,0]],"EP":[[-3.263,3.154,1.237,-0.066,-1.425],[-0.663,0,0,0,0]],"SB":[[-2.197,0,0,0,0],[-1.609,0,0,0,0]]}},"shark":{"r":{"LP":[[-5.908,5.838,0.79,3.802,-0.106],[-3.146,2.141,-1.807,0.891,0.114]],"*":[[-7.495,8.307,0.275,7.127,-0.296],[-6.752,3.497,0.288,0.499,0.144]],"BB":[[-5.273,5.912,0.0,4.284,-0.442],[-4.965,2.184,0.0,0.602,0.361]],"MP":[[-4.727,4.823,1.41,3.858,-0.553],[-4.587,2.642,-0.503,0.904,0.057]],"SB":[[-4.941,5.407,0.259,3.671,-0.679],[-2.172,2.194,-2.172,0.226,-0.276]],"EP":[[-4.345,4.188,1.102,1.917,-0.305],[-3.897,2.291,-0.356,0.563,-0.073]]},"l":{"EP":[[-2.188,5.279,0.933,0.153,-0.139],[4.394,0,0,0,0]],"*":[[-0.397,3.095,0.895,-0.424,-0.341],[-0.807,7.367,0.427,-0.018,-0.5]],"BB":[[4.71,0,0,0,0],[-1.773,4.227,0.0,0.001,-0.857]],"SB":[[-0.716,4.75,0.42,0.037,-0.157],[2.653,0,0,0,0]],"LP":[[-1.157,6.856,1.038,0.99,-0.069],[-0.53,5.164,0.326,-0.19,0.125]],"MP":[[-1.474,5.949,0.928,-0.921,-0.146],[1.228,3.092,0.917,0.311,0.868]]},"3b":{"EP":[[-4.263,2.454,0.323,-1.56,-0.613],[-2.269,0,0,0,0]],"*":[[-5.705,3.55,-0.142,-1.586,-0.321],[-2.434,0,0,0,0]],"LP":[[-3.289,1.678,-0.831,0.94,-0.95],[-2.197,0,0,0,0]],"SB":[[-3.397,1.393,-1.022,0.359,-0.518],[1.099,0,0,0,0]],"MP":[[-4.145,2.463,-0.211,0.004,-0.174],[-2.944,0,0,0,0]],"BB":[[-3.219,0,0,0,0],[-1.099,0,0,0,0]]},"o":{"EP":[[-5.136,5.903,5.84,-1.815,0.018],[6.263,0,0,0,0]],"*":[[-4.24,5.007,6.564,-2.188,-0.245],[0.751,2.714,2.35,0.62,1.036]],"MP":[[-3.565,4.151,4.708,0.594,0.222],[5.38,0,0,0,0]],"LP":[[-2.017,2.83,4.053,-1.124,-0.311],[4.949,0,0,0,0]],"SB":[[-0.129,0,0,0,0],[0.847,0,0,0,0]],"BB":[[2.197,0,0,0,0],[0.0,0,0,0,0]]}},"lag":{"r":{"SB":[[-1.128,5.788,-0.229,-2.755,-0.898],[-3.608,1.825,-1.3,-0.282,0.941]],"*":[[-0.659,4.316,-0.185,-0.087,-0.106],[-5.543,3.002,-0.526,-1.479,0.075]],"LP":[[-1.799,5.414,1.16,0.136,-0.657],[-3.681,1.534,-0.217,-0.269,-0.211]],"MP":[[-1.8,3.983,0.343,-1.878,0.325],[-4.354,1.781,-0.417,0.331,-1.02]],"EP":[[-1.154,5.894,0.528,1.212,-0.071],[-4.103,1.536,0.627,-0.174,-0.67]],"BB":[[1.543,4.265,0.0,0.753,-0.057],[-4.284,2.292,0.0,-0.05,-0.151]]},"o":{"EP":[[-5.464,6.236,5.164,1.085,0.133],[5.814,0,0,0,0]],"*":[[-4.777,5.323,5.566,1.137,-0.107],[1.629,2.456,1.909,0.312,0.901]],"MP":[[-3.414,2.911,3.637,0.847,-0.396],[4.466,0,0,0,0]],"SB":[[0.174,0,0,0,0],[2.037,0,0,0,0]],"LP":[[-2.406,2.229,3.446,0.526,-0.165],[3.97,0,0,0,0]],"BB":[[1.099,0,0,0,0],[1.099,0,0,0,0]]},"l":{"BB":[[4.234,0,0,0,0],[-0.987,0,0,0,0]],"*":[[-0.735,2.62,1.412,-1.713,-0.993],[-2.379,3.926,2.301,0.554,0.577]],"SB":[[-0.624,3.656,1.053,-1.691,-0.267],[1.266,0,0,0,0]],"LP":[[-3.006,3.993,2.083,-0.536,-0.027],[4.466,0,0,0,0]],"MP":[[-2.45,3.813,1.527,0.029,-0.766],[4.007,0,0,0,0]]},"3b":{"BB":[[-1.946,0,0,0,0],[1.946,0,0,0,0]],"*":[[-2.556,1.455,-0.666,0.355,0.047],[0.0,0,0,0,0]],"LP":[[-1.916,0.77,-1.747,1.114,0.417],[0.847,0,0,0,0]],"MP":[[-0.956,0,0,0,0],[-0.788,0,0,0,0]],"EP":[[-2.212,1.822,-0.881,-0.18,-0.963],[-0.31,0,0,0,0]],"SB":[[-3.135,0,0,0,0],[0.0,0,0,0,0]]}}}};
+var PFM={"1":{"maniac":{"o":{"EP":[[-0.549,5.232,0.487,0.366,-0.032],[-0.539,7.432,0.187,0.135,-0.06]],"*":[[-0.362,4.599,1.559,0.769,-0.015],[-0.454,7.589,1.324,0.568,0.039]],"MP":[[-0.46,4.326,1.252,0.415,0.296],[-0.454,7.589,1.324,0.568,0.039]],"SB":[[-0.036,2.948,0.999,0.493,-0.01],[-0.454,7.589,1.324,0.568,0.039]],"BB":[[0.635,2.613,0.886,0.437,-0.009],[-0.454,7.589,1.324,0.568,0.039]],"LP":[[-0.025,2.254,0.764,0.377,-0.007],[-0.454,7.589,1.324,0.568,0.039]]},"3b":{"EP":[[-3.121,1.436,1.14,-1.8,0.666],[1.18,-0.953,-0.892,0.976,-0.195]],"*":[[-3.598,1.951,0.754,-1.006,0.309],[1.18,-0.953,-0.892,0.976,-0.195]],"SB":[[-2.834,0.762,0.295,-0.393,0.121],[1.18,-0.953,-0.892,0.976,-0.195]],"MP":[[-3.679,1.975,0.928,-0.293,0.008],[1.18,-0.953,-0.892,0.976,-0.195]],"BB":[[-2.799,0.813,0.314,-0.419,0.129],[1.18,-0.953,-0.892,0.976,-0.195]],"LP":[[-3.016,1.627,0.701,0.464,-0.139],[1.18,-0.953,-0.892,0.976,-0.195]]},"r":{"BB":[[4.374,3.314,-0.042,0.037,-0.554],[-5.605,2.846,-0.0,-0.517,1.267]],"*":[[3.388,4.239,-0.496,0.381,-0.587],[-6.918,3.934,-0.002,-1.718,0.848]],"LP":[[3.296,5.133,-0.148,0.209,-1.031],[-5.525,3.55,-0.636,-1.35,-0.069]],"SB":[[3.034,4.91,-0.071,0.043,-0.067],[-5.084,2.508,-0.037,-0.638,0.748]],"EP":[[2.539,4.291,-0.049,0.251,0.554],[-4.75,2.296,0.968,-1.105,-0.376]],"MP":[[3.061,4.116,0.207,0.098,-0.181],[-4.904,1.456,1.116,-0.84,0.916]]},"l":{"SB":[[2.493,6.43,-0.055,0.248,-0.281],[2.068,3.54,0.985,0.219,0.462]],"*":[[1.392,4.035,0.851,-0.246,-0.173],[2.085,5.365,1.259,-0.144,-0.232]],"LP":[[2.261,6.075,0.494,0.216,0.299],[3.755,1.871,1.191,0.051,-0.063]],"MP":[[1.193,7.445,-0.029,-1.167,-0.173],[2.038,5.156,-0.309,0.698,-0.38]],"EP":[[0.915,5.082,0.271,1.227,0.002],[1.435,6.124,0.159,0.908,0.025]],"BB":[[3.261,1.374,0.097,0.168,-0.407],[0.556,5.885,0.149,-0.813,-0.69]]}},"nit":{"r":{"EP":[[-6.652,6.686,0.964,0.715,-0.384],[-5.792,2.446,1.243,-2.924,-0.975]],"*":[[-4.991,5.915,-1.005,0.575,0.189],[-8.575,4.834,0.356,-5.694,-0.739]],"SB":[[-6.417,5.204,1.044,-0.276,0.282],[-4.051,2.592,-1.883,-2.581,0.377]],"LP":[[-7.65,7.469,0.084,0.512,-0.152],[-4.345,3.571,-2.005,-3.612,-1.318]],"MP":[[-6.444,5.705,0.89,-0.248,0.099],[-5.538,2.938,-0.033,-2.956,-0.061]],"BB":[[-2.06,7.08,-0.043,-0.33,-0.494],[-6.176,2.893,0.035,-2.34,-0.388]]},"o":{"EP":[[-3.837,3.386,0.372,0.358,-0.181],[-4.871,1.298,3.15,0.454,-0.203]],"*":[[-3.619,3.021,0.927,0.15,-0.187],[-4.325,0.628,3.745,0.957,-0.134]],"LP":[[-3.511,2.293,2.239,-0.305,-1.17],[-4.325,0.628,3.745,0.957,-0.134]],"MP":[[-3.847,2.579,1.441,-1.327,0.583],[-4.325,0.628,3.745,0.957,-0.134]],"SB":[[-2.605,1.842,0.565,0.092,-0.114],[-4.325,0.628,3.745,0.957,-0.134]],"BB":[[-3.231,2.798,0.859,0.139,-0.173],[-4.325,0.628,3.745,0.957,-0.134]]},"l":{"BB":[[1.639,-0.232,0.003,1.2,-0.267],[-4.948,1.542,-0.115,1.038,-0.913]],"*":[[-1.606,1.357,0.016,0.085,-0.063],[-7.293,3.086,-0.66,1.209,-1.154]],"LP":[[-3.167,2.952,0.099,-0.384,-0.256],[-4.873,2.333,-1.498,1.825,-0.868]],"MP":[[-3.178,2.382,0.39,-0.48,-0.335],[-5.415,2.572,-1.434,1.429,-0.848]],"EP":[[-2.855,2.401,-0.225,0.0,0.204],[-5.295,2.237,-0.886,1.128,-0.967]],"SB":[[-2.896,3.216,-0.063,-0.554,0.028],[-7.293,3.086,-0.66,1.209,-1.154]]},"3b":{"MP":[[-4.822,2.513,-0.373,-0.87,-0.102],[-3.455,1.208,-1.193,-0.417,-0.764]],"*":[[-6.08,3.719,-0.085,-2.799,-0.785],[-3.455,1.208,-1.193,-0.417,-0.764]],"SB":[[-4.289,2.397,-0.483,-0.225,-0.762],[-3.455,1.208,-1.193,-0.417,-0.764]],"EP":[[-4.286,2.643,0.195,-2.293,-1.521],[-3.455,1.208,-1.193,-0.417,-0.764]],"BB":[[-4.648,2.517,-0.024,-1.412,0.181],[-3.455,1.208,-1.193,-0.417,-0.764]],"LP":[[-4.049,2.716,-0.716,-1.518,-0.485],[-3.455,1.208,-1.193,-0.417,-0.764]]}},"weekend":{"r":{"EP":[[-3.252,7.042,-0.56,1.193,0.095],[-5.91,2.189,1.014,-0.944,-1.262]],"*":[[-2.479,6.356,-0.527,0.735,0.283],[-8.796,5.036,0.558,-5.404,-0.627]],"BB":[[0.723,7.958,-0.022,-0.66,1.062],[-5.864,2.983,0.042,-2.68,-0.96]],"LP":[[-4.651,8.825,0.532,0.193,-0.388],[-5.988,3.543,-0.53,-3.379,0.069]],"MP":[[-3.795,8.516,0.733,-0.726,-0.002],[-6.367,2.871,1.033,-2.892,-0.617]],"SB":[[-3.483,6.735,1.288,-0.707,-1.418],[-5.903,3.821,-0.62,-2.879,-0.778]]},"o":{"EP":[[-2.176,2.295,1.202,0.56,0.272],[-6.209,5.084,3.352,-1.18,0.023]],"*":[[-2.075,2.251,1.792,0.46,0.21],[-5.31,3.985,3.983,-0.712,0.119]],"LP":[[-1.505,3.102,2.008,0.621,-0.378],[-3.233,2.488,2.962,0.377,0.147]],"MP":[[-1.992,2.393,1.177,0.719,0.264],[-4.106,2.223,3.834,0.714,0.183]],"SB":[[-0.703,1.173,0.933,0.239,0.11],[-5.31,3.985,3.983,-0.712,0.119]],"BB":[[-1.953,2.165,1.723,0.442,0.202],[-5.31,3.985,3.983,-0.712,0.119]]},"l":{"SB":[[-1.24,4.891,0.195,-0.657,-0.367],[-5.423,3.958,0.618,-0.673,-0.178]],"*":[[-1.042,1.604,-0.303,0.288,-0.026],[-7.633,5.249,1.775,-1.047,0.283]],"LP":[[-2.0,3.373,-1.094,-0.225,0.505],[-5.594,4.771,0.886,-1.136,0.179]],"MP":[[-1.874,1.9,-0.44,0.602,-0.298],[-5.501,3.704,1.151,0.265,-0.36]],"EP":[[-1.333,1.337,0.342,0.248,-0.311],[-5.073,3.037,2.022,-0.98,0.049]],"BB":[[1.417,0.035,-0.05,1.199,0.261],[-5.024,2.829,0.322,0.237,0.423]]},"3b":{"EP":[[-4.918,2.352,0.616,-1.032,-0.969],[-2.0,0,0,0,0]],"*":[[-6.54,3.606,0.5,-2.351,-0.494],[-2.0,0,0,0,0]],"LP":[[-4.215,2.297,-0.548,-1.976,-0.112],[-2.0,0,0,0,0]],"BB":[[-4.288,1.727,0.144,-1.24,-0.876],[-2.0,0,0,0,0]],"MP":[[-5.13,2.746,0.471,-1.622,-0.52],[-2.0,0,0,0,0]],"SB":[[-4.432,2.683,-0.098,-0.501,-0.221],[-2.0,0,0,0,0]]}},"tag":{"r":{"MP":[[-3.605,8.883,-0.201,0.217,-0.046],[-7.034,3.111,0.946,-2.511,-0.025]],"*":[[-1.635,5.632,-0.343,-0.268,-0.108],[-8.185,4.311,-0.012,-3.368,0.383]],"SB":[[-3.456,7.953,0.232,-0.437,-0.071],[-6.231,3.239,-0.835,-1.756,0.147]],"LP":[[-3.727,8.765,0.281,-0.083,-0.702],[-6.191,3.251,-0.76,-1.425,0.675]],"BB":[[2.253,8.751,-0.008,-1.104,0.2],[-6.418,3.268,-0.0,-2.371,0.242]],"EP":[[-3.606,8.756,-1.793,-0.169,0.113],[-6.584,2.307,0.651,-0.138,0.441]]},"3b":{"LP":[[-4.784,2.853,-0.39,-0.131,-1.615],[-4.572,1.462,-0.716,-0.445,-0.535]],"*":[[-6.012,2.989,0.901,-1.588,-1.159],[-4.572,1.462,-0.716,-0.445,-0.535]],"BB":[[-4.416,2.222,0.131,-1.746,-1.34],[-4.572,1.462,-0.716,-0.445,-0.535]],"EP":[[-4.973,2.045,1.128,-0.68,-0.504],[-4.572,1.462,-0.716,-0.445,-0.535]],"SB":[[-4.358,1.996,0.026,-1.09,-1.1],[-4.572,1.462,-0.716,-0.445,-0.535]],"MP":[[-4.81,2.379,0.5,-0.925,-1.151],[-4.572,1.462,-0.716,-0.445,-0.535]]},"l":{"EP":[[-2.695,2.297,0.441,-0.032,0.161],[-6.273,4.057,1.178,-0.343,-0.271]],"*":[[-1.214,1.515,-0.071,0.25,-0.025],[-9.171,6.121,1.787,-0.921,-0.448]],"BB":[[2.558,0.237,-0.006,0.848,0.528],[-5.753,3.224,0.151,1.015,-0.915]],"MP":[[-2.365,2.79,-1.415,1.049,0.007],[-6.569,4.011,0.959,0.18,-0.824]],"LP":[[-2.29,3.101,-0.745,0.667,0.197],[-6.613,5.963,0.568,-0.971,-0.46]],"SB":[[-2.391,4.64,1.125,-0.443,-0.34],[-6.067,5.145,-0.781,-0.639,-0.51]]},"o":{"EP":[[-2.324,2.201,1.117,0.463,0.124],[-6.421,3.75,4.398,-0.781,-0.438]],"*":[[-2.165,2.074,1.378,0.133,0.054],[-5.339,2.347,4.745,-0.236,0.204]],"MP":[[-2.275,2.599,0.698,-0.469,-0.054],[-4.855,1.784,4.308,0.391,0.813]],"SB":[[-0.949,3.482,1.187,0.044,-0.301],[-5.339,2.347,4.745,-0.236,0.204]],"LP":[[-2.833,2.117,2.633,0.139,0.288],[-2.723,1.247,2.931,0.371,0.925]],"BB":[[0.963,1.017,0.676,0.065,0.026],[-5.339,2.347,4.745,-0.236,0.204]]}},"lag":{"3b":{"MP":[[-3.002,1.065,0.328,0.375,-0.621],[1.324,-0.32,-1.348,-0.091,0.181]],"*":[[-3.437,1.59,-0.084,0.324,0.077],[1.324,-0.32,-1.348,-0.091,0.181]],"SB":[[-2.804,1.155,-0.222,0.866,-0.22],[1.324,-0.32,-1.348,-0.091,0.181]],"BB":[[-3.37,1.266,-0.023,0.983,0.38],[1.324,-0.32,-1.348,-0.091,0.181]],"LP":[[-3.354,2.048,-0.68,0.253,0.082],[1.324,-0.32,-1.348,-0.091,0.181]],"EP":[[-3.448,1.71,0.147,-0.318,0.013],[1.324,-0.32,-1.348,-0.091,0.181]]},"l":{"MP":[[-2.604,4.176,0.77,1.369,-0.178],[-2.68,5.638,1.285,-1.281,-0.895]],"*":[[-0.449,2.004,0.893,-0.206,-0.38],[-3.769,7.558,1.746,-1.54,-0.691]],"LP":[[-1.626,6.055,0.054,-0.544,-0.369],[-1.686,6.212,0.9,-1.018,-0.453]],"SB":[[-0.829,6.152,-0.292,-0.059,-0.127],[-2.9,5.53,1.146,-0.942,-0.546]],"EP":[[-1.104,2.092,1.166,-0.082,-0.35],[-2.62,5.74,0.889,-0.256,-1.007]],"BB":[[5.208,0.232,0.103,-0.024,-0.044],[-4.007,5.917,0.202,-0.342,0.215]]},"o":{"EP":[[-2.469,3.788,2.682,-0.067,-0.088],[-5.044,8.022,2.765,-0.184,0.016]],"*":[[-2.203,3.356,2.857,-0.164,-0.221],[-3.763,6.351,5.808,-0.181,0.188]],"MP":[[-2.192,3.059,2.572,-0.038,-0.782],[-2.334,4.418,3.463,0.601,0.154]],"BB":[[-1.437,2.797,2.381,-0.137,-0.184],[-3.763,6.351,5.808,-0.181,0.188]],"LP":[[-1.234,3.032,2.429,-0.441,-0.002],[-3.763,6.351,5.808,-0.181,0.188]],"SB":[[-1.193,1.951,1.661,-0.095,-0.128],[-3.763,6.351,5.808,-0.181,0.188]]},"r":{"BB":[[3.879,5.106,-0.024,0.186,0.433],[-5.335,2.103,0.044,-0.637,0.406]],"*":[[1.332,5.311,-0.495,0.883,0.399],[-6.425,2.745,0.7,-1.26,0.304]],"SB":[[1.074,6.669,-0.701,0.941,0.883],[-5.234,1.75,-0.041,0.584,0.342]],"LP":[[0.91,6.488,-0.205,0.74,0.164],[-5.589,2.519,0.462,-1.511,0.287]],"MP":[[1.247,8.049,1.586,0.512,0.328],[-5.662,2.117,1.084,-0.537,-0.725]],"EP":[[1.009,5.523,-0.001,-0.606,0.668],[-5.486,1.985,0.356,0.583,0.522]]}},"station":{"3b":{"LP":[[-3.473,3.98,-0.819,0.468,-0.099],[-4.441,2.355,-0.506,-2.907,-1.378]],"*":[[-4.185,5.17,-1.067,0.03,-0.237],[-4.441,2.355,-0.506,-2.907,-1.378]],"EP":[[-3.806,4.385,-0.419,-0.169,0.044],[-4.128,1.458,0.132,-1.324,0.001]],"SB":[[-3.565,3.133,0.496,-0.243,-1.221],[-4.441,2.355,-0.506,-2.907,-1.378]],"MP":[[-3.158,3.706,0.506,0.435,-0.242],[-4.441,2.355,-0.506,-2.907,-1.378]],"BB":[[-2.779,4.231,-0.208,0.006,-0.726],[-4.441,2.355,-0.506,-2.907,-1.378]]},"r":{"LP":[[1.048,5.451,0.781,0.926,0.068],[-6.621,3.827,-0.867,-3.544,-1.136]],"*":[[2.143,6.072,-0.314,-0.1,0.074],[-10.602,6.275,-0.058,-7.548,-0.649]],"MP":[[2.239,5.901,0.913,-0.969,-0.319],[-7.459,3.826,0.01,-3.389,-0.221]],"BB":[[3.873,7.683,-0.013,0.081,0.189],[-6.141,3.093,-0.004,-3.031,-0.495]],"SB":[[1.084,5.821,0.02,-1.162,-0.006],[-5.922,2.966,-0.694,-2.309,-1.21]],"EP":[[3.29,6.018,0.014,0.466,-0.561],[-7.841,3.395,1.544,-3.67,-0.327]]},"o":{"MP":[[2.067,6.076,-0.191,0.511,-0.328],[-5.478,1.589,1.478,-1.091,-0.996]],"*":[[2.355,6.632,-0.191,1.093,-0.042],[-6.153,1.183,3.023,-0.596,-1.421]],"EP":[[2.36,6.721,0.049,0.968,0.01],[-5.574,0.778,3.49,-0.571,-1.719]],"LP":[[1.915,5.31,-0.131,0.292,-0.014],[-4.596,1.236,0.756,0.604,-0.676]],"SB":[[2.037,4.531,0.336,0.408,0.86],[-6.153,1.183,3.023,-0.596,-1.421]],"BB":[[2.396,5.349,-0.154,0.881,-0.034],[-6.153,1.183,3.023,-0.596,-1.421]]},"l":{"EP":[[1.759,4.46,0.01,0.588,-0.046],[-4.559,1.22,1.98,-1.082,-0.896]],"*":[[1.926,3.848,-0.213,1.231,0.001],[-5.26,1.741,0.978,-0.585,-0.68]],"MP":[[1.866,5.741,-0.629,0.544,0.056],[-4.588,1.406,1.332,-0.397,-2.05]],"BB":[[3.069,1.942,-0.043,0.423,1.034],[-4.462,1.528,0.204,0.866,-0.009]],"LP":[[1.731,5.152,-0.449,0.833,0.603],[-4.346,1.017,0.238,0.68,-1.136]],"SB":[[2.939,3.788,1.033,0.212,-0.702],[-4.236,1.419,0.275,-0.746,0.05]]}},"limper":{"3b":{"SB":[[-3.601,1.996,0.275,0.035,-0.561],[-4.284,1.792,-0.056,-1.874,-0.469]],"*":[[-4.526,3.636,-0.187,-0.042,0.02],[-4.284,1.792,-0.056,-1.874,-0.469]],"LP":[[-3.73,2.302,-0.272,1.093,-0.542],[-4.284,1.792,-0.056,-1.874,-0.469]],"BB":[[-3.597,2.893,-0.05,0.407,-0.778],[-4.284,1.792,-0.056,-1.874,-0.469]],"MP":[[-4.162,2.624,0.608,-0.074,1.145],[-4.284,1.792,-0.056,-1.874,-0.469]],"EP":[[-3.534,3.175,0.637,-0.363,-0.706],[-4.284,1.792,-0.056,-1.874,-0.469]]},"r":{"LP":[[-0.824,6.025,0.403,-0.792,-0.068],[-5.906,3.112,-0.94,-2.657,0.088]],"*":[[-0.269,6.804,-1.074,-0.034,0.186],[-9.098,4.978,0.325,-5.692,-0.774]],"MP":[[-0.125,5.99,-0.707,-0.167,-0.3],[-6.096,2.277,0.527,-1.853,-1.512]],"BB":[[0.831,6.676,-0.074,-1.171,0.223],[-5.489,2.134,0.044,-1.034,-0.123]],"SB":[[-1.793,7.313,-0.46,0.008,-0.505],[-5.16,1.87,-0.511,-1.151,-0.782]],"EP":[[0.678,6.431,0.099,-0.013,0.602],[-6.941,2.965,2.094,-2.903,-1.328]]},"l":{"LP":[[-0.299,5.938,-0.185,0.117,0.286],[-4.816,1.276,-0.194,0.16,1.27]],"*":[[0.091,4.045,0.084,0.033,0.21],[-5.57,1.869,0.541,-0.497,0.693]],"MP":[[-0.317,6.496,-0.778,0.312,0.297],[-5.208,1.384,1.346,-0.386,0.502]],"EP":[[-0.655,5.522,0.498,0.117,0.336],[-4.803,0.623,1.856,0.556,-0.153]],"BB":[[2.332,1.228,0.018,0.296,1.025],[-4.347,2.132,0.119,-0.069,-0.538]],"SB":[[1.576,4.94,-0.055,0.073,-0.111],[-4.172,1.439,0.31,-0.449,-0.032]]},"o":{"EP":[[-0.601,6.488,0.344,0.559,-0.059],[-5.044,0.426,2.782,0.443,-0.326]],"*":[[-0.512,6.291,0.04,1.13,-0.123],[-5.363,1.034,1.447,0.595,-0.034]],"LP":[[-1.003,5.196,0.014,0.2,0.386],[-3.897,0.924,0.199,0.774,-0.734]],"MP":[[-0.144,5.544,1.296,1.039,-1.318],[-4.548,1.054,0.189,0.661,0.364]],"SB":[[-0.146,3.276,0.021,0.589,-0.064],[-5.363,1.034,1.447,0.595,-0.034]],"BB":[[0.185,4.139,0.026,0.743,-0.081],[-5.363,1.034,1.447,0.595,-0.034]]}},"whale":{"3b":{"BB":[[-2.024,2.34,0.058,-0.131,-0.755],[-5.13,2.295,0.455,-2.582,-0.17]],"*":[[-2.077,3.235,0.187,-0.119,-0.235],[-5.13,2.295,0.455,-2.582,-0.17]],"LP":[[-2.677,2.714,1.028,0.02,-0.333],[-5.13,2.295,0.455,-2.582,-0.17]],"EP":[[-1.532,2.791,1.513,1.34,-0.305],[-4.369,1.45,1.28,-1.92,-0.231]],"SB":[[-1.93,1.264,0.073,-0.046,-0.092],[-5.13,2.295,0.455,-2.582,-0.17]],"MP":[[-2.073,3.525,0.164,-0.917,-0.05],[-5.13,2.295,0.455,-2.582,-0.17]]},"r":{"SB":[[2.885,5.607,-0.533,0.228,0.029],[-5.543,2.616,-0.721,-1.238,-0.117]],"*":[[3.518,4.492,-0.935,1.008,-0.094],[-8.937,5.164,-0.058,-5.338,-1.042]],"EP":[[4.865,3.758,-0.008,0.127,-0.451],[-6.422,2.25,1.228,-1.389,-1.822]],"BB":[[3.647,4.165,-0.065,0.129,0.097],[-5.696,2.847,-0.005,-1.271,-0.65]],"LP":[[2.796,4.69,-0.148,0.631,-0.049],[-6.044,3.182,-0.794,-1.822,-0.618]],"MP":[[3.247,4.078,0.548,0.283,-0.119],[-6.507,3.029,1.018,-2.599,-1.088]]},"l":{"LP":[[3.632,5.29,-0.286,0.232,0.27],[-5.291,3.008,0.059,-0.035,-0.561]],"*":[[3.318,4.383,0.271,0.593,0.177],[-6.533,3.411,0.959,-1.421,-0.239]],"MP":[[3.193,5.151,0.761,0.237,0.312],[-5.855,2.305,1.685,-0.83,-0.079]],"EP":[[3.254,4.816,0.029,0.317,0.626],[-5.707,2.498,1.885,-1.465,-0.687]],"SB":[[4.206,4.118,0.752,0.068,-0.11],[-4.733,2.505,0.425,-1.142,-0.735]],"BB":[[3.152,1.824,0.047,0.229,-0.372],[-4.356,2.315,0.18,0.002,-0.056]]},"o":{"MP":[[2.533,4.348,0.307,0.206,-0.574],[-4.813,1.962,1.227,-1.075,0.165]],"*":[[3.388,4.864,-0.215,0.251,-0.086],[-5.952,2.264,1.503,-0.814,0.385]],"EP":[[3.403,4.793,0.023,0.114,0.141],[-5.54,1.994,1.548,-0.538,0.181]],"LP":[[2.918,4.885,0.176,0.137,-0.624],[-4.382,1.366,0.047,0.74,-0.284]],"BB":[[2.75,3.04,-0.135,0.157,-0.054],[-5.952,2.264,1.503,-0.814,0.385]],"SB":[[2.476,2.432,-0.108,0.125,-0.043],[-5.952,2.264,1.503,-0.814,0.385]]}},"shark":{"r":{"LP":[[-5.262,5.663,0.655,5.719,0.265],[-2.459,2.554,-1.862,0.721,-0.258]],"*":[[-6.06,7.057,0.459,6.878,-0.033],[-4.556,2.725,-0.167,0.763,0.206]],"MP":[[-5.566,5.981,0.857,5.291,-0.421],[-4.955,2.423,-0.057,1.146,-1.349]],"BB":[[-4.681,5.899,0.022,3.373,-0.415],[-4.628,2.872,-0.029,0.201,0.201]],"SB":[[-4.38,4.829,0.832,3.758,-0.062],[-2.519,1.828,-0.928,1.395,0.988]],"EP":[[-4.197,4.682,1.378,3.454,-0.313],[-4.493,2.515,-0.151,0.752,0.065]]},"o":{"LP":[[-1.751,3.954,2.162,0.684,0.823],[-0.47,3.104,3.134,-1.69,-0.392]],"*":[[-2.763,4.344,2.883,-0.485,0.259],[-3.467,6.354,5.038,-1.288,0.249]],"EP":[[-3.094,4.642,2.619,-0.137,0.279],[-5.369,8.52,1.552,0.605,0.466]],"MP":[[-2.586,4.106,1.735,-0.333,0.196],[-1.876,4.331,2.504,-0.746,0.029]],"BB":[[-1.983,3.291,2.184,-0.367,0.196],[-3.467,6.354,5.038,-1.288,0.249]],"SB":[[-1.042,1.975,1.31,-0.22,0.118],[-3.467,6.354,5.038,-1.288,0.249]]},"l":{"MP":[[-2.385,5.158,1.155,-1.309,-0.347],[-0.756,5.457,0.363,0.186,-0.535]],"*":[[-0.562,2.501,0.891,-0.432,-0.302],[-2.177,7.32,1.455,-0.156,-0.469]],"SB":[[-0.615,5.407,-0.832,0.16,0.529],[-1.071,5.308,0.581,0.092,-0.035]],"LP":[[-0.891,6.239,0.172,-0.894,-0.416],[-1.188,5.285,1.069,0.992,-0.015]],"EP":[[-1.795,3.189,1.608,-0.561,-0.471],[-0.713,5.133,0.606,0.073,0.152]],"BB":[[2.24,0.77,0.11,0.511,0.353],[-2.997,6.031,0.189,0.006,-0.092]]},"3b":{"EP":[[-5.248,2.104,0.715,-0.091,-0.678],[-3.867,1.574,-0.578,-1.221,-0.728]],"*":[[-6.169,2.79,0.66,0.265,-0.596],[-3.867,1.574,-0.578,-1.221,-0.728]],"BB":[[-4.599,1.7,0.176,1.169,-0.79],[-3.867,1.574,-0.578,-1.221,-0.728]],"SB":[[-4.312,2.018,-0.049,0.977,-0.825],[-3.867,1.574,-0.578,-1.221,-0.728]],"MP":[[-4.568,1.945,0.139,0.916,-1.125],[-3.867,1.574,-0.578,-1.221,-0.728]],"LP":[[-4.546,2.833,-0.606,-0.151,-0.269],[-3.867,1.574,-0.578,-1.221,-0.728]]}}},"0":{"tag":{"o":{"EP":[[-5.951,1.185,5.511,0.486,0.199],[5.531,0.134,0.406,0.103,0.095]],"*":[[-4.158,1.145,3.764,0.653,0.482],[-2.709,1.576,4.796,1.214,1.118]],"MP":[[-5.113,1.51,3.917,0.757,0.835],[2.965,0.41,1.249,0.316,0.291]],"LP":[[-4.149,1.354,3.683,0.786,1.015],[3.254,0.372,1.131,0.286,0.264]],"SB":[[-2.595,1.588,2.855,0.336,-0.185],[-2.709,1.576,4.796,1.214,1.118]],"BB":[[0.265,0.53,1.743,0.302,0.223],[-2.709,1.576,4.796,1.214,1.118]]},"r":{"LP":[[-6.004,7.251,0.001,-0.424,-0.176],[-4.33,2.216,-0.771,-1.47,-0.229]],"*":[[-4.054,6.246,-1.14,0.324,0.221],[-6.542,3.491,-0.056,-3.219,-0.565]],"BB":[[-1.276,7.546,-0.047,0.086,-0.673],[-5.433,2.682,-0.005,-1.994,-0.705]],"MP":[[-6.013,6.671,0.576,-0.59,0.322],[-5.041,2.434,-0.638,-1.051,-0.099]],"SB":[[-5.514,6.559,0.146,0.13,0.603],[-3.115,2.349,-1.886,-1.57,-0.595]],"EP":[[-4.807,4.81,1.507,-0.851,-0.577],[-4.488,2.205,0.057,-1.647,-0.803]]},"l":{"MP":[[-5.914,3.445,0.138,0.444,-0.423],[-4.739,3.761,1.109,-0.005,-0.261]],"*":[[-2.609,1.381,0.479,0.231,-0.341],[-4.739,3.761,1.109,-0.005,-0.261]],"EP":[[-5.556,3.194,0.477,-0.159,-0.033],[-4.739,3.761,1.109,-0.005,-0.261]],"SB":[[-2.752,4.137,-0.213,-0.061,0.245],[-4.739,3.761,1.109,-0.005,-0.261]],"LP":[[-5.321,4.779,-0.28,-0.798,-0.315],[-4.739,3.761,1.109,-0.005,-0.261]],"BB":[[1.865,0.508,0.176,0.085,-0.125],[-3.641,2.451,0.408,0.163,-0.885]]},"3b":{"LP":[[-4.006,2.698,-0.557,-1.873,-1.038],[-2.441,0.103,-0.992,0.476,-0.413]],"*":[[-5.507,3.662,-0.408,-2.798,-1.044],[-2.441,0.103,-0.992,0.476,-0.413]],"SB":[[-3.732,2.721,-0.737,-1.953,-0.931],[-2.441,0.103,-0.992,0.476,-0.413]],"EP":[[-3.592,2.598,-1.047,-1.333,-0.749],[-2.441,0.103,-0.992,0.476,-0.413]],"MP":[[-4.236,2.487,-0.734,-0.924,-0.542],[-2.441,0.103,-0.992,0.476,-0.413]],"BB":[[-4.115,2.416,-0.086,-1.153,-1.042],[-2.441,0.103,-0.992,0.476,-0.413]]}},"nit":{"o":{"EP":[[-5.414,1.474,3.581,0.673,0.4],[0.508,-0.677,1.311,2.654,-0.109]],"*":[[-5.128,1.156,3.907,0.532,0.373],[-0.694,-0.411,2.325,1.691,-0.013]],"LP":[[-3.897,2.079,2.431,-0.239,0.655],[-0.694,-0.411,2.325,1.691,-0.013]],"MP":[[-4.402,1.03,3.03,1.128,0.32],[-0.694,-0.411,2.325,1.691,-0.013]],"SB":[[-3.309,0.642,2.171,0.296,0.207],[-0.694,-0.411,2.325,1.691,-0.013]],"BB":[[-4.629,1.07,3.618,0.493,0.345],[-0.694,-0.411,2.325,1.691,-0.013]]},"r":{"BB":[[-4.542,4.947,-0.356,0.35,0.379],[-4.711,2.69,0.038,-3.028,-1.09]],"*":[[-7.44,7.422,-2.98,-0.053,0.093],[-4.711,2.69,0.038,-3.028,-1.09]],"SB":[[-4.777,4.212,-1.678,0.037,-0.56],[-4.711,2.69,0.038,-3.028,-1.09]],"LP":[[-5.924,5.277,-1.716,-0.004,0.029],[-4.711,2.69,0.038,-3.028,-1.09]],"MP":[[-5.725,4.231,-0.53,-0.142,-0.785],[-4.711,2.69,0.038,-3.028,-1.09]],"EP":[[-4.743,3.15,1.773,-0.514,-0.722],[-4.711,2.69,0.038,-3.028,-1.09]]},"3b":{"BB":[[-3.006,1.053,-0.217,-0.426,-0.297],[-2.0,0,0,0,0]],"*":[[-4.144,2.275,-0.469,-0.921,-0.641],[-2.0,0,0,0,0]],"SB":[[-3.442,1.264,-0.261,-0.512,-0.356],[-2.0,0,0,0,0]],"MP":[[-2.721,0.998,-0.206,-0.404,-0.281],[-2.0,0,0,0,0]],"LP":[[-4.179,0.981,-0.202,-0.397,-0.276],[-2.0,0,0,0,0]],"EP":[[-2.929,1.58,-0.326,-0.64,-0.445],[-2.0,0,0,0,0]]},"l":{"BB":[[2.37,0.299,-1.152,0.149,-0.242],[-2.0,0,0,0,0]],"*":[[0.602,0.622,-2.397,0.309,-0.504],[-2.0,0,0,0,0]],"SB":[[-1.351,0.283,-1.09,0.141,-0.229],[-2.0,0,0,0,0]]}},"weekend":{"o":{"EP":[[-5.332,1.503,5.083,0.706,0.128],[4.401,0.249,0.569,0.11,0.03]],"*":[[-5.321,1.422,5.602,0.051,-0.07],[0.483,1.284,2.934,0.57,0.154]],"MP":[[-4.329,1.225,4.794,-0.663,0.132],[3.206,0.434,0.991,0.192,0.052]],"LP":[[-3.751,1.783,3.746,1.208,-0.04],[3.36,0.406,0.929,0.18,0.049]],"SB":[[-2.927,2.392,3.286,0.019,-0.002],[0.483,1.284,2.934,0.57,0.154]]},"r":{"BB":[[-1.62,5.641,-0.208,1.441,-0.208],[-4.54,1.352,0.055,-0.369,-0.769]],"*":[[-4.339,6.331,-1.757,1.572,0.416],[-5.661,2.338,0.235,-1.472,-0.204]],"SB":[[-4.43,4.397,-0.243,0.256,0.892],[-5.661,2.338,0.235,-1.472,-0.204]],"LP":[[-5.727,6.224,-0.096,1.008,0.173],[-3.656,1.508,-1.491,-0.211,-0.523]],"MP":[[-5.31,5.399,0.33,0.673,-0.165],[-3.942,1.778,-0.524,-0.632,-0.168]],"EP":[[-3.384,3.665,0.939,0.618,-0.296],[-5.661,2.338,0.235,-1.472,-0.204]]},"3b":{"BB":[[-4.314,1.018,-0.089,0.191,-0.286],[-2.0,0,0,0,0]],"*":[[-4.618,2.158,-0.189,0.406,-0.606],[-2.0,0,0,0,0]],"MP":[[-3.442,1.148,-0.1,0.216,-0.322],[-2.0,0,0,0,0]],"SB":[[-3.455,1.199,-0.105,0.225,-0.337],[-2.0,0,0,0,0]],"LP":[[-3.752,1.989,-0.62,-0.22,-0.207],[-2.0,0,0,0,0]],"EP":[[-2.959,1.058,-0.093,0.199,-0.297],[-2.0,0,0,0,0]]},"l":{"LP":[[0.178,0.741,-1.476,0.574,-0.14],[-2.0,0,0,0,0]],"*":[[0.693,0.889,-1.771,0.689,-0.169],[-2.0,0,0,0,0]],"MP":[[-0.162,0.674,-1.342,0.522,-0.128],[-2.0,0,0,0,0]],"BB":[[2.557,0.404,-0.805,0.313,-0.077],[-2.0,0,0,0,0]],"EP":[[0.051,0.654,-1.302,0.507,-0.124],[-2.0,0,0,0,0]],"SB":[[0.624,0.855,-1.703,0.662,-0.162],[-2.0,0,0,0,0]]}},"station":{"o":{"MP":[[2.182,7.168,1.143,0.174,-0.663],[-4.68,0.774,0.401,1.685,-0.822]],"*":[[2.508,8.237,0.303,0.494,-0.556],[-5.611,1.198,2.039,-0.526,-0.247]],"EP":[[2.14,7.814,-0.586,0.714,-0.242],[-5.333,1.41,1.859,-1.481,-0.373]],"LP":[[1.637,6.146,0.777,0.235,-0.105],[-4.072,1.09,0.178,-0.157,-0.169]],"SB":[[1.448,3.269,0.12,0.196,-0.221],[-5.611,1.198,2.039,-0.526,-0.247]],"BB":[[2.441,7.627,0.28,0.458,-0.515],[-5.611,1.198,2.039,-0.526,-0.247]]},"r":{"EP":[[2.311,5.48,0.074,0.149,0.46],[-5.771,2.405,0.546,-1.111,-2.018]],"*":[[1.369,7.245,-1.015,1.212,0.12],[-8.026,4.662,0.279,-5.525,-1.377]],"BB":[[2.102,5.701,-0.113,0.182,-0.592],[-4.728,2.213,0.049,-2.509,-1.679]],"SB":[[0.128,6.99,0.101,0.287,-0.26],[-4.749,2.797,-0.676,-3.127,-0.161]],"MP":[[0.934,6.505,0.463,0.454,0.546],[-5.914,2.992,1.17,-2.96,-0.901]],"LP":[[0.284,7.696,0.055,0.813,0.099],[-5.205,2.824,-0.767,-1.923,-1.328]]},"l":{"LP":[[0.422,0.0,0.0,0.0,0.0],[-2.0,0,0,0,0]],"*":[[0.351,0.0,0.0,0.0,0.0],[-2.0,0,0,0,0]],"EP":[[0.33,0.0,0.0,0.0,0.0],[-2.0,0,0,0,0]],"MP":[[0.303,0.0,0.0,0.0,0.0],[-2.0,0,0,0,0]],"BB":[[0.38,0.0,0.0,0.0,0.0],[-2.0,0,0,0,0]],"SB":[[0.296,0.0,0.0,0.0,0.0],[-2.0,0,0,0,0]]},"3b":{"MP":[[-3.124,2.26,-0.287,0.342,-0.098],[-3.098,0.871,1.024,-1.397,0.126]],"*":[[-4.714,4.701,-0.598,0.711,-0.204],[-3.098,0.871,1.024,-1.397,0.126]],"LP":[[-3.824,3.186,-0.349,0.278,-0.21],[-3.098,0.871,1.024,-1.397,0.126]],"BB":[[-2.906,2.35,-0.299,0.355,-0.102],[-3.098,0.871,1.024,-1.397,0.126]],"EP":[[-3.689,3.609,0.697,0.162,-1.066],[-3.098,0.871,1.024,-1.397,0.126]],"SB":[[-3.481,2.398,-0.305,0.363,-0.104],[-3.098,0.871,1.024,-1.397,0.126]]}},"shark":{"r":{"LP":[[-5.979,5.949,0.767,3.951,-0.114],[-3.897,2.423,-1.371,0.809,0.121]],"*":[[-7.495,8.307,0.275,7.127,-0.296],[-6.752,3.497,0.288,0.499,0.144]],"BB":[[-5.406,6.056,0.017,4.455,-0.434],[-5.421,2.519,0.074,0.576,0.305]],"MP":[[-4.887,5.025,1.344,4.048,-0.539],[-5.088,2.84,-0.32,0.81,0.077]],"SB":[[-5.106,5.595,0.26,3.894,-0.654],[-3.39,2.541,-1.518,0.299,-0.164]],"EP":[[-4.666,4.608,1.018,2.449,-0.304],[-4.888,2.71,-0.132,0.541,0.003]]},"l":{"EP":[[-1.897,4.924,0.927,0.06,-0.172],[2.394,2.834,0.164,-0.007,-0.192]],"*":[[-0.397,3.095,0.895,-0.424,-0.341],[-0.807,7.367,0.427,-0.018,-0.5]],"BB":[[3.114,0.967,0.28,-0.132,-0.107],[-1.471,5.209,0.133,-0.005,-0.745]],"SB":[[-0.638,4.344,0.537,-0.076,-0.202],[-0.807,7.367,0.427,-0.018,-0.5]],"LP":[[-1.093,6.536,1.026,0.87,-0.092],[-0.575,5.524,0.343,-0.162,0.023]],"MP":[[-1.37,5.674,0.925,-0.873,-0.165],[0.807,3.976,0.816,0.243,0.586]]},"3b":{"EP":[[-4.647,2.746,0.2,-1.567,-0.535],[-2.0,0,0,0,0]],"*":[[-5.705,3.55,-0.142,-1.586,-0.321],[-2.0,0,0,0,0]],"LP":[[-3.96,2.198,-0.639,0.238,-0.775],[-2.0,0,0,0,0]],"SB":[[-4.146,2.093,-0.736,-0.273,-0.454],[-2.0,0,0,0,0]],"MP":[[-4.626,2.798,-0.19,-0.487,-0.219],[-2.0,0,0,0,0]],"BB":[[-4.205,1.409,-0.056,-0.629,-0.127],[-2.0,0,0,0,0]]},"o":{"EP":[[-5.117,5.884,5.855,-1.823,0.012],[5.783,0.236,0.205,0.054,0.09]],"*":[[-4.24,5.007,6.564,-2.188,-0.245],[0.751,2.714,2.35,0.62,1.036]],"MP":[[-3.609,4.206,4.827,0.415,0.192],[4.51,0.51,0.442,0.117,0.195]],"LP":[[-2.289,3.096,4.36,-1.254,-0.303],[3.844,0.714,0.618,0.163,0.273]],"SB":[[-1.998,2.276,2.983,-0.994,-0.111],[0.751,2.714,2.35,0.62,1.036]],"BB":[[-3.352,4.316,5.658,-1.886,-0.211],[0.751,2.714,2.35,0.62,1.036]]}},"lag":{"r":{"SB":[[-1.072,5.612,-0.224,-2.436,-0.803],[-4.073,2.108,-1.114,-0.57,0.733]],"*":[[-0.659,4.316,-0.185,-0.087,-0.106],[-5.543,3.002,-0.526,-1.479,0.075]],"LP":[[-1.706,5.325,1.05,0.118,-0.612],[-4.026,1.806,-0.275,-0.493,-0.158]],"MP":[[-1.68,4.018,0.287,-1.689,0.279],[-4.657,2.092,-0.445,-0.13,-0.74]],"EP":[[-1.067,5.618,0.403,0.985,-0.077],[-4.553,1.994,0.266,-0.582,-0.437]],"BB":[[1.282,4.271,-0.022,0.654,-0.063],[-4.515,2.423,-0.097,-0.313,-0.11]]},"o":{"EP":[[-5.439,6.202,5.179,1.087,0.124],[5.269,0.32,0.249,0.041,0.117]],"*":[[-4.777,5.323,5.566,1.137,-0.107],[1.629,2.456,1.909,0.312,0.901]],"MP":[[-3.561,3.171,3.845,0.878,-0.364],[3.423,0.903,0.702,0.115,0.331]],"SB":[[-2.459,2.832,2.961,0.605,-0.057],[1.629,2.456,1.909,0.312,0.901]],"LP":[[-3.017,3.027,3.992,0.683,-0.15],[1.629,2.456,1.909,0.312,0.901]],"BB":[[-4.551,5.119,5.352,1.094,-0.103],[1.629,2.456,1.909,0.312,0.901]]},"l":{"BB":[[2.129,1.11,0.598,-0.726,-0.421],[-2.379,3.926,2.301,0.554,0.577]],"*":[[-0.735,2.62,1.412,-1.713,-0.993],[-2.379,3.926,2.301,0.554,0.577]],"SB":[[-0.664,3.281,1.183,-1.699,-0.53],[-2.379,3.926,2.301,0.554,0.577]],"LP":[[-2.644,3.774,1.976,-0.724,-0.181],[1.949,1.443,0.846,0.204,0.212]],"MP":[[-2.06,3.542,1.501,-0.367,-0.817],[-2.379,3.926,2.301,0.554,0.577]]},"3b":{"BB":[[-2.239,0.7,-0.32,0.171,0.023],[-2.0,0,0,0,0]],"*":[[-2.556,1.455,-0.666,0.355,0.047],[-2.0,0,0,0,0]],"LP":[[-2.155,1.026,-1.344,0.831,0.279],[-2.0,0,0,0,0]],"MP":[[-1.74,0.713,-0.326,0.174,0.023],[-2.0,0,0,0,0]],"EP":[[-2.333,1.693,-0.805,0.008,-0.608],[-2.0,0,0,0,0]],"SB":[[-2.733,1.011,-0.462,0.247,0.033],[-2.0,0,0,0,0]]}}}};
 /* ===== pre-flop model fitted from 90,000 simulated bot decisions ===== */
 function pfWeights(i){var p=T.players[i],lv=T.live?1:0,pos=H.pos[i],pg=i===H.bbI?"BB":i===H.sbI?"SB":["CO","BTN"].indexOf(pos)>=0?"LP":["MP","HJ"].indexOf(pos)>=0?"MP":"EP";
   var acts=(H.hist||[]).filter(function(e){return e.i===i&&e.st===0;}),M=PFM[lv?"1":"0"]||PFM["1"],A=M&&M[liveKey(p)],out={};
@@ -3126,47 +3192,89 @@ function evResponse(j,cb,brd,toCall,potSeen,heroAggNow,raisesNow,P,loc){if(!P)re
   var hi=hcCached(cb,brd),mk=hi.S*1000+hi.outs;if(loc[mk])return loc[mk];var c={toCall:toCall,canRaise:T.players[j].stack>toCall,pot:potSeen,nOpp:1,st:H.street,isPreAgg:H.preAgg===j,facingRaise:raisesNow>=2,raises:raisesNow,memAdj:heroAggNow?liveMem(j):0},f=0,cl=0,r=0;
   for(var k=0;k<QR.length;k++){var q=QR[k],t=0,d=liveDecide(P,hi,c,function(){return q[t++];});if(d[0]==="fold")f++;else if(d[0]==="raise")r++;else cl++;}
   var n=QR.length;return (loc[mk]=[f/n,cl/n,r/n]);}
-var EV_REAL={1:[0.9,0.82],2:[0.95,0.9],3:[1,1]};
+/* ===== EV accounting convention =====
+   EV(action) = expected chips gained from now on if the hero takes that action, measured against folding now (fold = 0).
+   Chips already in the pot are SUNK: they sit in `pot` as chips the hero can win and are never counted as a loss.
+   Only chips the hero adds from now on are costs. A chip the opponent cannot match is refunded, not risked.
+   rho scales showdown equity to the share the hand actually collects after betting (an assumed constant, see EV_REAL).
+   Rake: off unless a table sets T.room.rake. It is taken from the pot the hero wins. */
+function roomRake(){return (T&&T.room&&T.room.rake)||null;}
+function rakeOf(pot,sawFlop){var r=roomRake();if(!r||!(pot>0))return 0;if(r.noFlopNoDrop!==false&&!sawFlop)return 0;
+  var x=Math.floor(pot*(r.pct||0));if(r.cap>0)x=Math.min(x,r.cap);x+=(r.drop||0);return Math.min(x,pot);}
+function rakeNet(P,flop){return P-rakeOf(P,flop);}
+function evCallPure(eq,pot,call,rho,flop){return eq*rakeNet(pot+call,flop)*rho-call;}   /* pot includes the bet being called */
+function evCheckDown(eq,pot,rho,flop){return eq*rakeNet(pot,flop)*rho;}
+/* heads-up bet or raise. o: pot, eb (chips hero adds, after refund), ocE (chips the opponent adds if he continues),
+   f/c/r: opponent fold/call/raise probabilities, eqC: hero equity when called, eqR: hero equity vs a re-raise,
+   rho, flop, reraise: "fold" (hero gives up to a re-raise) or "callOrFold" with rr (hero's total after calling it). */
+function evAggressHU(o){var called=o.eqC*rakeNet(o.pot+o.eb+o.ocE,o.flop)*o.rho-o.eb,ev=o.f*rakeNet(o.pot,o.flop)+o.c*called;
+  if(o.r>0){var rr=-o.eb;if(o.reraise==="callOrFold"){var cr=o.eqR*rakeNet(o.pot+2*o.rr,o.flop)*o.rho-o.rr;if(cr>rr)rr=cr;}ev+=o.r*rr;}return ev;}
+/* multiway bet or raise: opponents fold independently (an approximation), callers share one effective equity */
+function evAggressMW(o){var called=Math.pow(o.eqC,Math.max(1,o.callers))*rakeNet(o.pot+o.eb*(1+o.callers),o.flop)*o.rho-o.eb;return o.allF*rakeNet(o.pot,o.flop)+(1-o.allF)*called;}
+var EV_REAL={1:[0.9,0.82],2:[0.95,0.9],3:[1,1]},EV_MAX_SIZE=2;
+function evStdErr(a){var n=a.length;if(n<2)return 0;var m=0;a.forEach(function(x){m+=x;});m/=n;var v=0;a.forEach(function(x){v+=(x-m)*(x-m);});return Math.sqrt(v/(n-1)/n);}
 function evAnalyze(){if(!H||H.street<1||H.done)return null;RESP_MEMO={};var L=legal(0),pot=potTotal(),opps=live().filter(function(j){return j!==0;});if(!opps.length)return null;
-  var hs=H.s[0],hero=hs.cards,board=H.board,st=H.street,t0=Date.now(),bb=T.bb,ip=heroIP(),rho=EV_REAL[st][ip?0:1];
+  var hs=H.s[0],hero=hs.cards,board=H.board,st=H.street,t0=Date.now(),bb=T.bb,ip=heroIP(),rho=EV_REAL[st][ip?0:1],flop=true;
   var R=opps.map(function(j){return actionRange(j);}),dead={};hero.concat(board).forEach(function(c){dead[c]=1;});
-  var runs=evRunouts(board,dead,st===1?150:0),eqs=R.map(function(r){return evComboEq(hero,board,r,runs);});
+  var runs=evRunouts(board,dead,st===1?150:0),F=runs.length>=50?5:1,eqs,foldEq=null;
+  if(F>1){var parts=[];for(var f=0;f<F;f++)parts.push(runs.filter(function(_,q){return q%F===f;}));
+    var pe=R.map(function(r){return parts.map(function(pr){return evComboEq(hero,board,r,pr);});});foldEq=pe;
+    eqs=pe.map(function(fs){return fs[0].map(function(_,k){var s=0;fs.forEach(function(a){s+=a[k];});return s/F;});});}
+  else eqs=R.map(function(r){return evComboEq(hero,board,r,runs);});
   var eqR=R.map(function(r,ri){var s=0;r.combos.forEach(function(_,k){s+=r.w[k]*eqs[ri][k];});return s/r.tot;});
-  var eqAll=opps.length===1?eqR[0]:eqVsRangesD(hero,board,R,1500).eq,hu=opps.length===1,stack=T.players[0].stack,heroIn=hs.sb;
+  var hu=opps.length===1,mwD=hu?null:eqVsRangesD(hero,board,R,1500),eqAll=hu?eqR[0]:mwD.eq,stack=T.players[0].stack,heroIn=hs.sb;
+  var eqSE=hu?(foldEq?evStdErr(foldEq[0].map(function(fs){var s=0;R[0].combos.forEach(function(_,k){s+=R[0].w[k]*fs[k];});return s/R[0].tot;})):0):mwD.se;
+  var vStack=hu?T.players[opps[0]].stack:Infinity;
   var opts=[],toCall=L.toCall,potOdds=toCall?toCall/(pot+toCall):0;
-  function respond(addTo,raisesNow){/* hero puts in `addTo` more; returns weighted fold/call/raise and equity when called, per opponent */
-    return opps.map(function(j,ri){var r=R[ri],sb=H.s[j].sb,oc=Math.max(0,(heroIn+addTo)-sb),pf=0,pc=0,pr=0,eqc=0,eqr=0,tot=r.tot,PJ=useLive(T.players[j])?liveProfAt(j):null,loc={};
-      r.combos.forEach(function(cb,k){var w=r.w[k];if(w<=0)return;var rs=evResponse(j,cb,board,oc,pot+addTo,true,raisesNow,PJ,loc);pf+=w*rs[0];pc+=w*rs[1];pr+=w*rs[2];eqc+=w*rs[1]*eqs[ri][k];eqr+=w*rs[2]*eqs[ri][k];});
-      return {f:pf/tot,c:pc/tot,r:pr/tot,eqC:pc?eqc/pc:0,eqR:pr?eqr/pr:0,oc:oc};});}
-  function checkEV(){if(!hu)return eqAll*pot*rho;var j=opps[0],r=R[0],PJ=useLive(T.players[j])?liveProfAt(j):null;if(!PJ)return eqAll*pot*rho;
-    /* their likely bet size if they bet: about 60% of the pot */
-    var b=Math.max(bb,Math.round(pot*0.6)),loc={},pBet=0,eqBet=0,eqChk=0,tot=r.tot;
+  function respond(addTo,raisesNow){/* hero adds `addTo` chips; per opponent: fold/call/raise odds and hero equity in each branch */
+    return opps.map(function(j,ri){var r=R[ri],sb=H.s[j].sb,vs=T.players[j].stack,oc=Math.max(0,(heroIn+addTo)-sb),ocE=Math.min(oc,vs),pf=0,pc=0,pr=0,eqc=0,eqr=0,tot=r.tot,PJ=useLive(T.players[j])?liveProfAt(j):null,loc={};
+      r.combos.forEach(function(cb,k){var w=r.w[k];if(w<=0)return;var rs=evResponse(j,cb,board,ocE,pot+addTo,true,raisesNow,PJ,loc);pf+=w*rs[0];pc+=w*rs[1];pr+=w*rs[2];eqc+=w*rs[1]*eqs[ri][k];eqr+=w*rs[2]*eqs[ri][k];});
+      return {f:pf/tot,c:pc/tot,r:pr/tot,eqC:pc?eqc/pc:0,eqR:pr?eqr/pr:0,oc:oc,ocE:ocE};});}
+  function checkEV(){if(!hu)return evCheckDown(eqAll,pot,rho,flop);var j=opps[0],r=R[0],PJ=useLive(T.players[j])?liveProfAt(j):null;if(!PJ)return evCheckDown(eqAll,pot,rho,flop);
+    /* if checked to, this opponent bets about 60% of the pot when he bets */
+    var b=Math.min(Math.max(bb,Math.round(pot*0.6)),vStack,stack),loc={},pBet=0,eqBet=0,eqChk=0,tot=r.tot;
     r.combos.forEach(function(cb,k){var w=r.w[k];if(w<=0)return;var hi=hcCached(cb,board),ck=hi.S*1000+hi.outs,pb=loc[ck];
       if(pb===undefined){var c={toCall:0,canRaise:true,pot:pot,nOpp:1,st:st,isPreAgg:H.preAgg===j,facingRaise:false,raises:0},n=0;for(var q=0;q<QR.length;q++){var qq=QR[q],t=0;if(liveDecide(PJ,hi,c,function(){return qq[t++];})[0]==="bet")n++;}pb=loc[ck]=n/QR.length;}
       pBet+=w*pb;eqBet+=w*pb*eqs[0][k];eqChk+=w*(1-pb)*eqs[0][k];});
-    var fb=pBet/tot,eB=pBet?eqBet/pBet:0,eC=(tot-pBet)?eqChk/(tot-pBet):eqAll,callEV=eB*(pot+2*b)*rho-b;
-    return (1-fb)*eC*pot*rho+fb*Math.max(0,callEV);}
-  if(toCall===0){opts.push({k:"check",lab:"Check",amt:0,ev:checkEV()});
-    [0.33,0.5,0.75,1].forEach(function(f){var b=Math.min(stack,Math.max(bb,Math.round(pot*f)));if(opts.some(function(o){return o.amt===b;}))return;var rs=respond(b,H.raises+1),ev;
-      if(hu){var x=rs[0],raiseTo=b*2.8,callRaise=x.eqR*(pot+2*raiseTo)*rho-raiseTo>=-b;ev=x.f*pot+x.c*(x.eqC*(pot+2*b)*rho-b)+x.r*(callRaise?x.eqR*(pot+2*raiseTo)*rho-raiseTo:-b);}
-      else{var allF=rs.reduce(function(a,x){return a*x.f;},1),callers=rs.reduce(function(a,x){return a+x.c+x.r;},0),eqC=rs.reduce(function(a,x){return a+(x.c+x.r)*x.eqC;},0)/Math.max(0.01,callers);ev=allF*pot+(1-allF)*(Math.pow(eqC,Math.max(1,callers))*(pot+b*(1+callers))*rho-b);}
-      opts.push({k:"bet",lab:"Bet "+Math.round(f*100)+"% pot",amt:b,ev:ev,fe:hu?rs[0].f:rs.reduce(function(a,x){return a*x.f;},1),pc:hu?rs[0].c:null,pr:hu?rs[0].r:null,eqC:hu?rs[0].eqC:null});});}
-  else{opts.push({k:"fold",lab:"Fold",amt:0,ev:0});
-    var callAmt=Math.min(toCall,stack);opts.push({k:"call",lab:"Call",amt:callAmt,ev:eqAll*(pot+callAmt)*rho-callAmt});
-    if(L.canRaise)[2.5,3.5].forEach(function(m){var to=Math.min(L.maxTo,Math.round(H.cur*m));if(to<L.minTo)return;var add=to-heroIn,rs=respond(add,H.raises+1),ev;
-      if(hu){var x=rs[0];ev=x.f*pot+x.c*(x.eqC*(pot+add+x.oc)*rho-add)+x.r*(-add);}
-      else{var allF=rs.reduce(function(a,x){return a*x.f;},1),eqC=rs.reduce(function(a,x){return a+(x.c)*x.eqC;},0)/Math.max(0.01,rs.reduce(function(a,x){return a+x.c;},0));ev=allF*pot+(1-allF)*(eqC*(pot+add*2)*rho-add);}
-      opts.push({k:"raise",lab:"Raise to "+money(to),amt:to,ev:ev,fe:hu?rs[0].f:rs.reduce(function(a,x){return a*x.f;},1),pc:hu?rs[0].c:null,pr:hu?rs[0].r:null,eqC:hu?rs[0].eqC:null});});}
-  opts.forEach(function(o){o.bb=o.ev/bb;});var best=opts.slice().sort(function(a,b){return b.ev-a.ev;})[0],mBest=best;
-
-  var combosN=R.reduce(function(a,r){return a+r.combos.filter(function(_,k){return r.w[k]>0.0005;}).length;},0);
-  return {opts:opts,best:best,mBest:mBest,blend:best!==mBest,eqR:eqR,eqAll:eqAll,eqRand:eqRandom(hero,board,opps.length,600),potOdds:potOdds,pot:pot,toCall:toCall,spr:stack/Math.max(1,pot),
-    hc:hcInfo(hero,board),opps:opps,R:R,ip:ip,rho:rho,runs:runs.length||(st===3?1:0),combos:combosN,ms:Date.now()-t0,hu:hu};}
+    var fb=pBet/tot,eB=pBet?eqBet/pBet:0,eC=(tot-pBet)?eqChk/(tot-pBet):eqAll,callEV=evCallPure(eB,pot+b,b,rho,flop);
+    return (1-fb)*evCheckDown(eC,pot,rho,flop)+fb*Math.max(0,callEV);}
+  function aggress(kind,lab,to,addTo,allIn){/* to: bet or raise-to total; addTo: chips hero adds */
+    var rh=allIn?1:rho,rs=respond(addTo,H.raises+1),o={k:kind,lab:lab,amt:to,allIn:!!allIn},ev,eb;
+    if(hu){var x=rs[0];eb=addTo-(x.oc-x.ocE);
+      ev=evAggressHU({pot:pot,eb:eb,ocE:x.ocE,f:x.f,c:x.c,r:x.r,eqC:x.eqC,eqR:x.eqR,rho:rh,flop:flop,reraise:kind==="bet"?"callOrFold":"fold",rr:Math.min(stack,Math.max(eb*2.8,eb))});
+      o.fe=x.f;o.pc=x.c;o.pr=x.r;o.eqC=x.eqC;o.price=x.ocE/Math.max(1,pot+eb+x.ocE);o.cont=x.c+x.r;o.spr2=Math.max(0,(stack-eb))/Math.max(1,pot+eb+x.ocE);
+      o.se=eqSE*Math.abs(x.c*rakeNet(pot+eb+x.ocE,flop)*rh);}
+    else{var allF=rs.reduce(function(a,x){return a*x.f;},1),callers=rs.reduce(function(a,x){return a+x.c+x.r;},0),eqC=rs.reduce(function(a,x){return a+(x.c+x.r)*x.eqC;},0)/Math.max(0.01,callers);eb=addTo;
+      ev=evAggressMW({pot:pot,eb:eb,allF:allF,callers:callers,eqC:eqC,rho:rh,flop:flop});o.fe=allF;o.eqC=eqC;o.cont=1-allF;o.price=addTo/Math.max(1,pot+addTo*(1+callers));o.spr2=Math.max(0,(stack-eb))/Math.max(1,pot+eb*(1+callers));
+      o.se=eqSE*(1-allF)*rakeNet(pot+eb*(1+callers),flop)*rh;}
+    o.ev=ev;o.eb=eb;opts.push(o);}
+  if(toCall===0){opts.push({k:"check",lab:"Check",amt:0,ev:checkEV(),se:eqSE*rakeNet(pot,flop)*rho});
+    [0.33,0.5,0.75,1].forEach(function(f){var b=Math.min(stack,Math.max(bb,Math.round(pot*f)));if(opts.some(function(o){return o.amt===b;}))return;aggress("bet","Bet "+Math.round(f*100)+"% pot",b,b,b>=stack);});
+    if(L.canRaise&&!opts.some(function(o){return o.amt===stack;}))aggress("bet","All in "+money(stack),stack,stack,true);}
+  else{opts.push({k:"fold",lab:"Fold",amt:0,ev:0,se:0});
+    var callAmt=Math.min(toCall,stack);opts.push({k:"call",lab:"Call",amt:callAmt,ev:evCallPure(eqAll,pot,callAmt,rho,flop),se:eqSE*rakeNet(pot+callAmt,flop)*rho});
+    if(L.canRaise){[2.5,3.5].forEach(function(m){var to=Math.min(L.maxTo,Math.round(H.cur*m));if(to<L.minTo)return;if(opts.some(function(o){return o.amt===to&&o.k==="raise";}))return;aggress("raise","Raise to "+money(to),to,to-heroIn,to>=L.maxTo);});
+      if(!opts.some(function(o){return o.k==="raise"&&o.amt===L.maxTo;}))aggress("raise","All in "+money(L.maxTo),L.maxTo,L.maxTo-heroIn,true);}}
+  /* The opponent response model only covers bets up to about twice the pot. Larger sizes are shown, but they are
+     extrapolation (the simulated players saturate there, so a huge overbet looks cheaper than it would be), so they are never recommended. */
+  opts.forEach(function(o){o.bb=o.ev/bb;o.seBB=(o.se||0)/bb;o.extrap=(o.k==="bet"||o.k==="raise")&&o.eb/Math.max(1,pot)>EV_MAX_SIZE;});
+  var cand=opts.filter(function(o){return !o.extrap;});if(!cand.length)cand=opts;
+  var best=cand.slice().sort(function(a,b){return b.ev-a.ev;})[0],mBest=best;
+  var combosN=R.reduce(function(a,r){return a+r.combos.filter(function(_,k){return r.w[k]>0.0005;}).length;},0),rk=roomRake();
+  var assumptions=["The rest of the hand is approximated: showdown equity is scaled by an assumed realization of "+Math.round(rho*100)+"% ("+(ip?"in":"out of")+" position, "+["","flop","turn","river"][st]+"). Future betting is not modeled.",
+    "Opponent responses come from the same decision rules the simulated players use, not from real people.",
+    hu?"Heads-up: any chips beyond the opponent's stack are refunded, not risked.":"Multiway: opponents are treated as folding independently, and side pots are ignored."];
+  if(opts.some(function(o){return o.extrap;}))assumptions.push("Sizes above twice the pot are marked and never recommended. The opponent response model was only built for sizes up to 2x the pot, so beyond that its numbers are extrapolation.");
+  if(rk)assumptions.push("Rake: "+Math.round((rk.pct||0)*1000)/10+"%"+(rk.cap?" up to "+money(rk.cap):"")+(rk.drop?" plus "+money(rk.drop)+" drop":"")+" taken from the pot you win.");
+  return {opts:opts,best:best,mBest:mBest,blend:false,eqR:eqR,eqAll:eqAll,eqSE:eqSE,eqRand:eqRandom(hero,board,opps.length,600),potOdds:potOdds,pot:pot,toCall:toCall,spr:stack/Math.max(1,pot),
+    hc:hcInfo(hero,board),opps:opps,R:R,ip:ip,rho:rho,runs:runs.length||(st===3?1:0),combos:combosN,ms:Date.now()-t0,hu:hu,assumptions:assumptions,
+    horizon:"this street, with showdown equity scaled by an assumed realization factor",method:hu?(runs.length?runs.length+" sampled runouts":"all runouts, exact"):"sequential importance sampling, "+(mwD&&mwD.n)+" valid trials (ESS "+Math.round(mwD&&mwD.ess)+")"};}
 /* ===== analysis panel: model recommendation, reasons at two levels, EV chart, range charts ===== */
 var MODEL_MW=true;
 function evPick(A,d){var a=d[0],o=A.opts;if(a==="fold")return o.find(function(x){return x.k==="fold";})||o.find(function(x){return x.k==="check";});
   if(a==="check")return o.find(function(x){return x.k==="check";});if(a==="call")return o.find(function(x){return x.k==="call";});
-  var c=o.filter(function(x){return x.k==="bet"||x.k==="raise";});if(!c.length)return null;var amt=d[1]||0;return c.sort(function(x,y){return Math.abs(x.amt-amt)-Math.abs(y.amt-amt);})[0];}
+  var c=o.filter(function(x){return x.k==="bet"||x.k==="raise";});if(!c.length)return null;var amt=d[1]||0,pick=c.slice().sort(function(x,y){return Math.abs(x.amt-amt)-Math.abs(y.amt-amt);})[0];
+  if(pick.extrap){var ok=c.filter(function(x){return !x.extrap;}).sort(function(x,y){return y.amt-x.amt;})[0];if(ok)pick=ok;}return pick;}
 function evKey(){return H?H.id+"|"+H.street+"|"+(H.hist||[]).length+"|"+H.board.length:"";}
 function evGet(sync){if(!H||H.done||H.street<1||!H.s[0]||H.s[0].folded)return null;var k=evKey();if(H.evA&&H.evA.k===k)return H.evA.A;if(!sync)return null;
   var A=null;try{A=evAnalyze();}catch(e){A=null;}H.evA={k:k,A:A};return A;}
@@ -3178,23 +3286,27 @@ function evExplain(A){var b=A.best,nm=A.hu?T.players[A.opps[0]].name:"the table"
   else if(b.k==="check")out="Check. Your hand wins about "+evPct(A.eqAll)+" against "+nm+"'s likely hands, but betting mostly folds out worse and gets called by better. Keep the pot small"+(A.hc&&A.hc.outs>=8?" and take a free card.":".");
   else if(b.k==="call")out="Call. You need to win "+evPct(A.potOdds)+" to break even, and you win about "+evPct(A.eqAll)+" against what "+nm+" bets here.";
   else out="Fold. You need to win "+evPct(A.potOdds)+" to break even, but you only win about "+evPct(A.eqAll)+" against what "+nm+" bets here.";
-  if(alt){var gap=b.bb-alt.bb;out+=gap<0.15?" "+b.lab+" and "+alt.lab.toLowerCase()+" are about equal here"+((b.k==="bet"&&alt.k==="bet")||(b.k==="raise"&&alt.k==="raise")?"; the smaller size risks less.":".")
+  if(alt){var gap=b.bb-alt.bb,noise=Math.sqrt((b.seBB||0)*(b.seBB||0)+(alt.seBB||0)*(alt.seBB||0));out+=gap<Math.max(0.15,noise)?" "+b.lab+" and "+alt.lab.toLowerCase()+" are about equal here"+((b.k==="bet"&&alt.k==="bet")||(b.k==="raise"&&alt.k==="raise")?"; the smaller size risks less.":".")
     :" "+b.lab+" is worth about "+gap.toFixed(1)+" big blinds more than "+alt.lab.toLowerCase()+".";}
   return out;}
-function evChartSVG(A){var o=A.opts,mx=Math.max(1,Math.max.apply(null,o.map(function(x){return Math.abs(x.bb);}))),W=300,rowH=24,H2=o.length*rowH+8,z=W*0.42,sc=(W-z-56)/mx;
+function evChartSVG(A){/* dagger options are outside the model's range: drawn in grey */var o=A.opts,mx=Math.max(1,Math.max.apply(null,o.map(function(x){return Math.abs(x.bb);}))),W=300,rowH=24,H2=o.length*rowH+8,z=W*0.42,sc=(W-z-56)/mx;
   return "<svg viewBox='0 0 "+W+" "+H2+"' width='100%' role='img' aria-label='Expected value of each option in big blinds'><line x1='"+z+"' y1='0' x2='"+z+"' y2='"+H2+"' stroke='currentColor' stroke-opacity='.3'/>"+
-    o.map(function(x,i){var y=i*rowH+4,w=Math.abs(x.bb)*sc,isB=x===A.best,col=isB?"#c99a2e":x.bb<0?"#c8102e":"#7a8a99",x0=x.bb>=0?z:z-w;
+    o.map(function(x,i){var y=i*rowH+4,w=Math.abs(x.bb)*sc,isB=x===A.best,col=x.extrap?"#b9b9b9":isB?"#c99a2e":x.bb<0?"#c8102e":"#7a8a99",x0=x.bb>=0?z:z-w;
       return "<text x='0' y='"+(y+15)+"' font-size='11' fill='currentColor'>"+x.lab+"</text><rect x='"+x0.toFixed(1)+"' y='"+(y+3)+"' width='"+Math.max(1,w).toFixed(1)+"' height='14' rx='3' fill='"+col+"'/><text x='"+(x.bb>=0?z+w+4:z+4).toFixed(1)+"' y='"+(y+15)+"' font-size='11' font-weight='700' fill='currentColor'>"+(x.bb>=0?"+":"")+x.bb.toFixed(1)+"</text>";}).join("")+"</svg>";}
-function evLowHTML(A){var bb=T.bb,rows=A.opts.map(function(o){return "<tr><td>"+o.lab+(o===A.best?" \u2605":"")+"</td><td>"+(o.bb>=0?"+":"")+o.bb.toFixed(2)+" bb</td><td>"+(o.fe!=null?evPct(o.fe):"\u2013")+"</td><td>"+(o.eqC!=null?evPct(o.eqC):o.k==="call"||o.k==="check"?evPct(A.eqAll):"\u2013")+"</td></tr>";}).join("");
+function evLowHTML(A){var bb=T.bb,pm=function(x){return x==null?"\u2013":evPct(x);},
+  rows=A.opts.map(function(o){return "<tr><td>"+o.lab+(o===A.best?" \u2605":"")+(o.extrap?" \u2020":"")+"</td><td>"+(o.bb>=0?"+":"")+o.bb.toFixed(2)+(o.seBB>=0.05?" \u00b1"+o.seBB.toFixed(2):"")+" bb</td><td>"+pm(o.fe)+"</td><td>"+(o.eqC!=null?evPct(o.eqC):o.k==="call"||o.k==="check"?evPct(A.eqAll):"\u2013")+"</td></tr>";}).join("");
+  var agg=A.opts.filter(function(o){return o.k==="bet"||o.k==="raise";}),
+    sz=agg.length?"<div style='font-weight:700;font-size:.82rem;margin:8px 0 2px'>What each size does</div><table class='st evt'><tr><th>Size</th><th>They fold</th><th>They continue</th><th>Their price*</th><th>SPR after call</th></tr>"+agg.map(function(o){return "<tr><td>"+o.lab+(o.extrap?" \u2020":"")+"</td><td>"+pm(o.fe)+"</td><td>"+pm(o.cont)+"</td><td>"+pm(o.price)+"</td><td>"+(o.spr2!=null?o.spr2.toFixed(1):"\u2013")+"</td></tr>";}).join("")+"</table><p class='muted' style='font-size:.72rem;margin:2px 0 6px'>*Equity an opponent needs to call profitably. Smaller bets give a better price and keep more of their range in.</p>":"";
   var mx=A.hu?rangeMix(A.R[0]):null,nm=A.hu?T.players[A.opps[0]].name:"the field";
-  return "<table class='st evt'><tr><th>Option</th><th>EV</th><th>They fold</th><th>Your equity if called</th></tr>"+rows+"</table>"+
-    "<table class='st'><tr><td>Your equity vs "+nm+"'s range</td><td><b>"+evPct(A.eqAll)+"</b></td></tr><tr><td>Your equity vs random hand"+(A.opps.length>1?"s":"")+"</td><td>"+evPct(A.eqRand)+"</td></tr>"+
+  return "<table class='st evt'><tr><th>Option</th><th>EV</th><th>They fold</th><th>Your equity if called</th></tr>"+rows+"</table>"+sz+
+    "<table class='st'><tr><td>Your equity vs "+nm+"'s range</td><td><b>"+evPct(A.eqAll)+"</b>"+(A.eqSE>=0.003?" \u00b1"+(A.eqSE*100).toFixed(1):"")+"</td></tr><tr><td>Your equity vs random hand"+(A.opps.length>1?"s":"")+"</td><td>"+evPct(A.eqRand)+"</td></tr>"+
     (A.toCall?"<tr><td>Price: equity needed to call</td><td>"+evPct(A.potOdds)+"</td></tr><tr><td>Minimum defense (pot / (pot + bet))</td><td>"+evPct((A.pot-A.toCall)/A.pot)+"</td></tr>":"")+
     "<tr><td>Pot</td><td>"+money(A.pot)+" ("+(A.pot/bb).toFixed(1)+" bb)</td></tr><tr><td>Stack to pot ratio</td><td>"+A.spr.toFixed(1)+"</td></tr>"+
     "<tr><td>Your hand</td><td>"+(HC_NAME[A.hc.c]||A.hc.c)+(A.hc.outs?", "+A.hc.outs+" outs":"")+"</td></tr>"+
     (mx?"<tr><td>Their range now</td><td>"+evPct(mx.strong)+" strong, "+evPct(mx.pair)+" one pair, "+evPct(mx.draw)+" draws, "+evPct(mx.air)+" nothing</td></tr><tr><td>Hands that beat you now</td><td>"+evPct(mx.beats)+"</td></tr>":"")+
-    "<tr><td>Position</td><td>"+(A.ip?"In position":"Out of position")+" (realization "+Math.round(A.rho*100)+"%)</td></tr></table>"+
-    "<p class='muted' style='font-size:.75rem;margin:6px 0 0'>Model: "+(A.runs>1?A.runs+" simulated runouts":"exact board")+" \u00d7 "+A.combos+" weighted opponent hands. Their responses come from the same decision rules the bots use ("+QR.length+" samples per hand class). Ranges combine a pre-flop model fit on 90,000 simulated decisions with every action they took this hand. Computed in "+A.ms+" ms.</p>";}
+    "<tr><td>Position</td><td>"+(A.ip?"In position":"Out of position")+"</td></tr></table>"+
+    "<div style='font-weight:700;font-size:.82rem;margin:8px 0 2px'>How to read these numbers</div><ul class='muted' style='font-size:.78rem;margin:0 0 4px;padding-left:18px'>"+A.assumptions.map(function(t){return "<li>"+t+"</li>";}).join("")+"</ul>"+
+    "<p class='muted' style='font-size:.75rem;margin:6px 0 0'>Method: "+A.method+", across "+A.combos+" weighted opponent hands. Pre-flop ranges come from a model fit on 90,000 simulated decisions, then every action this hand updates them (including bet size). Differences smaller than the \u00b1 shown are ties. Computed in "+A.ms+" ms.</p>";}
 /* range charts: 13 x 13 grid of starting hands, shaded by weight */
 function codeAt(r,c){var a=R[r],b=R[c];return r===c?a+a:r<c?a+b+"s":b+a+"o";}
 function gridHTML(W,label){var mx=0;Object.keys(W).forEach(function(k){if(W[k]>mx)mx=W[k];});var h="<div class='rgrid' role='img' aria-label='"+label+"'>";
@@ -3230,7 +3342,7 @@ var CHIPV=[[100,"#1a1a1a","#fff"],[25,"#2e8b57","#fff"],[5,"#c8102e","#fff"],[1,
 function chipStacks(amt){return "<div class='cstacks'>"+chipHTML(amt,"lg")+"</div>"+chipKey(amt);}
 var MATH_TIMER=null;
 function mathDrill(){clearInterval(MATH_TIMER);
-  var pot=5*(3+rnd(70))+rnd(5)+(Math.random()<0.4?25*rnd(6):0),bet=5*Math.max(1,Math.round(pot*pick([0.33,0.5,0.66,0.75,1])/5)),type=Math.random()<0.4?"count":"price",ans,opts;
+  var pot=5*(3+rnd(70))+rnd(5)+(RNG()<0.4?25*rnd(6):0),bet=5*Math.max(1,Math.round(pot*pick([0.33,0.5,0.66,0.75,1])/5)),type=RNG()<0.4?"count":"price",ans,opts;
   if(type==="count"){ans=pot;var d=shuffle([5,10,25,20,1,6,30,50]).slice(0,3);opts=shuffle([pot].concat(d.map(function(x,i){return Math.max(1,pot+(i%2?-x:x));})));}
   else{ans=Math.round(bet/(pot+2*bet)*100);var ds=[];[-12,-7,7,12,-15,15].forEach(function(x){var v=ans+x;if(v>3&&v<60&&ds.indexOf(v)<0&&ds.length<3)ds.push(v);});opts=shuffle([ans].concat(ds));}
   var secs=type==="count"?25:20,left=secs,done=false;
@@ -3247,7 +3359,7 @@ function mathDrill(){clearInterval(MATH_TIMER);
 function pfTop(frac){var out={},cum=0;for(var i=0;i<EQORDER.length;i++){var c=EQORDER[i];out[c]=1;cum+=(c.length===2?6:c[2]==="s"?4:12)/1326;if(cum>=frac)break;}return out;}
 function pfStackKey(bbs){var ks=[5,8,10,12,15,20],best=ks[0];ks.forEach(function(k){if(Math.abs(k-bbs)<Math.abs(best-bbs))best=k;});return best;}
 function pfWorst(set){var w=[];EQORDER.forEach(function(c){if(set[c])w.push(c);});return w.slice(-4).join(", ");}
-function pushDrill(){var call=Math.random()<0.3,pos=pick(["UTG","HJ","CO","BTN","SB"]),S2=pick([5,8,10,12,15,20]),deck=shuffle(Array.from({length:52},function(_,i){return i;})),h=[deck[0],deck[1]],code=codeOf(h);
+function pushDrill(){var call=RNG()<0.3,pos=pick(["UTG","HJ","CO","BTN","SB"]),S2=pick([5,8,10,12,15,20]),deck=shuffle(Array.from({length:52},function(_,i){return i;})),h=[deck[0],deck[1]],code=codeOf(h);
   var set=call?pfTop(CALLF[pos][S2]):pfTop(PUSHF[pos][S2]),ans=set[code]?(call?"Call":"Push"):"Fold",opts=call?["Fold","Call"]:["Fold","Push"];
   drillOpen("<h2>Push or fold</h2><div class='muted' style='font-size:.85rem'>Tournament, six-handed. "+(call?"Everyone folds to "+pos+", who goes all in for <b>"+S2+" big blinds</b>. You're in the big blind with about the same stack.":"Everyone folds to you in <b>"+pos+"</b>. You have <b>"+S2+" big blinds</b>.")+"</div><div style='margin:8px 0'>"+cardsRow(h,"lg")+"</div><div id='dq'>"+opts.map(function(o){return "<button class='btn ghost dopt' data-o='"+o+"'>"+o+"</button>";}).join("")+"</div>",function(el){
     el.querySelectorAll("[data-o]").forEach(function(b){b.onclick=function(){var ok=b.dataset.o===ans;dstat("push",ok);var fr=Math.round((call?CALLF:PUSHF)[pos][S2]*100);
@@ -3689,7 +3801,7 @@ function dwBestDiscard(cs,p,nOpp){if(nOpp===undefined)nOpp=DWH&&DWH.seats?Math.m
     return {d:idx(function(c){return (c>>2)!==pr;}),why:"Keep the pair and draw three. About 29% to improve, mostly to two pair or trips."};}
   if(di.flush)return {d:idx(function(c){return di.flush.indexOf(c)<0;}),why:"Four to a flush: draw one. About 19% to hit."};
   if(di.oe)return {d:idx(function(c,i){return di.oe.indexOf(c>>2)<0||rk.indexOf(c>>2)!==i;}),why:"Open-ended straight draw: draw one. About 17% to hit."};
-  if(p&&styleOf(p).bluff>=1.4&&Math.random()<0.06)return {d:[],why:"Snowing: standing pat with nothing to represent a big hand."};
+  if(p&&styleOf(p).bluff>=1.4&&RNG()<0.06)return {d:[],why:"Snowing: standing pat with nothing to represent a big hand."};
   var hi=Math.max.apply(null,rk);if(hi===12&&nOpp>=2&&!(DWH&&DWH.two))return {d:idx(function(c){return (c>>2)!==12;}).slice(0,4),why:"Ace high against 2 or more players: keep only the ace and draw four. The simulation shows it wins more often in crowded pots."};
   var keep=rk.slice().sort(function(a,b){return b-a;}).slice(0,2);return {d:idx(function(c,i){return keep.indexOf(c>>2)<0||rk.indexOf(c>>2)!==i;}).slice(0,3),why:hi===12?(DWH&&DWH.two?"Ace high with two draws: keep the ace and your next-highest card, and draw three. With two draws it beats drawing four in every pot size.":"Ace high heads-up: keep the ace and your next-highest card, and draw three. It edges out drawing four against one player."):"Nothing to build on. Keep the two highest cards and draw three, or fold before the draw next time."};}
 /* table setup */
@@ -3749,12 +3861,12 @@ function dwDrawNext(){if(DWH.drawIdx>=DWH.drawOrder.length)return dwEndStreet();
   if(i===0){DW_SEL={};dwControls();sfx("turn");return;}
   var tok=DWH.id,delay={slow:1000,normal:600,fast:220}[S.settings.speed]||600;
   clearTimeout(DW_BT);DW_BT=setTimeout(function(){if(!DWH||DWH.id!==tok||DWH.done||(DWH.street!==1&&DWH.street!==3)||DWH.drawOrder[DWH.drawIdx]!==i)return;var Pk=liveKey(DW.players[i]);if(["maniac","lag","shark"].indexOf(Pk)>=0&&dwLive().length===2){var o=dwLive().filter(function(j){return j!==i;})[0];
-    if(DWH.s[o].drewAt===DWH.street&&DWH.s[o].drew>=2&&dwStrength(DWH.s[i].cards)<0.35&&Math.random()<(Pk==="maniac"?0.3:0.15)){DWH.s[i].snow=true;return dwDoDraw(i,[]);}}
+    if(DWH.s[o].drewAt===DWH.street&&DWH.s[o].drew>=2&&dwStrength(DWH.s[i].cards)<0.35&&RNG()<(Pk==="maniac"?0.3:0.15)){DWH.s[i].snow=true;return dwDoDraw(i,[]);}}
   dwDoDraw(i,dwBestDiscard(DWH.s[i].cards,DW.players[i]).d);},delay);}
 function dwDoDraw(i,idxs){var s=DWH.s[i],p=DW.players[i];if(s.drewAt===DWH.street)return;s.drewAt=DWH.street;if(i===0)dwGradeDraw(idxs);idxs=idxs.slice().sort(function(a,b){return b-a;});idxs.forEach(function(k){s.cards[k]=DWH.deck.pop();});s.drew=idxs.length;s.label=idxs.length?"Drew "+idxs.length:"Stood pat";
   dwLog((p.hero?"You ":p.name+" ")+(idxs.length?(p.hero?"draw ":"draws ")+idxs.length+".":(p.hero?"stand pat.":"stands pat.")));sfx("deal");DWH.drawIdx++;DW_SEL={};dwRender();dwControls();dwSched(200);}
 /* bots */
-function dwBot(i){var p=DW.players[i],s=DWH.s[i],E=eff(p),L=dwLegal(i),pot=dwPot(),bb=DW.bb,r=Math.random();
+function dwBot(i){var p=DW.players[i],s=DWH.s[i],E=eff(p),L=dwLegal(i),pot=dwPot(),bb=DW.bb,r=RNG();
   if(DWH.street===0&&DWH.jacks&&DWH.cur===0){if(!dwQual(s.cards))return ["check"];return dwStrength(s.cards)>=0.5||r<0.5*E.agg?dwRaise(i,Math.max(bb,pot*0.6)):["check"];}
   if(DWH.street===0){var A=dwPreSim(i,E.loose);if(A.a==="raise"){if(DWH.raises===0||r<0.6*E.agg+0.2)return dwRaise(i,DWH.raises===0?bb*3:DWH.cur*3);return L.toCall?["call"]:["check"];}
     if(A.a==="call")return ["call"];if(A.a==="check")return ["check"];if(r<0.03*E.bluff&&DWH.raises===0)return dwRaise(i,bb*3);if(E.sticky>0.1&&L.toCall<=bb*2&&r<0.5)return ["call"];return ["fold"];
@@ -3906,7 +4018,7 @@ function dwSessFinish(){var x=DW&&DW.sess;if(!x||x.hands<5||!dwOpt("dwSess"))ret
 function dwSessHTML(){var L=S.dwSess||[];if(!dwOpt("dwSess"))return "";
   return "<div class='panel glass'><div class='evtop'><div><div class='venue'>Every draw session</div><h2>Draw session history</h2></div></div>"+(L.length?L.slice(0,12).map(function(r){return "<div style='display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:.88rem'><span><b>"+r.d+"</b> \u00b7 "+r.where+" \u00b7 "+r.hands+" hands<br><span class='muted'>"+r.mins+" min"+(r.q===null?"":" \u00b7 play "+r.q+"%")+"</span></span><span style='text-align:right'><b style='color:"+(r.net>=0?"var(--good)":"var(--bad)")+"'>"+(r.net>=0?"+":"\u2212")+money(Math.abs(r.net))+"</b><br><span class='muted'>"+r.bb100+" bb/100</span></span></div>";}).join(""):"<p class='muted' style='font-size:.85rem'>Play at least 5 hands and cash out. Each session lands here with your results and play quality.</p>")+"</div>";}
 /* drills */
-function dwDealDrillHand(){for(var t=0;t<60;t++){var d=shuffle(Array.from({length:52},function(_,k){return k;})),h=d.slice(0,5),c=catOf(evaluate(h)),di=dwDrawInfo(h);if(c>=1||di.flush||di.oe||Math.random()<0.25)return h;}return d.slice(0,5);}
+function dwDealDrillHand(){for(var t=0;t<60;t++){var d=shuffle(Array.from({length:52},function(_,k){return k;})),h=d.slice(0,5),c=catOf(evaluate(h)),di=dwDrawInfo(h);if(c>=1||di.flush||di.oe||RNG()<0.25)return h;}return d.slice(0,5);}
 function dwDrillDraw(){var h=dwDealDrillHand(),sel={},nO=pick([1,3]),best=dwBestDiscard(h,null,nO);
   function view(el,done){el.querySelector("#ddh").innerHTML=h.map(function(c,k){return "<button class='dwc"+(sel[k]?" sel":"")+"' data-k='"+k+"'"+(done?" disabled":"")+">"+cardStatic(c,"lg",done&&best.d.indexOf(k)>=0?"":"")+(sel[k]?"<em class='dtag'>Discard</em>":"")+"</button>";}).join("");
     if(!done)el.querySelectorAll("#ddh .dwc").forEach(function(b){b.onclick=function(){var k=+b.dataset.k;if(sel[k])delete sel[k];else{var ace=h.some(function(c,j){return (c>>2)===12&&!sel[j]&&j!==k;});if(Object.keys(sel).length>=(ace?4:3))return toast("Up to 3 cards, or 4 if you keep an ace.");sel[k]=1;}view(el,false);};});}
@@ -4108,7 +4220,7 @@ function makeTour(ev,stage,heroStack,handNo,minBB){
   var ps=[{name:"You",hero:true,stack:stage===0?base:heroStack,out:false,skill:"hero"}],taken=["You"];
   var theme=ev.finalTheme&&ev.stages[stage]===0&&ev.stages.length>1?ev.finalTheme:null,castL=theme?shuffle(THEMES[theme].cast):null;
   if(ev.castMix)castL=shuffle(ladderList()).slice(0,5);
-  for(var k=0;k<5;k++){var st=stage===0?base:Math.max(500,Math.round(avg*(0.55+Math.random()*0.9)/100)*100);
+  for(var k=0;k<5;k++){var st=stage===0?base:Math.max(500,Math.round(avg*(0.55+RNG()*0.9)/100)*100);
     var b=castL?{name:castL[k].short,cid:castL[k].id,skill:castL[k].skill,stack:st,hero:false,out:false}:newBot(ev.skill,st,taken);taken.push(b.name);ps.push(b);}
   if(!theme&&!ev.castMix&&ev.tier>=2)maybeRival(ps);
   return {mode:"tour",ev:ev.id,stage:stage,theme:theme,skill:ev.skill,players:ps,button:rnd(6),sb:10,bb:20,level:0,handNo:handNo||0,minBB:minBB||999};
@@ -4537,6 +4649,7 @@ $("look-close").onclick=closeLook;
 $("look-rand").onclick=function(){var L=look(),ok=function(a){return a.filter(okItem);};L.table=pick(ok(TABLES)).id;L.back=pick(ok(BACKS)).id;L.face=pick(FACES).id;L.atm=pick(ok(ATMOS)).id;if(T)S.settings.venueLooks=false;save();applyLook(T?venueLook():null);renderLook();};
 $("g-style").onclick=function(){openTableMenu("holdem");};
 if(S.settings.gradeLive===undefined){S.settings.gradeLive=true;save();}
+if(location.search.indexOf("test=1")>=0){window.__dbg=function(c){return eval(c);};}
 buildLookCSS();applyLook();
 
 renderLobby();
