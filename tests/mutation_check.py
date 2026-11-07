@@ -20,6 +20,11 @@ MUTS = [
  ('raise-size assumption removed', 'var SIZE_TILT=0.7,SIZE_GAMMA=1.2;', 'var SIZE_TILT=0,SIZE_GAMMA=0;', 'test_strategy'),
  ('rake ignored in the pre-flop call', 'cev=cq.eq*rakeNet(potCall,true)*rC-callAmt', 'cev=cq.eq*potCall*rC-callAmt', 'test_strategy'),
  ('overbets offered for any hand', '(st===3&&eqAll>=0.8?', '(st>=2?', 'test_strategy'),
+ ('illegal actions accepted', 'if(!actLegal(i,a,to))return false;   /* illegal actions change nothing */', '', 'test_reliability'),
+ ('a refresh mid-hand loses the pot', 'if(sn&&sn.players&&sn.players.length===T.players.length)swaps.push([T.players,', 'if(false)swaps.push([T.players,', 'test_reliability'),
+ ('stale bot action allowed to fire', 'H.sn!==tok||H.done||(H.hist||[]).length!==hl)return;', 'H.sn!==tok||H.done)return;', 'test_reliability'),
+ ('players decide with a hard threshold again', 'S=hi.S+THRESH_S*Math.log(u/(1-u))', 'S=hi.S+(u*0.4-0.2)', 'test_opponents'),
+ ('idle precompute does not warm the grade', 'if(A&&(A.pre||A.hu||MODEL_MW))stratExtras(A,true);', 'if(A&&(A.pre||A.hu||MODEL_MW)){}', 'test_reliability'),
  ('posterior ignores bet size', 'n+=sized?sizeProbs(P,d[2],d[1])[bk]:1;', 'n+=1;', 'test_ranges'),
 ]
 bad = 0

@@ -1,0 +1,60 @@
+[
+ {
+  "cpu_throttle": 1,
+  "evals_per_sec": 4228309,
+  "evAnalyze ms, flop heads-up": 27.5,
+  "grade a decision ms, flop heads-up": 73.5,
+  "grade at the tap ms after the idle precompute, flop heads-up": 6.7,
+  "evAnalyze ms, flop three-way": 82.9,
+  "grade a decision ms, flop three-way": 124.6,
+  "grade at the tap ms after the idle precompute, flop three-way": 2.5,
+  "evAnalyze ms, river heads-up": 3.3,
+  "grade a decision ms, river heads-up": 5.6,
+  "grade at the tap ms after the idle precompute, river heads-up": 1.5,
+  "preAnalyze ms, limped pot": 7.6,
+  "grade at the tap ms after the idle precompute, pre-flop": 1.1,
+  "grade a decision ms, pre-flop": 13.5,
+  "open the analysis sheet ms (adds three what-if runs), pre-flop": 28.5,
+  "open the analysis sheet ms (adds three what-if runs), flop": 129.3,
+  "long session, 3000 hands": {
+   "hands": 3000,
+   "errors": 0,
+   "chip_drift": 0,
+   "duplicate_cards": 0,
+   "seconds": 6.0,
+   "heap_before_MB": 3.97,
+   "heap_after_MB": 4.4,
+   "saved_state_KB": 46.9
+  },
+  "page_errors": []
+ },
+ {
+  "cpu_throttle": 4,
+  "evals_per_sec": 904101,
+  "evAnalyze ms, flop heads-up": 124.7,
+  "grade a decision ms, flop heads-up": 283.2,
+  "grade at the tap ms after the idle precompute, flop heads-up": 18.6,
+  "evAnalyze ms, flop three-way": 397.3,
+  "grade a decision ms, flop three-way": 578.2,
+  "grade at the tap ms after the idle precompute, flop three-way": 12.4,
+  "evAnalyze ms, river heads-up": 11.4,
+  "grade a decision ms, river heads-up": 30.5,
+  "grade at the tap ms after the idle precompute, river heads-up": 7,
+  "preAnalyze ms, limped pot": 32.2,
+  "grade at the tap ms after the idle precompute, pre-flop": 4.8,
+  "grade a decision ms, pre-flop": 61.2,
+  "open the analysis sheet ms (adds three what-if runs), pre-flop": 136.9,
+  "open the analysis sheet ms (adds three what-if runs), flop": 643.8,
+  "long session, 3000 hands": {
+   "hands": 3000,
+   "errors": 0,
+   "chip_drift": 0,
+   "duplicate_cards": 0,
+   "seconds": 28.2,
+   "heap_before_MB": 3.97,
+   "heap_after_MB": 4.4,
+   "saved_state_KB": 46.9
+  },
+  "page_errors": []
+ }
+]

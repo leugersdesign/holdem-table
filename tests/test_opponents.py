@@ -213,11 +213,23 @@ def test_a_seeded_table_of_individuals_still_plays_like_a_live_game():
     assert 0.3 < r['vpip'] < 0.5 and 0.05 < r['pfr'] < 0.16 and 0.4 < r['foldToBet'] < 0.7 and 0.4 < r['cbet'] < 0.85, r
 
 def test_a_hand_stronger_than_the_call_cap_still_calls_a_big_bet():
-    """Each type has a strength at which it calls any bet. A hand just above that cap must keep calling a river bet of twice
-    the pot, even though the uncapped rule (base + fear of size) would fold it for most types."""
+    """Each type has a strength at which it calls any bet. A hand just above that cap must call a river bet of twice the pot clearly more
+    often than the same player would without the cap (base + fear of size), which for the tighter types would be a fold."""
     r = engine().run('''seedRNG(4);__t.table({seats:6});var out={};
-      ["station","limper","whale","maniac","nit","weekend","tag","lag","shark","wild","thinker","shorty"].forEach(function(k){var P=canonProf(k),hi={S:P.cap+0.4,outs:0,c:"set"},
-        c={st:3,nOpp:1,isPreAgg:false,facingRaise:false,raises:1,canRaise:true,memAdj:0,pot:300,toCall:200},n=0,uncapped=P.callBase[2]+P.sens*2;
-        for(var q=0;q<400;q++)if(liveDecide(P,hi,c,RNG)[0]!=="fold")n++;out[k]={call:n/400,cap:P.cap,uncapped:uncapped};});return out;''')
-    assert all(v['call'] > 0.97 for v in r.values()), r
-    assert sum(v['uncapped'] > v['cap'] + 0.45 for v in r.values()) >= 3, r      # the cap really binds for the tighter types here (rock, weekend, solid regular)
+      ["station","limper","whale","maniac","nit","weekend","tag","lag","shark","wild","thinker","shorty"].forEach(function(k){var P=canonProf(k),U=canonProf(k);U.cap=99;var hi={S:P.cap+0.4,outs:0,c:"set"},
+        c={st:3,nOpp:1,isPreAgg:false,facingRaise:false,raises:1,canRaise:true,memAdj:0,pot:300,toCall:200},n=0,m=0,uncapped=P.callBase[2]+P.sens*2;
+        for(var q=0;q<1500;q++){if(liveDecide(P,hi,c,RNG)[0]!=="fold")n++;if(liveDecide(U,hi,c,RNG)[0]!=="fold")m++;}out[k]={call:n/1500,uncappedCall:m/1500,cap:P.cap,uncapped:uncapped};});return out;''')
+    assert all(v['call'] > 0.7 for v in r.values()), r
+    binds = [v for v in r.values() if v['uncapped'] > v['cap'] + 0.45]
+    assert len(binds) >= 3 and all(v['call'] > v['uncappedCall'] + 0.25 for v in binds), r     # where the cap matters, it matters a lot
+
+def test_no_type_calls_or_folds_as_a_step_function_of_bet_size():
+    """A player whose calling drops from 100% to 0% within one bet-size step can be exploited by betting just under the threshold.
+    For a fixed hand, the chance of continuing must change smoothly with the size of the bet, for every type."""
+    r = engine().run('''seedRNG(11);__t.table({seats:6});var out={},sizes=[0.25,0.33,0.5,0.66,0.75,1,1.25,1.5,2];
+      ["station","limper","whale","maniac","nit","weekend","tag","lag","shark","wild","thinker","shorty"].forEach(function(k){var P=canonProf(k),worst=0,mono=true;
+        [2.0,3.0,3.6,4.4,5.2].forEach(function(S){var prev=2,row=sizes.map(function(f){var n=0,N=1500,hi={S:S,outs:0,c:"pair"},c={st:3,nOpp:1,isPreAgg:false,facingRaise:false,raises:1,canRaise:true,memAdj:0,pot:100+100*f,toCall:100*f};
+          for(var q=0;q<N;q++)if(liveDecide(P,hi,c,RNG)[0]!=="fold")n++;return n/N;});
+          for(var i=1;i<row.length;i++){worst=Math.max(worst,Math.abs(row[i]-row[i-1]));if(row[i]>row[i-1]+0.05)mono=false;}});out[k]={worst:worst,mono:mono};});return out;''')
+    assert all(v['worst'] <= 0.4 for v in r.values()), r          # no jump of more than 40 points between neighbouring sizes (it was up to 75 with a hard threshold)
+    assert all(v['mono'] for v in r.values()), r                   # a bigger bet never gets called more often

@@ -25,7 +25,7 @@ Scope: prompts 04 and 05, for hold'em cash tables. What is not done is listed at
 
 ## Tests
 
-`python3 tests/run_all.py`: 104 pass, 0 fail, 1 known failure (illegal action acceptance, planned for prompt 06). New: `tests/test_strategy.py` (17) and `tests/test_coaching.py` (13). Each strategy scenario changes one thing and checks the direction of the result: large raises, isolation, opener type and 3-bet folds, limp-reraises, short stacks, rake flipping a marginal call, multiway c-bets, thin value, under-bluffed river aggression, river overbets, and the four confidence labels. Mutation checks now cover 17 deliberate breakages, including the grading tolerance, the sample-size rule, the size assumption, rake in the pre-flop call, and unrestricted overbets.
+`python3 tests/run_all.py`: 104 pass, 0 fail, 1 known failure (illegal action acceptance, planned for prompt 06). New: `tests/test_strategy.py` (16) and `tests/test_coaching.py` (13). Each strategy scenario changes one thing and checks the direction of the result: large raises, isolation, opener type and 3-bet folds, limp-reraises, short stacks, rake flipping a marginal call, multiway c-bets, thin value, under-bluffed river aggression, river overbets, and the four confidence labels. Mutation checks now cover 17 deliberate breakages, including the grading tolerance, the sample-size rule, the size assumption, rake in the pre-flop call, and unrestricted overbets.
 
 ## Mistakes caught during the work
 
