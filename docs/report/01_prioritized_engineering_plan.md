@@ -15,6 +15,6 @@ Deferred on purpose (each needs real design work, and none is required for the a
 
 1. Replay of a past hand with a different opponent assumption (needs a full hand-state snapshot). What exists instead: every graded decision keeps its alternatives, its confidence label, and the typical-player comparison.
 2. A manual notebook for live-table observations. The app records the stats a player could see automatically, and Observed-only mode keeps hidden types hidden.
-3. A generic engine-backed multiway drill, and a solver comparison.
+3. A generic engine-backed multiway drill. The solver now covers heads-up rivers (version 43, `../solver.md`); flop and turn solving is the next stage.
 4. A Web Worker. The measured worst case is handled by computing ahead during the player's thinking time (see 06).
 5. Re-tuning the regular opponent types' pre-flop raise rates (they raise less than live regulars).

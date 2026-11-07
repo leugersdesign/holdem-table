@@ -7,8 +7,8 @@ This was done by the same agent that built the app, so it is not independent in 
 ## How to reproduce
 
 ```
-python3 tests/run_all.py                 # 136 tests, about 1 minute; each test sets its own seed with seedRNG(n)
-python3 tests/mutation_check.py          # 26 deliberate breakages, about 8 minutes
+python3 tests/run_all.py                 # 144 tests, about 1 minute; each test sets its own seed with seedRNG(n)
+python3 tests/mutation_check.py          # 33 deliberate breakages, about 8 minutes
 python3 tools/benchmark.py               # performance profile, writes docs/performance.json
 python3 tools/calibrate_ev.py 500 30 "shark,station,limper,whale,tag" out.json 16 x revealed && python3 tools/score_calibration.py out.json
 python3 tools/make_opponent_doc.py       # regenerates docs/opponent-model.md
@@ -28,11 +28,12 @@ python3 tools/make_opponent_doc.py       # regenerates docs/opponent-model.md
 | Adversarial recommendations | test_adversarial (10) | Pass: high equity but check, bluff with low equity, small beats large, call good against one range and bad against another, one observation does not justify an exploit, similar-EV options graded monotonically, explanations contain only computed numbers |
 | Coaching | test_coaching (15) + test_adversarial | Pass: result separate from decision, tolerance, leak categories, no leak from small samples, adjusting versus failing to adjust |
 | Memorable rules | test_rules (10) | Pass: hand score, seat ladder matches the charts at every seat (90% or more), limper rule decisions, the course and drill use the same rule, typical-opponent grading by default, exact price math |
+| River solver | test_solver (8) | Pass: textbook polarized-river equilibrium (bets 100% / bluffs 50% / calls 50%), convergence, exact card removal, board-driven strategy, grading only when ready and never penalizing a mixed action |
 | Reliability | test_reliability (8) | Pass: illegal actions rejected, bots always legal, refresh loses no chips, precompute transparent, 4 table types x 500 hands |
-| Mutation checks | 26 | All caught (0 missed, 0 skipped) |
+| Mutation checks | 33 | All caught (0 missed, 0 skipped) |
 | UI scripts (phone viewport) | 9 plus 2 refresh checks | Pass (the draw-game script is intermittent in v39 as well, see 06) |
 
-Total: 136 tests, 0 failed, 0 known failures. Test tolerances were not loosened to pass; where a test encoded an assumption that changed (a call-cap threshold written for the old hard threshold), the test was rewritten to check the intended relationship, and a mutation check confirms it still catches the defect.
+Total: 144 tests, 0 failed, 0 known failures. Test tolerances were not loosened to pass; where a test encoded an assumption that changed (a call-cap threshold written for the old hard threshold), the test was rewritten to check the intended relationship, and a mutation check confirms it still catches the defect.
 
 ## Defects found during validation
 
@@ -51,7 +52,7 @@ Refresh loses the pot; no action validation; duplicate bot actions; hard-thresho
 
 | Criterion | Assessment |
 | --- | --- |
-| Critical correctness tests pass | Met: 136 of 136; 26 of 26 mutations caught |
+| Critical correctness tests pass | Met: 144 of 144; 33 of 33 mutations caught |
 | Known failures documented | Met: none open in the suite; limitations below |
 | Core scenarios behave in the expected direction | Met within the modelled opponents; two caveats below |
 | No material regression | Met for behavior (type stats moved 5 points or less), the UI scripts, and the EV benchmark (re-run above) |
@@ -66,7 +67,7 @@ Assessment: the app passes this gate **for its stated scope, a training simulato
 2. Pre-flop equity realization, the raise-size assumptions, and the 7% per extra opponent discount are judgment values, not measured.
 3. The regular types raise less pre-flop than live regulars.
 4. Multiway EV treats opponents as independent and ignores side pots and squeezes behind a caller.
-5. No solver comparison; no study against real players.
+5. The river solver is validated against a textbook equilibrium, not against a commercial solver; flop and turn are not solved; no study against real players.
 6. Mobile testing is emulated (viewport and CPU throttle).
 7. Replay under a different assumption and a manual observation notebook are not built.
 8. A refresh voids the hand instead of resuming it.

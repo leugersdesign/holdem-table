@@ -29,6 +29,10 @@ MUTS = [
  ('limped pots ignore the rule', '      else if(limpersIn()>0){var LR=limpRule(code,pos,limpersIn());', '      else if(false){var LR=limpRule(code,pos,limpersIn());', 'test_rules'),
  ('course and drill keep their own limper logic', 'isoDecide=function(code,ip,n){if(ip==="BB")return', 'isoDecide=function(code,ip,n){return _isoDecideOld(code,ip,n);if(ip==="BB")return', 'test_rules'),
  ('post-flop graded against the read by default', 'if(S.settings.postGrade!=="read"){var X0=stratExtras(MA,true);', 'if(false){var X0=stratExtras(MA,true);', 'test_rules'),
+ ('solver ignores card removal', 'for(var i=0;i<me.cards.length;i++){c=me.cards[i];out[i]=tot-tC[c[0]]-tC[c[1]]+(me.same[i]>=0?r[me.same[i]]:0);}return out;}', 'for(var i=0;i<me.cards.length;i++){out[i]=tot;}return out;}', 'test_solver'),
+ ('solver ignores the board', 'rh.rank=rank(rh);rv.rank=rank(rv);', 'rh.rank=rh.cards.map(function(c){return EQ[codeOf(c)];});rv.rank=rv.cards.map(function(c){return EQ[codeOf(c)];});', 'test_solver'),
+ ('river grading bypasses the solver', 'RVr=RVwant?rvGet(false):null,', 'RVr=null,', 'test_solver'),
+ ('ranges ignore the flop and turn action', '      if(e.a==="bet"||e.a==="raise")wt*=Math.min(1,Math.max(0.08,rvSig((S-3.8)/0.45)+(o>=8?0.45:o>=4?0.15:0)));', '      if(false)wt*=1;', 'test_solver'),
  ('posterior ignores bet size', 'n+=sized?sizeProbs(P,d[2],d[1])[bk]:1;', 'n+=1;', 'test_ranges'),
 ]
 bad = 0

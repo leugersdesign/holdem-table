@@ -751,7 +751,7 @@ function save(){try{
 function migrateS(s){if(!s.version||s.version<2){s.version=2;s.coach=s.coach||blankCoach();if(s.customCfg&&s.customCfg.bi>=1)s.customCfg.bi++;}return s;}
 S=migrateS(S);
 var PREWARM=0;
-function prewarmNow(){if(!H||H.done||H.toAct!==0||!T||T.mode!=="cash"||T.pass)return;var A=H.street>=1?evGet(true):(S.settings.preModel===true?preGet(true):null);if(A&&(A.pre||A.hu||MODEL_MW))stratExtras(A,true);}
+function prewarmNow(){if(!H||H.done||H.toAct!==0||!T||T.mode!=="cash"||T.pass)return;try{if(H.street===3&&(S.settings.postGrade||"solver")==="solver")rvPrewarm();}catch(e){}var A=H.street>=1?evGet(true):(S.settings.preModel===true?preGet(true):null);if(A&&(A.pre||A.hu||MODEL_MW))stratExtras(A,true);}
 function prewarm(){var id=H&&H.id,n=H&&(H.hist||[]).length;clearTimeout(PREWARM);PREWARM=setTimeout(function(){try{if(H&&H.id===id&&(H.hist||[]).length===n)prewarmNow();}catch(e){}},150);}   /* the grade and the analysis sheet then find their numbers already computed */
 var _renderControls=renderControls;renderControls=function(){var r=_renderControls.apply(this,arguments);try{if(H&&H.toAct===0&&!H.done)prewarm();}catch(e){}return r;};
 var _isoDecideOld=isoDecide,_isoWhyOld=isoWhy;
@@ -1493,7 +1493,7 @@ function openTools(){
     html+="<div class='tool'><div class='v'><b>Helpers are off in live mode.</b> Count the pot, read the table, and make the call yourself. Turn helpers on in Settings if you want them here.</div><button class='btn ghost pill' id='t-helpok' style='margin-top:8px'>Show the analysis for this hand</button></div>"+sessToolsHTML();
   }else if(inHand){
     var A=adviseHero(true),L=A.L,pot=A.pot,need=A.need,code=A.code,pos=A.pos,opp=A.opp,nO=A.nO,dR=A.dR,dV=A.dV,vc=A.vc,bettor=A.bettor;
-    var anl=H.toAct===0?(H.street>=1?analysisHTML():preAnalysisHTML()):"";
+    var anl=H.toAct===0?(H.street>=1?(H.street===3?rvHTML():"")+analysisHTML():preAnalysisHTML()):"";
     html+=(anl||"<div class='advice'>Tools say: <b>"+A.advice+"</b><br><span style='font-size:.92rem'>"+A.why+"</span></div>")+sessToolsHTML();
     if(L.toCall>0)html+="<div class='tool'><div class='k'>Pot odds</div><div class='v'>Call "+chips(L.toCall)+" to win "+chips(pot+L.toCall)+".</div><div class='formula'>Need = call \u00f7 (pot + call) = "+n0(L.toCall)+" \u00f7 ("+n0(pot)+" + "+n0(L.toCall)+") = "+n0(L.toCall)+" \u00f7 "+n0(pot+L.toCall)+" = <b>"+p1(need)+"</b></div></div>";
     if(H.street===0){
@@ -2182,11 +2182,17 @@ function recordDecision(d){
     var rec={code:A.code,st:H.street,act:d[0],to:d[1]||0,toCall:A.L.toCall,pot:A.pot,need:A.need,eq:A.eq,advice:A.advice,why:A.why,raises:H.raises,pos:A.pos,nOpp:A.opp.length,canRaise:A.L.canRaise,board:H.board.slice()};
     rec.leak=classify(rec);var G=gradeDec(rec);rec.sev=G.sev;rec.loss=G.loss;rec.triv=G.trivial;rec.best=G.best;
     var MA=null,ch=null;
-    if(H.street>=1){MA=evGet(true);if(MA&&(MA.hu||MODEL_MW)){
-        if(S.settings.postGrade!=="read"){var X0=stratExtras(MA,true);if(X0.base&&X0.base.A){var GA=X0.base.A;GA.extras=GA.extras||{base:null,sens:[],minHands:X0.minHands,label:X0.label,why:X0.why,tol:X0.tol,gap:X0.gap,full:true};GA.gradedVs="typical";MA=GA;}}   /* graded against a typical opponent unless the player chooses reads */
+    var RVwant=H.street===3&&(S.settings.postGrade||"solver")==="solver"&&live().length===2,RVr=RVwant?rvGet(false):null,RVc=RVr?rvPick(RVr,d):null;
+    if(RVr&&RVc){var bbR=T.bb,evB=Math.max.apply(null,RVr.acts.map(function(a){return a.ev;})),rawR=Math.max(0,(evB-RVc.ev)/bbR),tolR=Math.max(0.15,2*RVr.expl*RVr.P/bbR),sevR=(RVc.freq>=0.1||rawR<tolR)?0:rawR<1?1:rawR<3?2:3,topR=RVr.acts.slice().sort(function(a,b){return b.freq-a.freq;})[0];
+      G={sev:sevR,best:RVc.freq>=0.5||rawR<0.05,loss:sevR?rawR:0};rec.advice=topR.lab;rec.why=rvExplain(RVr);rec.sev=G.sev;rec.loss=G.loss;rec.best=G.best;rec.model=true;rec.raw=rawR;rec.tol=tolR;rec.conf=RVr.expl<0.01?"Clear":"Close";rec.confWhy="Solver equilibrium within "+(RVr.expl*100).toFixed(2)+"% of the pot.";
+      rec.gradedVs="solver";rec.solver=RVr.acts.map(function(a){return [a.lab,Math.round(a.freq*100),Math.round(a.ev/bbR*10)/10];});rec.alts=RVr.acts.map(function(a){return [a.lab,Math.round(a.ev/bbR*100)/100];});
+      rec.math=priceLine(potTotal(),legal(0).toCall,0.5,0).replace(/ Your equity[^.]*\./,"");var hiR=null;try{hiR=hcInfo(H.s[0].cards,H.board).S;}catch(e){}
+      rec.leak=G.sev?leakOf(rec,{best:{k:topR.kind}},{k:RVc.kind},hiR):null;MA=null;}
+    else if(H.street>=1){MA=evGet(true);if(MA&&(MA.hu||MODEL_MW)){
+        if(S.settings.postGrade!=="read"){var X0=stratExtras(MA,true);   /* typical opponent where the solver does not apply */if(X0.base&&X0.base.A){var GA=X0.base.A;GA.extras=GA.extras||{base:null,sens:[],minHands:X0.minHands,label:X0.label,why:X0.why,tol:X0.tol,gap:X0.gap,full:true};GA.gradedVs="typical";MA=GA;}}   /* graded against a typical opponent unless the player chooses reads */
         ch=evPick(MA,d);}else MA=null;}
     else if(T.mode==="cash"&&!T.pass&&S.settings.preModel===true){MA=preGet(true);ch=MA?prePick(MA,d):null;}
-    if(MA&&ch){var Q=coachGrade(rec,MA,ch);rec.advice=MA.best.lab;rec.why=MA.pre?preExplain(MA):evExplain(MA);rec.eq=MA.eqAll;rec.need=MA.potOdds;G=Q.G;rec.sev=G.sev;rec.loss=G.loss;rec.best=G.best;rec.model=true;Object.assign(rec,Q.fields);rec.leak=G.sev?Q.leak:null;if(!MA.pre){rec.gradedVs=MA.gradedVs||"read";var bo=ch.k==="bet"||ch.k==="raise"?ch.amt:0;rec.math=priceLine(potTotal(),legal(0).toCall,MA.eqAll,legal(0).toCall>0?0:(MA.best.k==="bet"?MA.best.amt:bo));}}
+    if(MA&&ch){var Q=coachGrade(rec,MA,ch);rec.advice=MA.best.lab;rec.why=MA.pre?preExplain(MA):evExplain(MA);rec.eq=MA.eqAll;rec.need=MA.potOdds;G=Q.G;rec.sev=G.sev;rec.loss=G.loss;rec.best=G.best;rec.model=true;Object.assign(rec,Q.fields);rec.leak=G.sev?Q.leak:null;if(!MA.pre){rec.gradedVs=MA.gradedVs||"read";if(RVwant)rec.solverPending=true;var bo=ch.k==="bet"||ch.k==="raise"?ch.amt:0;rec.math=priceLine(potTotal(),legal(0).toCall,MA.eqAll,legal(0).toCall>0?0:(MA.best.k==="bet"?MA.best.amt:bo));}}
     if(G.sev===0)rec.leak=null;else if(!rec.leak)rec.leak=rec.toCall>0&&rec.act==="raise"?"raise_no_odds":"off_line";
     var lu=liveUnitOf(rec);if(lu)cpush(lu,"l",rec.sev===0);liveUnitsExtra(rec).forEach(function(x){cpush(x[0],"l",x[1]);});
     if(T.live&&rec.st===3&&rec.toCall>0){T.heroRv=T.heroRv||{face:0,fold:0};T.heroRv.face++;if(rec.act==="fold")T.heroRv.fold++;}
@@ -3623,7 +3629,9 @@ function coachLinesHTML(d){if(!d||!d.model)return "";var L=[];
   L.push("<b>Decision quality:</b> "+(d.sev?"about "+(d.raw||d.loss).toFixed(2)+" big blinds below the best option":"within tolerance of the best option")+(d.tol?" (tolerance "+d.tol.toFixed(2)+" bb, from how noisy the estimate is)":"")+".");
   if(d.base!==null&&d.base!==undefined)L.push("<b>Against a typical player:</b> "+(d.base<(d.tol||0.15)?"this choice is fine":"about "+d.base.toFixed(2)+" big blinds below the best option")+".");
   if(d.math)L.push(d.math);
-  if(d.gradedVs)L.push("<b>Graded against:</b> "+(d.gradedVs==="typical"?"a typical opponent (not your read of this player)":"the read of this player")+".");
+  if(d.gradedVs)L.push("<b>Graded against:</b> "+(d.gradedVs==="solver"?"the solver (heads-up river, your actual board)":d.gradedVs==="typical"?"a typical opponent (not your read of this player)":"the read of this player")+".");
+  if(d.solverPending)L.push("The solver had not finished this spot when you acted, so this decision was graded against a typical opponent.");
+  if(d.solver)L.push("<b>Solver mix for your hand:</b> "+d.solver.map(function(x){return x[0]+" "+x[1]+"%";}).join(", ")+".");
   if(d.alts&&d.alts.length)L.push("<b>Options (estimated EV, big blinds):</b> "+d.alts.map(function(a){return a[0]+" "+(a[1]>=0?"+":"")+a[1].toFixed(1);}).join(", ")+".");
   if(d.baseBest)L.push("<b>Against a typical player</b> the best play was "+d.baseBest+".");
   if(d.conf)L.push("<b>Confidence: "+d.conf+".</b> "+(d.confWhy||""));
@@ -3675,6 +3683,124 @@ function rulesCardHTML(){var t=function(r){return "<tr>"+r.map(function(c){retur
     "<div class='lbl'>With limpers in front of you</div><p style='font-size:.86rem;margin:4px 0'><b>Raise</b> if your score is at least your seat number, plus 1 for each limper after the first. Raise to about 4 big blinds plus 1 per limper. <b>Limp behind</b> (or complete the small blind) with any pair, or any suited hand that scores 6 or more. <b>Fold</b> the rest.</p>"+
     "<p class='muted' style='font-size:.78rem;margin:0'>This is standard live low-stakes practice written as a formula. It is not a solver result. The opening charts still decide your opens.</p>"+
     "<div class='lbl'>The price after the flop</div><table class='st'>"+t(["Their bet","1/3 pot","1/2 pot","2/3 pot","Pot","2x pot"])+t(["You need to win","20%","25%","29%","33%","40%"])+"</table></div>";}
+/* ===== heads-up river solver: CFR+ on the real board, exact card removal, no hand abstraction =====
+   Players 0 (out of position) and 1 (in position). Money is counted from the start of the river: a player's value at a terminal is what they collect minus what
+   they put in on this street, so the two players' values add up to the pot at the start of the river. Strategies are per hand (combo), not per bucket. */
+function rvTree(P,S,sizes,extraBets,extraRaises){var nodes=[];
+  function mk(c0,c1,pl,facing,raises,hist){var n={pl:pl,acts:[],ch:[],hist:hist,id:nodes.length};nodes.push(n);
+    var cMe=pl?c1:c0,cOp=pl?c0:c1,potNow=P+c0+c1;
+    function add(lab,kind,amt,child){n.acts.push({lab:lab,kind:kind,amt:amt});n.ch.push(child);}
+    if(facing===0){
+      add("Check","check",cMe,pl===1?{term:"show",c0:c0,c1:c1}:mk(c0,c1,1,0,raises,hist+"x"));
+      var amts=[];sizes.forEach(function(f){var a=Math.min(S-cMe,Math.round(potNow*f));if(a>0)amts.push(a);});
+      (extraBets||[]).forEach(function(a){if(a>0&&a<=S-cMe)amts.push(a);});if(S-cMe>0)amts.push(S-cMe);
+      amts=amts.filter(function(a,i,arr){return arr.indexOf(a)===i;}).sort(function(a,b){return a-b;});
+      amts.forEach(function(a){var to=cMe+a;add(to>=S?"All in":"Bet "+Math.round(100*a/potNow)+"% pot","bet",to,mk(pl?c0:to,pl?to:c1,1-pl,to-cOp,raises,hist+"b"+a));});
+    }else{
+      add("Fold","fold",cMe,{term:"fold",win:1-pl,c0:c0,c1:c1});
+      var callTo=Math.min(S,cOp);add("Call","call",callTo,{term:"show",c0:pl?c0:callTo,c1:pl?callTo:c1});
+      if(raises<1&&S>cOp){var tos=[Math.min(S,cOp+Math.round(potNow+facing))];(extraRaises||[]).forEach(function(t){if(t>cOp&&t<=S)tos.push(t);});tos.push(S);
+        tos=tos.filter(function(t,i,arr){return arr.indexOf(t)===i;}).sort(function(a,b){return a-b;});
+        tos.forEach(function(to){add(to>=S?"All in":"Raise to "+to,"raise",to,mk(pl?c0:to,pl?to:c1,1-pl,to-cOp,raises+1,hist+"r"+to));});}
+    }return n;}
+  var root=mk(0,0,0,0,0,"");return {root:root,nodes:nodes};}
+/* range data for one player against the other: per-card sums and the opposite combo index, for exact card removal */
+function rvPrep(R){/* R: [{cards:[[a,b],...], rank:[...], w:[...]}, {...}] for players 0 and 1 */
+  [0,1].forEach(function(p){var me=R[p],op=R[1-p],n=me.cards.length;me.ord=Array.from({length:n},function(_,i){return i;}).sort(function(a,b){return me.rank[a]-me.rank[b];});
+    var key={};op.cards.forEach(function(c,j){key[Math.min(c[0],c[1])*52+Math.max(c[0],c[1])]=j;});me.same=me.cards.map(function(c){var k=key[Math.min(c[0],c[1])*52+Math.max(c[0],c[1])];return k===undefined?-1:k;});});return R;}
+function rvShow(R,p,r,Ptot,cp,out){var me=R[p],op=R[1-p],n=me.cards.length,m=op.cards.length,wC=new Float64Array(52),tC=new Float64Array(52),tot=0,i,j,k,c;
+  for(j=0;j<m;j++){c=op.cards[j];tot+=r[j];tC[c[0]]+=r[j];tC[c[1]]+=r[j];}
+  var beats=new Float64Array(n),loses=new Float64Array(n),ws=0;j=0;
+  for(k=0;k<n;k++){i=me.ord[k];var rk=me.rank[i];while(j<m&&op.rank[op.ord[j]]<rk){var o=op.ord[j];ws+=r[o];c=op.cards[o];wC[c[0]]+=r[o];wC[c[1]]+=r[o];j++;}c=me.cards[i];beats[i]=ws-wC[c[0]]-wC[c[1]];}
+  wC.fill(0);ws=0;j=m-1;
+  for(k=n-1;k>=0;k--){i=me.ord[k];var rk2=me.rank[i];while(j>=0&&op.rank[op.ord[j]]>rk2){var o2=op.ord[j];ws+=r[o2];c=op.cards[o2];wC[c[0]]+=r[o2];wC[c[1]]+=r[o2];j--;}c=me.cards[i];loses[i]=ws-wC[c[0]]-wC[c[1]];}
+  for(i=0;i<n;i++){c=me.cards[i];var comp=tot-tC[c[0]]-tC[c[1]]+(me.same[i]>=0?r[me.same[i]]:0),ties=comp-beats[i]-loses[i];out[i]=Ptot*beats[i]+Ptot*0.5*ties-cp*comp;}}
+function rvCompat(R,p,r,out){var me=R[p],op=R[1-p],tC=new Float64Array(52),tot=0,j,c;for(j=0;j<op.cards.length;j++){c=op.cards[j];tot+=r[j];tC[c[0]]+=r[j];tC[c[1]]+=r[j];}
+  for(var i=0;i<me.cards.length;i++){c=me.cards[i];out[i]=tot-tC[c[0]]-tC[c[1]]+(me.same[i]>=0?r[me.same[i]]:0);}return out;}
+function rvTerm(R,P,t,p,r){var n=R[p].cards.length,out=new Float64Array(n),Ptot0=P+t.c0+t.c1,Ptot=RV_RAKE?Ptot0-Math.min(RV_RAKE.cap||1e15,(RV_RAKE.pct||0)*Ptot0)-(RV_RAKE.drop||0):Ptot0,cp=p?t.c1:t.c0;
+  if(t.term==="show"){rvShow(R,p,r,Ptot,cp,out);return out;}
+  var comp=rvCompat(R,p,r,new Float64Array(n)),v=t.win===p?Ptot-cp:-cp;for(var i=0;i<n;i++)out[i]=v*comp[i];return out;}
+function rvStrat(n,np,avg){var A=n.acts.length,s=[],a,i;for(a=0;a<A;a++)s.push(new Float64Array(np));
+  for(i=0;i<np;i++){var tot=0;for(a=0;a<A;a++){var x=avg?n.sum[a][i]:Math.max(0,n.reg[a][i]);tot+=x;}for(a=0;a<A;a++)s[a][i]=tot>0?(avg?n.sum[a][i]:Math.max(0,n.reg[a][i]))/tot:1/A;}return s;}
+function rvSolveCore(P,R,T,iters){rvPrep(R);var np=[R[0].cards.length,R[1].cards.length];
+  T.nodes.forEach(function(n){var m=np[n.pl];n.reg=n.acts.map(function(){return new Float64Array(m);});n.sum=n.acts.map(function(){return new Float64Array(m);});});
+  function cfr(n,p,rOp,rMe,t){if(n.term)return rvTerm(R,P,n,p,rOp);var A=n.acts.length,a,i,m=np[p];
+    if(n.pl===p){var s=rvStrat(n,m,false),v=new Float64Array(m),cv=[];for(a=0;a<A;a++){var rm=new Float64Array(m);for(i=0;i<m;i++)rm[i]=rMe[i]*s[a][i];cv.push(cfr(n.ch[a],p,rOp,rm,t));for(i=0;i<m;i++)v[i]+=s[a][i]*cv[a][i];}
+      for(a=0;a<A;a++)for(i=0;i<m;i++){n.reg[a][i]=Math.max(0,n.reg[a][i]+cv[a][i]-v[i]);n.sum[a][i]+=t*rMe[i]*s[a][i];}return v;}
+    var so=rvStrat(n,np[1-p],false),out=new Float64Array(m);for(a=0;a<A;a++){var ro=new Float64Array(np[1-p]);for(i=0;i<ro.length;i++)ro[i]=rOp[i]*so[a][i];var c=cfr(n.ch[a],p,ro,rMe,t);for(i=0;i<m;i++)out[i]+=c[i];}return out;}
+  for(var t=1;t<=iters;t++){cfr(T.root,0,R[1].w,R[0].w,t);cfr(T.root,1,R[0].w,R[1].w,t);}
+  function br(n,p,rOp){if(n.term)return rvTerm(R,P,n,p,rOp);var A=n.acts.length,a,i,m=np[p];
+    if(n.pl===p){var best=null;for(a=0;a<A;a++){var c=br(n.ch[a],p,rOp);if(!best)best=c;else for(i=0;i<m;i++)if(c[i]>best[i])best[i]=c[i];}return best;}
+    var so=rvStrat(n,np[1-p],true),out=new Float64Array(m);for(a=0;a<A;a++){var ro=new Float64Array(np[1-p]);for(i=0;i<ro.length;i++)ro[i]=rOp[i]*so[a][i];var cc=br(n.ch[a],p,ro);for(i=0;i<m;i++)out[i]+=cc[i];}return out;}
+  var M=0,cmp=rvCompat(R,0,R[1].w,new Float64Array(np[0]));for(var i=0;i<np[0];i++)M+=R[0].w[i]*cmp[i];
+  var b0=br(T.root,0,R[1].w),b1=br(T.root,1,R[0].w),e0=0,e1=0;for(i=0;i<np[0];i++)e0+=R[0].w[i]*b0[i];for(i=0;i<np[1];i++)e1+=R[1].w[i]*b1[i];
+  return {expl:((e0+e1)/M-P)/2/P,M:M};}   /* exploitability as a share of the starting pot: 0 is a perfect equilibrium */
+/* the average strategy and per-action values for one hand at the node reached by a history string */
+function rvQuery(P,R,T,hist,p,idx){var np=[R[0].cards.length,R[1].cards.length],found=null;
+  function walk(n,rOp){if(n.term)return null;if(n.hist===hist&&n.pl===p){found={n:n,rOp:rOp};return;}var so=rvStrat(n,np[n.pl],true);
+    for(var a=0;a<n.acts.length;a++){if(n.pl!==p){var ro=new Float64Array(np[1-p]);for(var i=0;i<ro.length;i++)ro[i]=rOp[i]*so[a][i];walk(n.ch[a],ro);}else walk(n.ch[a],rOp);if(found)return;}}
+  walk(T.root,R[1-p].w);if(!found)return null;var n=found.n,s=rvStrat(n,np[p],true),comp=rvCompat(R,p,found.rOp,new Float64Array(np[p]));
+  function ev(m,rOp){if(m.term)return rvTerm(R,P,m,p,rOp);var A=m.acts.length,so=rvStrat(m,np[m.pl],true),out=new Float64Array(np[p]),a,i;
+    for(a=0;a<A;a++){if(m.pl===p){var c=ev(m.ch[a],rOp);for(i=0;i<out.length;i++)out[i]+=so[a][i]*c[i];}else{var ro=new Float64Array(np[1-p]);for(i=0;i<ro.length;i++)ro[i]=rOp[i]*so[a][i];var c2=ev(m.ch[a],ro);for(i=0;i<out.length;i++)out[i]+=c2[i];}}return out;}
+  var acts=n.acts.map(function(a,k){var v=ev(n.ch[k],found.rOp);return {lab:a.lab,kind:a.kind,amt:a.amt,freq:s[k][idx],ev:comp[idx]>0?v[idx]/comp[idx]:0,rangeFreq:0};});
+  var wtot=0;for(var i=0;i<np[p];i++)wtot+=R[p].w[i];   /* how often the whole range takes each action here (reach-weighted) */
+  return {acts:acts,node:n};}
+/* ===== the river solver applied to the hand in play (heads-up) ===== */
+function rvSig(x){return 1/(1+Math.exp(-x));}
+function rvPreW(j){/* pre-flop range weights by hand class, from the charts and the pre-flop rules, for player j */
+  var ev=(H.hist||[]).filter(function(e){return e.st===0;}),mine=ev.filter(function(e){return e.i===j;}),pos=H.pos[j],out={},opener=ev.find(function(e){return e.a==="raise"&&e.raises===0;}),opPos=opener?H.pos[opener.i]:null,ck=opPos?chartKey(opPos):null;
+  Object.keys(EQ).forEach(function(c){var w=1,last=mine[mine.length-1];
+    if(!last){w=1;}
+    else if(last.a==="raise"&&last.raises===0)w=(j===H.bbI||pos==="BB")?(EQ[c]>=60?1:0.15):(inChart(pos,c)?1:0.02);   /* opened (or raised limpers) */
+    else if(last.a==="raise")w=(PREMIUM_PRE[c]||(ck&&VSOPEN[ck]&&VSOPEN[ck][c]>=57))?1:(c[2]==="s"&&c[0]==="A"&&rkv(c[1])<=3?0.5:0.02);   /* 3-bet */
+    else if(last.a==="call"&&last.raises>=2)w=(inChart(pos,c)||!ck)&&EQ[c]>=58?1:0.05;   /* called a 3-bet */
+    else if(last.a==="call"&&last.raises===1){var e2=ck&&VSOPEN[ck]?VSOPEN[ck][c]:EQ[c],lo=(pos==="BB"||j===H.bbI)?36:42;w=e2>=lo&&e2<57&&!PREMIUM_PRE[c]?1:PREMIUM_PRE[c]?0.15:0.03;}   /* flatted a raise */
+    else if(last.a==="call")w=chenScore(c)>=4?(chenScore(c)>=12?0.3:1):0.05;   /* limped */
+    else if(last.a==="check")w=EQ[c]>=70?0.3:1;   /* big blind checked its option */
+    out[c]=w;});return out;}
+function rvRange(j,dead,heroHole){var pw=rvPreW(j),cards=[],w=[],ev=(H.hist||[]).filter(function(e){return e.i===j&&(e.st===1||e.st===2);}),D={};dead.forEach(function(c){D[c]=1;});
+  Object.keys(pw).forEach(function(code){if(!(pw[code]>0.001))return;combosOfCode(code).forEach(function(x){if(D[x[0]]||D[x[1]])return;var wt=pw[code];
+    ev.forEach(function(e){var bd=H.board.slice(0,e.st===1?3:4),hi=hcInfo(x,bd),S=hi.S,o=hi.outs||0;   /* how this exact hand connects with that street's board */
+      if(e.a==="bet"||e.a==="raise")wt*=Math.min(1,Math.max(0.08,rvSig((S-3.8)/0.45)+(o>=8?0.45:o>=4?0.15:0)));
+      else if(e.a==="call")wt*=Math.min(1,Math.max(0.03,rvSig((S-2.7)/0.45)+(o>=8?0.7:o>=4?0.35:0)));
+      else if(e.a==="check")wt*=1-0.55*rvSig((S-4.6)/0.4);});
+    cards.push(x);w.push(wt);});});
+  if(heroHole){var k=cards.findIndex(function(x){return (x[0]===heroHole[0]&&x[1]===heroHole[1])||(x[0]===heroHole[1]&&x[1]===heroHole[0]);});if(k<0){cards.push(heroHole.slice());w.push(0.05);k=cards.length-1;}else w[k]=Math.max(w[k],0.05);}
+  var mx=Math.max.apply(null,w.concat([1e-9]));var C=[],W=[];for(var i=0;i<cards.length;i++){var v=w[i]/mx;if(v>=0.02||(heroHole&&cards[i]===cards[cards.length-1]&&i===cards.length-1)){C.push(cards[i]);W.push(v);}}
+  return {cards:C,w:W};}
+function rvSpotInput(iters){iters=iters||250;if(!H||H.done||H.street!==3||!H.s[0]||H.s[0].folded)return null;var opps=live().filter(function(j){return j!==0;});if(opps.length!==1)return null;
+  var v=opps[0],ip=heroIP(),hp=ip?1:0,board=H.board.slice(),hole=H.s[0].cards,riv=(H.hist||[]).filter(function(e){return e.st===3;}),inSt=H.seats.reduce(function(a,j){return a+H.s[j].sb;},0);
+  var P=potTotal()-inSt,S=Math.min(T.players[0].stack+H.s[0].sb,T.players[v].stack+H.s[v].sb),hist="",xb=[],xr=[];
+  riv.forEach(function(e,k){var last=k===riv.length-1||!riv.slice(k+1).some(function(x){return x.i===e.i&&(x.a==="bet"||x.a==="raise");}),amt=e.to!=null?e.to:(last?H.s[e.i].sb:Math.round((e.f||0.5)*(e.pot||P)));   /* the latest bet is what is in front of the player now */
+    if(e.a==="check")hist+="x";else if(e.a==="bet"){hist+="b"+amt;xb.push(amt);}else if(e.a==="raise"){hist+="r"+amt;xr.push(amt);}else if(e.a==="call")hist+="c";});
+  var rh=rvRange(0,board,hole),rv=rvRange(v,board,null),rank=function(r){return r.cards.map(function(c){return evaluate(c.concat(board));});};rh.rank=rank(rh);rv.rank=rank(rv);
+  var idx=rh.cards.findIndex(function(x){return (x[0]===hole[0]&&x[1]===hole[1])||(x[0]===hole[1]&&x[1]===hole[0]);}),rk=roomRake();
+  return {P:P,S:S,sizes:[0.33,0.75],xb:xb,xr:xr,R:hp===0?[rh,rv]:[rv,rh],hp:hp,idx:idx,hist:hist,iters:iters,rake:rk&&!T.home?{pct:rk.pct||0,cap:rk.cap||0,drop:rk.drop||0}:null,v:v};}
+function rvSolveInput(I){var t0=Date.now(),T2=rvTree(I.P,I.S,I.sizes,I.xb,I.xr);RV_RAKE=I.rake;var res=rvSolveCore(I.P,I.R,T2,I.iters),q=rvQuery(I.P,I.R,T2,I.hist,I.hp,I.idx);RV_RAKE=null;
+  if(!q)return null;var rf={};   /* how often the whole range takes each action at this point */
+  return {acts:q.acts.map(function(a){return {lab:a.lab,kind:a.kind,amt:a.amt,freq:a.freq,ev:a.ev};}),expl:res.expl,P:I.P,S:I.S,ms:Date.now()-t0,iters:I.iters,nHero:I.R[I.hp].cards.length,nVill:I.R[1-I.hp].cards.length};}
+var RV_RAKE=null,RV_WORKER=null,RV_JOBS={};
+function rvKey(){return H?H.sn+"|"+(H.hist||[]).length:"";}
+function rvGet(sync){if(!H||H.street!==3)return null;var k=rvKey();if(H.rv&&H.rv.key===k&&H.rv.res)return H.rv.res;if(!sync)return null;
+  var I=rvSpotInput(sync===true?250:sync);if(!I||I.idx<0)return null;var r=null;try{r=rvSolveInput(I);}catch(e){r=null;}H.rv={key:k,res:r};return r;}
+function rvPrewarm(){if(!H||H.street!==3||H.toAct!==0||H.done)return;var k=rvKey();if(H.rv&&H.rv.key===k)return;var I=rvSpotInput(250);if(!I||I.idx<0)return;H.rv={key:k,res:null};
+  var w=rvWorker();if(!w){H.rv.res=rvSolveInput(I);return;}var id=k;RV_JOBS[id]=H;
+  try{w.postMessage({id:id,I:{P:I.P,S:I.S,sizes:I.sizes,xb:I.xb,xr:I.xr,R:I.R.map(function(r){return {cards:r.cards,rank:r.rank,w:r.w};}),hp:I.hp,idx:I.idx,hist:I.hist,iters:I.iters,rake:I.rake}});}catch(e){H.rv.res=rvSolveInput(I);}}
+function rvWorker(){if(RV_WORKER!==null)return RV_WORKER||null;try{if(typeof Worker==="undefined"||typeof Blob==="undefined"){RV_WORKER=false;return null;}
+  var src=[rvTree,rvPrep,rvShow,rvCompat,rvTerm,rvStrat,rvSolveCore,rvQuery,rvSolveInput].map(function(f){return f.toString();}).join("\n")+"\nvar RV_RAKE=null;\nonmessage=function(m){var r=null;try{r=rvSolveInput(m.data.I);}catch(e){r=null;}postMessage({id:m.data.id,res:r});};";
+  RV_WORKER=new Worker(URL.createObjectURL(new Blob([src],{type:"text/javascript"})));
+  RV_WORKER.onmessage=function(m){var h=RV_JOBS[m.data.id];delete RV_JOBS[m.data.id];if(h&&h===H&&H.rv&&H.rv.key===m.data.id)H.rv.res=m.data.res;};RV_WORKER.onerror=function(){RV_WORKER=false;};return RV_WORKER;}catch(e){RV_WORKER=false;return null;}}
+function rvPick(res,d){var a=d[0],A=res.acts;if(a==="fold")return A.find(function(x){return x.kind==="fold";})||A.find(function(x){return x.kind==="check";});
+  if(a==="check"||a==="call")return A.find(function(x){return x.kind===a;})||A.find(function(x){return x.kind==="check"||x.kind==="call";});
+  var amt=d[1]||0,c=A.filter(function(x){return x.kind==="bet"||x.kind==="raise";});if(!c.length)return null;return c.sort(function(x,y){return Math.abs(x.amt-amt)-Math.abs(y.amt-amt);})[0];}
+function rvMixText(res){return res.acts.filter(function(a){return a.freq>=0.03;}).sort(function(a,b){return b.freq-a.freq;}).map(function(a){return a.lab+" "+Math.round(a.freq*100)+"%";}).join(", ");}
+function rvExplain(res){var top=res.acts.slice().sort(function(a,b){return b.freq-a.freq;})[0],mixed=res.acts.filter(function(a){return a.freq>=0.1;}).length>1;
+  return "The solver plays your hand on this board: "+rvMixText(res)+"."+(mixed?" When it mixes, those actions are worth about the same, so either is fine.":" "+top.lab+" is clearly best here.");}
+function rvHTML(){if(!H||H.street!==3||live().length!==2)return "";var r=rvGet(false);if(!r){try{rvPrewarm();}catch(e){}return "<div class='tool anl'><div class='k'>Solver \u00b7 heads-up river</div><div class='muted' style='font-size:.85rem'>Working on this spot on your actual board (a few seconds). Close and reopen Analysis to see it.</div></div>";}var bb=T.bb,rows=r.acts.map(function(a){return "<tr><td>"+a.lab+"</td><td>"+Math.round(a.freq*100)+"%</td><td>"+(a.ev/bb>=0?"+":"")+(a.ev/bb).toFixed(1)+" bb</td></tr>";}).join("");
+  return "<div class='tool anl'><div class='k'>Solver \u00b7 heads-up river, your actual board</div><div class='anl-hi'>"+rvExplain(r)+"</div><table class='st evt'><tr><th>Action</th><th>How often</th><th>Value from here</th></tr>"+rows+"</table>"+
+    "<details class='anl-lo'><summary>How the solver works here</summary><ul class='muted' style='font-size:.78rem;padding-left:18px'><li>It finds the equilibrium for both players' whole ranges on this exact board (counterfactual regret minimization, "+r.iters+" iterations). Every hand is evaluated against the real five cards, and card removal is exact.</li>"+
+    "<li>Your range ("+r.nHero+" hands) and theirs ("+r.nVill+") start from the pre-flop charts and rules, then are narrowed on each street by how each hand connects with that board (made hand strength and draws) and the action taken. That narrowing is an assumption; the river solve itself is exact for those ranges.</li>"+
+    "<li>Bet sizes: one third and three quarters of the pot, all in, plus any size actually used this street; one raise. Convergence: within "+(r.expl*100).toFixed(2)+"% of the pot of a perfect equilibrium. Computed in "+r.ms+" ms.</li><li>Flop and turn are not solved yet; those streets use the model.</li></ul></details></div>";}
 /* ===== analysis panel: model recommendation, reasons at two levels, EV chart, range charts ===== */
 var MODEL_MW=true;
 function evPick(A,d){var a=d[0],o=A.opts;if(a==="fold")return o.find(function(x){return x.k==="fold";})||o.find(function(x){return x.k==="check";});
@@ -4796,7 +4922,7 @@ function renderSettings(){
     "<div class='lbl' style='margin-top:0'>Difficulty</div><div class='seg' id='l-diff'><button data-v='relaxed'>Relaxed</button><button data-v='realistic'>Realistic</button><button data-v='brutal'>Brutal</button></div><p class='muted' style='font-size:.8rem' id='l-diffdesc'></p>"+
     "<div class='lbl'>Opponent info</div><div class='seg' id='l-oppinfo'><button data-v='observed'>Observed only</button><button data-v='revealed'>Revealed</button></div><p class='muted' style='font-size:.8rem' id='l-oppdesc'></p>"+
     "<div class='lbl'>Pre-flop grading</div><div class='seg' id='l-pregrade'><button data-v='charts'>Opening charts</button><button data-v='model'>EV model</button></div><p class='muted' style='font-size:.8rem'>Opening charts grades your pre-flop play against the charts and rules the app has always used. EV model grades it by estimated value against the players at your table. The Analysis sheet shows the EV model either way.</p>"+
-    "<div class='lbl'>Post-flop grading</div><div class='seg' id='l-postgrade'><button data-v='typical'>Typical opponent</button><button data-v='read'>Read-based</button></div><p class='muted' style='font-size:.8rem'>Typical opponent grades every street the same way, whoever is at the table, so you learn the fundamentals (price, equity, what bets need to work). Read-based grades against the model's read of each player.</p>"+
+    "<div class='lbl'>Post-flop grading</div><div class='seg' id='l-postgrade'><button data-v='solver'>Solver</button><button data-v='typical'>Typical opponent</button><button data-v='read'>Read-based</button></div><p class='muted' style='font-size:.8rem'>Solver grades heads-up river decisions against a solver run on your actual board, and other streets against a typical opponent (the flop and turn solver is next). Typical opponent grades every street the same way, whoever is at the table. Read-based grades against the model's read of each player.</p>"+
     "<div class='lbl'>Sharks per table (Casino $1/$2 and Home Game Night)</div><div class='seg' id='l-sharks'><button data-v='0'>None</button><button data-v='1'>One</button><button data-v='2'>Two</button></div><p class='muted' style='font-size:.8rem'>Strong regulars who adapt to how you play. Takes effect at your next new table.</p>"+
     [["liveChips","Pot as chips","Show the pot as chip stacks so you count it yourself. Tap the pot to check your count."],["liveHelp","Allow helpers","Lets the Tools panel give advice in live mode. Off is closer to a real game."]].map(function(x){return "<div class='toggle' style='border-top:0;margin-top:0'><div><b>"+x[1]+"</b><div class='muted' style='font-size:.85rem'>"+x[2]+"</div></div><button class='switch' role='switch' data-sw='"+x[0]+"' aria-checked='"+(!!S.settings[x[0]])+"' aria-label='"+x[1]+"'></button></div>";}).join("")+(S.liveStats&&S.liveStats.peeks?"<p class='muted' style='font-size:.82rem'>Pot checks so far: "+S.liveStats.peeks+"</p>":"")+"</div>"+
     "<div class='panel glass'><h2>Backup and transfer</h2><p class='muted' style='font-size:.85rem'>Move your bankroll, stats, career, and settings to another copy of the game, like the home screen app on your phone. Copy the save code here, then paste it into the other copy.</p>"+
@@ -4811,7 +4937,7 @@ function renderSettings(){
   $("l-oppdesc").textContent=OPPD[oppMode()];
   $("l-oppinfo").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",oppMode()===b.dataset.v?"true":"false");b.onclick=function(){S.settings.oppInfo=b.dataset.v;save();renderLobby();toast(b.textContent+": "+(b.dataset.v==="observed"?"hidden types stay hidden.":"types and tendencies are shown."));};});
   $("l-pregrade").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",(S.settings.preModel===true?"model":"charts")===b.dataset.v?"true":"false");b.onclick=function(){S.settings.preModel=b.dataset.v==="model";save();renderLobby();toast(b.dataset.v==="model"?"Pre-flop play is graded by the EV model.":"Pre-flop play is graded against the opening charts.");};});
-  $("l-postgrade").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",(S.settings.postGrade==="read"?"read":"typical")===b.dataset.v?"true":"false");b.onclick=function(){S.settings.postGrade=b.dataset.v;save();renderLobby();toast(b.dataset.v==="read"?"Post-flop play is graded against your read of each player.":"Post-flop play is graded against a typical opponent.");};});
+  $("l-postgrade").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",(S.settings.postGrade||"solver")===b.dataset.v?"true":"false");b.onclick=function(){S.settings.postGrade=b.dataset.v;save();renderLobby();toast(b.dataset.v==="read"?"Post-flop play is graded against your read of each player.":b.dataset.v==="solver"?"Heads-up river decisions are graded by the solver.":"Post-flop play is graded against a typical opponent.");};});
   $("l-diffdesc").textContent=DIFFD[difficulty()];
   $("l-diff").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",difficulty()===b.dataset.v?"true":"false");b.onclick=function(){S.settings.difficulty=b.dataset.v;save();renderLobby();toast(b.textContent+" difficulty. Bot skill levels change at your next new table.");};});
   $("l-sharks").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",String(sharkCount())===b.dataset.v?"true":"false");b.onclick=function(){S.settings.sharks=+b.dataset.v;save();renderLobby();};});
