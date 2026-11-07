@@ -6,7 +6,7 @@ window.__t=(function(){
   window.clearTimeout=function(){};
   render=function(){};renderControls=function(){};sfx=function(){};buzz=function(){};toast=function(){};flyChips=function(){};sayText=function(){};
   chatterStart=function(){};chatterEnd=function(){};greetRivals=function(){};showModal=function(){};unlock=function(){};confetti=function(){};
-  S.settings.speed="fast";S.settings.rit="never";S.settings.difficulty="realistic";
+  S.settings.speed="fast";S.settings.rit="never";S.settings.difficulty="realistic";S.settings.oppInfo="revealed";   /* tests of type-specific behaviour use the real player; observed-mode tests switch it back */
   var T0={};
   function card(s){return "23456789TJQKA".indexOf(s[0])*4+"shdc".indexOf(s[1]);}
   function cards(s){var o=[];for(var i=0;i<s.length;i+=2)o.push(card(s.substr(i,2)));return o;}

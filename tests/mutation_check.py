@@ -10,6 +10,11 @@ MUTS = [
  ('rake not removed from the pot', 'var cut=Math.min(rkLeft,amt);amt-=cut;rkLeft-=cut;', 'var cut=0;', 'test_engine'),
  ('three-way tie scored as a half share', 'me===best?1/(1+tied):0', 'me===best?0.5:0', 'test_equity'),
  ('oversized bets can be recommended', 'var cand=opts.filter(function(o){return !o.extrap;});if(!cand.length)cand=opts;', 'var cand=opts;', 'test_ev'),
+ ('a bot peeks at the hero hole cards', 'var d=liveDecide(P,hcInfo(s.cards,H.board),c,RNG),S=d[2];', 'var d=liveDecide(P,hcInfo(s.cards,H.board),Object.assign(c,{memAdj:(H.s[0].cards[0]>>2)*0.05-0.3}),RNG),S=d[2];', 'test_opponents'),
+ ('no call cap: everything folds to a shove', 'need=Math.min(need,P.cap||99);', '', 'test_opponents'),
+ ('adaptation without evidence', 'function beliefWt(p,k){var t=beliefTrials(p,k);return t/(t+20);}', 'function beliefWt(p,k){return 1;}', 'test_opponents'),
+ ('observed mode secretly uses the true type', 'function modelKeyP(p){if(!p||oppMode()==="revealed"||p.hero||p.human)return liveKey(p);', 'function modelKeyP(p){return liveKey(p);', 'test_opponents'),
+ ('attention ignored', 'var a=trOf(p).attn,foldIdx=', 'var a=1,foldIdx=', 'test_opponents'),
  ('posterior ignores bet size', 'n+=sized?sizeProbs(P,d[2],d[1])[bk]:1;', 'n+=1;', 'test_ranges'),
 ]
 bad = 0

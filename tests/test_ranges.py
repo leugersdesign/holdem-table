@@ -62,10 +62,18 @@ def test_preflop_action_sets_the_prior():
     assert three > opn + 5.0 and three > lim + 5.0, (lim, opn, three)   # a 3-bet range is clearly the strongest
 
 def test_raise_shifts_weight_toward_strong_hands_more_than_a_check():
-    chk = _post('weekend', '[{i:1,st:1,a:"check",toCall:0,pot:20}]')
-    bt = _post('weekend', bet(0.66))
-    rs = _post('weekend', '[{i:1,st:1,a:"raise",toCall:10,pot:30,raises:1}]')
-    assert rs['strong'] > bt['strong'] > chk['strong'], (chk['strong'], bt['strong'], rs['strong'])
+    """Population level: averaged over 40 individuals of a type, a raise leaves a much stronger range than a bet, and a bet a
+    stronger one than a check. Individuals differ (a heavy slow-player checks strong hands, a heavy c-bettor bets many weak
+    ones), so a single seeded individual can invert bet vs check; the average over individuals must not."""
+    e = engine()
+    hist = {'check': '[{i:1,st:1,a:"check",toCall:0,pot:20}]', 'bet': '[{i:1,st:1,a:"bet",f:0.66,toCall:0,pot:20}]',
+            'raise': '[{i:1,st:1,a:"raise",toCall:10,pot:30,raises:1}]'}
+    for arch in ('weekend', 'tag', 'station', 'nit'):
+        m = {}
+        for name, h in hist.items():
+            xs = e.run('''var o=[];for(var k=1;k<=40;k++){__t.spot({hero:"AhQd",board:"Ks7d2c",opps:[{arch:"%s"}],pot:20,seed:k,history:%s});o.push(rangeMix(rangePosterior(1)).strong);}return o;''' % (arch, h))
+            m[name] = sum(xs) / len(xs)
+        assert m['raise'] > m['bet'] + 0.3 and m['bet'] > m['check'] + 0.015, (arch, m)
 
 def test_bigger_bets_mean_stronger_hands_for_every_player_type():
     """Direction check across all profiles: a pot-size bet leaves a stronger range than a 30% bet."""
