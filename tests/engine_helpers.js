@@ -52,3 +52,15 @@ window.__t=(function(){
     H.hist=h;H._ar={};H.evA=null;RESP_MEMO={};return H;}
   return {card:card,cards:cards,table:table,hand:hand,play:play,spot:spot,drain:drain,chipsTotal:chipsTotal,q:q};
 })()
+/* pre-flop spot: cfg {hero:"AhKd", pos:"BTN", stack, opps:[{arch,pos,stack}], actions:[{i,a:"call"|"raise",to}], rake} (chip amounts in big blinds) */
+window.__t.preSpot=function(cfg){var opps=cfg.opps,n=opps.length+1,t=window.__t;
+  S.customCfg={bi:0,depth:100,seats:n,style:cfg.style||"casino",spec:opps.map(function(o){return o.arch;}),table:"classic",atm:"vegas"};
+  seedRNG(cfg.seed||21);T=makeCash(customStake());S.cash=T;T.noLeave=true;T.room=Object.assign({},cfg.room||{},cfg.rake?{rake:cfg.rake}:{});H=null;startHand();t.q.length=0;
+  var bb=T.bb,sb=T.sb;H.board=[];H.street=0;H.done=false;H.deck=H.deck;H.straddle=-1;H.hist=[];H._ar={};H.evA=null;H.preA=null;RESP_MEMO={};
+  H.seats.forEach(function(i){var s=H.s[i];s.folded=false;s.allin=false;s.acted=false;s.sb=0;s.tot=0;s.label="";T.players[i].stack=((i===0?cfg.stack:opps[i-1].stack)||100)*bb;});
+  H.pos={0:cfg.pos};opps.forEach(function(o,k){H.pos[k+1]=o.pos;});H.sbI=-1;H.bbI=-1;H.seats.forEach(function(i){if(H.pos[i]==="SB")H.sbI=i;if(H.pos[i]==="BB")H.bbI=i;});
+  H.s[0].cards=t.cards(cfg.hero);function post(i,x){var amt=Math.min(x,T.players[i].stack);H.s[i].sb+=amt;H.s[i].tot+=amt;T.players[i].stack-=amt;}
+  if(H.sbI>=0)post(H.sbI,sb);if(H.bbI>=0)post(H.bbI,bb);H.cur=bb;H.raises=0;H.lastAgg=-1;H.preAgg=-1;H.minR=bb;
+  (cfg.actions||[]).forEach(function(x){var s=H.s[x.i];H.hist.push({i:x.i,st:0,a:x.a,toCall:Math.max(0,H.cur-s.sb),pot:potTotal(),nOpp:n-1,raises:H.raises,la:H.lastAgg,lf:0,pa:0,xr:0,to:x.a==="raise"?Math.round(x.to*bb):undefined});
+    if(x.a==="call")post(x.i,Math.max(0,H.cur-s.sb));else if(x.a==="raise"){var to=Math.round(x.to*bb);post(x.i,to-s.sb);H.minR=Math.max(bb,to-H.cur);H.cur=to;H.raises++;H.lastAgg=x.i;H.preAgg=x.i;}});
+  H.toAct=0;return H;};

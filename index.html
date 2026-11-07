@@ -739,6 +739,10 @@ function fresh(){var t=blankStats();t.played=0;t.wins=0;t.cashes=0;t.finSum=0;t.
 var S=fresh();
 try{var raw=JSON.parse(localStorage.getItem(KEY));if(raw&&raw.stats&&raw.settings)S=raw;}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+/* version 2: adds the coaching store (S.coach) and shifts saved table-builder blind indices for the new $1/$3 level. Nothing else changes. */
+function migrateS(s){if(!s.version||s.version<2){s.version=2;s.coach=s.coach||blankCoach();if(s.customCfg&&s.customCfg.bi>=1)s.customCfg.bi++;}return s;}
+S=migrateS(S);
+var _mkCash=makeCash;makeCash=function(st){var t=_mkCash(st);if(st&&st.room)t.room=st.room;return t;};
 if(S.tour&&!S.tour.ev){S.tour.ev="legacy";S.tour.stage=0;S.tour.minBB=999;}
 if(S.cash&&!S.cash.stake){S.cash.stake="micro";S.cash.buy=200;}
 if(S.stats.cash.bbNet===undefined)S.stats.cash.bbNet=S.stats.cash.net/2;
@@ -838,7 +842,7 @@ function act(i,a,to){
     if(H.street===0&&p.hero)H.heroVpip=true;}
   else{ /* raise or bet to `to` */
     to=Math.min(to,s.sb+p.stack);
-    var wasBet=H.cur===0;H.aggBy=H.aggBy||{};H.aggBy[H.street]=i;
+    var wasBet=H.cur===0;H.aggBy=H.aggBy||{};H.aggBy[H.street]=i;var he0=H.hist[H.hist.length-1];if(he0)he0.to=to;
     if(wasBet){var he=H.hist[H.hist.length-1];if(he&&he.pot>0){he.f=to/he.pot;H.lastBetF=he.f;}}
     put(i,to-s.sb);
     if(to>H.cur){var inc=to-H.cur;if(inc>=H.minR){H.minR=inc;H.seats.forEach(function(j){if(j!==i)H.s[j].acted=false;});}H.cur=to;H.raises++;H.lastAgg=i;if(H.street===0)H.preAgg=i;}
@@ -1467,7 +1471,7 @@ function openTools(){
     html+="<div class='tool'><div class='v'><b>Helpers are off in live mode.</b> Count the pot, read the table, and make the call yourself. Turn helpers on in Settings if you want them here.</div><button class='btn ghost pill' id='t-helpok' style='margin-top:8px'>Show the analysis for this hand</button></div>"+sessToolsHTML();
   }else if(inHand){
     var A=adviseHero(true),L=A.L,pot=A.pot,need=A.need,code=A.code,pos=A.pos,opp=A.opp,nO=A.nO,dR=A.dR,dV=A.dV,vc=A.vc,bettor=A.bettor;
-    var anl=H.street>=1&&H.toAct===0?analysisHTML():"";
+    var anl=H.toAct===0?(H.street>=1?analysisHTML():preAnalysisHTML()):"";
     html+=(anl||"<div class='advice'>Tools say: <b>"+A.advice+"</b><br><span style='font-size:.92rem'>"+A.why+"</span></div>")+sessToolsHTML();
     if(L.toCall>0)html+="<div class='tool'><div class='k'>Pot odds</div><div class='v'>Call "+chips(L.toCall)+" to win "+chips(pot+L.toCall)+".</div><div class='formula'>Need = call \u00f7 (pot + call) = "+n0(L.toCall)+" \u00f7 ("+n0(pot)+" + "+n0(L.toCall)+") = "+n0(L.toCall)+" \u00f7 "+n0(pot+L.toCall)+" = <b>"+p1(need)+"</b></div></div>";
     if(H.street===0){
@@ -2116,7 +2120,7 @@ function greetRivals(){
 }
 
 /* ===== hand recorder and leak finder ===== */
-var LEAKS={
+var LEAKS={ev_size:["Bet size","You chose the right kind of action, but a size the model values less. Pick a size the worse hands will still call."],ev_fold:["Folding too much","You folded when continuing was worth more. Check the price and what the other player's range really contains before you give up."],ev_call:["Calling too wide","You called when folding was worth more. Count how many of their hands you actually beat."],ev_value:["Missed value","You checked or called when betting or raising was worth more. Bet your good hands for value, especially against players who call too much."],ev_bluff:["Bluffing too much","You bet or raised with a weak hand when a quieter play was worth more. Bluff less against players who rarely fold, and in multiway pots."],ev_overplay:["Overplaying medium hands","You bet or raised a medium-strength hand when a quieter play was worth more. Medium hands often do best as bluff-catchers."],ev_pre_loose:["Pre-flop: too loose","You called or raised pre-flop when folding was worth more. Tighten up in early position and against big raises."],ev_pre_tight:["Pre-flop: too tight","You folded pre-flop when continuing was worth more. Defend more in position and against players who raise too wide."],ev_pre_passive:["Pre-flop: too passive","You limped or called when raising was worth more. Raise to isolate weak limpers with strong hands."],ev_other:["Other EV loss","Your choice was worth less than the best option. The details show the numbers."],
  raise_no_odds:["Raised without the equity","You raised when you were behind their range. Raising a weak hand into a bet only works against players who fold a lot."],
  off_line:["Went against the tools","You chose a different play than the tools and it cost you. Open the hint to see what they weighed."],
  fold_chart:["Folded a chart hand","You folded a hand that's in your opening chart for that seat. Those hands make money long term, so open them."],
@@ -2155,12 +2159,14 @@ function recordDecision(d){
   try{var A=adviseHero(false);
     var rec={code:A.code,st:H.street,act:d[0],to:d[1]||0,toCall:A.L.toCall,pot:A.pot,need:A.need,eq:A.eq,advice:A.advice,why:A.why,raises:H.raises,pos:A.pos,nOpp:A.opp.length,canRaise:A.L.canRaise,board:H.board.slice()};
     rec.leak=classify(rec);var G=gradeDec(rec);rec.sev=G.sev;rec.loss=G.loss;rec.triv=G.trivial;rec.best=G.best;
-    if(H.street>=1){var MA=evGet(true);if(MA&&(MA.hu||MODEL_MW)){var ch=evPick(MA,d);if(ch){var mloss=Math.max(0,(MA.best.ev-ch.ev)/T.bb);
-      rec.advice=MA.best.lab;rec.why=evExplain(MA);rec.eq=MA.eqAll;rec.need=MA.potOdds;G={sev:mloss<0.2?0:mloss<1?1:mloss<3?2:3,best:ch===MA.best||mloss<0.05};G.loss=G.sev?mloss:0;
-      rec.sev=G.sev;rec.loss=G.loss;rec.best=G.best;rec.model=true;}}}
+    var MA=null,ch=null;
+    if(H.street>=1){MA=evGet(true);if(MA&&(MA.hu||MODEL_MW))ch=evPick(MA,d);else MA=null;}
+    else if(T.mode==="cash"&&!T.pass&&S.settings.preModel!==false){MA=preGet(true);ch=MA?prePick(MA,d):null;}
+    if(MA&&ch){var Q=coachGrade(rec,MA,ch);rec.advice=MA.best.lab;rec.why=MA.pre?preExplain(MA):evExplain(MA);rec.eq=MA.eqAll;rec.need=MA.potOdds;G=Q.G;rec.sev=G.sev;rec.loss=G.loss;rec.best=G.best;rec.model=true;Object.assign(rec,Q.fields);rec.leak=G.sev?Q.leak:null;}
     if(G.sev===0)rec.leak=null;else if(!rec.leak)rec.leak=rec.toCall>0&&rec.act==="raise"?"raise_no_odds":"off_line";
     var lu=liveUnitOf(rec);if(lu)cpush(lu,"l",rec.sev===0);liveUnitsExtra(rec).forEach(function(x){cpush(x[0],"l",x[1]);});
     if(T.live&&rec.st===3&&rec.toCall>0){T.heroRv=T.heroRv||{face:0,fold:0};T.heroRv.face++;if(rec.act==="fold")T.heroRv.fold++;}
+    if(rec.model){try{coachRecord(rec);}catch(e){}}
     H.dec=H.dec||[];H.dec.push(rec);H.gcAt=Date.now();setTimeout(function(){try{gcRender();}catch(e){}},3300);if(!rec.leak)addXP(1);if(rec.leak)addRedo(rec);sessDecision(rec);
     if(rec.act==="fold"&&rec.toCall>0&&rec.eq<rec.need)mission("goodfold");if(rec.act==="fold"&&rec.st===3&&rec.advice==="Fold")mission("riverfold");
     if(rec.st===0&&rec.act==="raise"&&rec.raises===1&&H.preAgg>0){var opn=T.players[H.preAgg];if(opn&&(["station","limper","whale","maniac"].indexOf(opn.arch)>=0||opn.cid==="moonshot"))mission("3bloose");}
@@ -2169,7 +2175,7 @@ function recordDecision(d){
   }catch(e){}
 }
 function saveHandRecord(net){
-  var rv=S.review=S.review||[];
+  var rv=S.review=S.review||[];(H.dec||[]).forEach(function(r){r.res=Math.round(net/(T.bb||1)*10)/10;});
   var opps=H.seats.filter(function(i){return i!==0;}).map(function(i){var p=T.players[i];return {n:p.name,cid:p.cid||"",sk:p.skill,c:H.s[i].cards,f:H.s[i].folded};});
   rv.unshift({t:Date.now(),where:tableName()+(T.home?" (live)":""),cards:H.s[0].cards,board:H.board.slice(),pos:H.pos[0],net:net,bb:T.bb,dec:H.dec||[],log:H.log.slice(),opps:opps,read:H.read||null});
   if(rv.length>40)rv.length=40;
@@ -2570,7 +2576,8 @@ function liveLikeHi(P,e,hi,isPreAgg,memAdj,x){x=x||{};var c={toCall:e.toCall,can
    If the posterior collapses to zero (or is not finite), the prior is returned and `collapsed` is set. */
 function priorRange(i){var dead={};H.s[0].cards.concat(H.board).forEach(function(c){dead[c]=1;});var list=[],ws=[],pw=null;
   try{pw=pfWeights(i);}catch(e){pw=null;}
-  if(pw)Object.keys(pw).forEach(function(cd){var w0=pw[cd];if(!(w0>=0.002))return;combosOfCode(cd).forEach(function(x){if(!dead[x[0]]&&!dead[x[1]]){list.push(x);ws.push(w0);}});});
+  var pmx=0;if(pw)Object.keys(pw).forEach(function(cd){if(pw[cd]>pmx)pmx=pw[cd];});if(!(pmx>0))pw=null;   /* weights are relative: a rare action sequence must not empty the range */
+  if(pw)Object.keys(pw).forEach(function(cd){var w0=pw[cd]/pmx;if(!(w0>=0.002))return;combosOfCode(cd).forEach(function(x){if(!dead[x[0]]&&!dead[x[1]]){list.push(x);ws.push(w0);}});});
   else preRangeCodes(i).forEach(function(cd){combosOfCode(cd).forEach(function(x){if(!dead[x[0]]&&!dead[x[1]]){list.push(x);ws.push(1);}});});
   return {combos:list,w:ws};}
 function rangeLogLik(i,combos){var p=T.players[i],hist=(H.hist||[]).filter(function(e){return e.i===i&&e.st>0&&e.a!=="fold";}),LV=useLive(p),PP=LV?modelProfAt(i):null,mem=LV?modelMem(i):0,ll=new Float64Array(combos.length);
@@ -2582,7 +2589,7 @@ function rangeLogLik(i,combos){var p=T.players[i],hist=(H.hist||[]).filter(funct
       ll[k]+=Math.log(pr>0?pr:0.004);}});
   return {ll:ll,hist:hist};}
 function rangePosterior(i){
-  H._ar=H._ar||{};var key=i+"|"+H.board.length+"|"+(H.hist||[]).length;if(H._ar[key])return H._ar[key];
+  H._ar=H._ar||{};var key=i+"|"+H.board.length+"|"+(H.hist||[]).length+"|"+(FORCE_KEY||"");if(H._ar[key])return H._ar[key];
   var pri=priorRange(i),L=rangeLogLik(i,pri.combos),ll=L.ll,mx=-Infinity,k;
   for(k=0;k<ll.length;k++)if(pri.w[k]>0&&ll[k]>mx)mx=ll[k];
   var post=new Array(pri.w.length),tot=0;for(k=0;k<post.length;k++){post[k]=pri.w[k]*Math.exp(ll[k]-(mx===-Infinity?0:mx));tot+=post[k];}
@@ -2630,12 +2637,13 @@ function liveMem(i){return adaptCall(T.players[i]);}
 var ARCH_STATS={"station":[0.508,0.03,0.417,0.662,0.415],"limper":[0.357,0.03,0.492,0.69,0.527],"whale":[0.6,0.047,0.515,0.713,0.422],"maniac":[0.554,0.39,0.63,0.639,0.49],"nit":[0.144,0.035,0.594,0.625,0.715],"weekend":[0.274,0.082,0.622,0.537,0.648],"tag":[0.271,0.083,0.71,0.575,0.71],"lag":[0.375,0.165,0.711,0.607,0.674],"shark":[0.274,0.183,0.727,0.513,0.708],"wild":[0.482,0.031,0.523,0.733,0.453],"thinker":[0.29,0.079,0.594,0.603,0.587],"shorty":[0.25,0.142,0.508,0.5,0.527]};   /* [vpip, pfr, bet share, c-bet (unused: too few samples), fold to bet] */
 var POP_MIX={station:0.17,limper:0.13,whale:0.05,maniac:0.06,nit:0.09,weekend:0.15,tag:0.09,lag:0.05,shark:0.03,wild:0.07,thinker:0.05,shorty:0.06};
 function oppMode(){return S.settings.oppInfo==="revealed"?"revealed":"observed";}
-function readOpp(p){var r=T&&T.hud&&T.hud[p.name];if(!r||r.h<12)return null;
+function readOpp(p){return readFromStats(T&&T.hud&&T.hud[p.name]);}
+function readFromStats(r){if(!r||r.h<12)return null;
   var F=[[r.vp,r.h,0],[r.pr,r.h,1],[r.agg,r.agg+r.call,2],[r.fb,r.fbO||0,4]],lp={},mx=-1e9,tot=0,probs={};
   Object.keys(ARCH_STATS).forEach(function(k){var ll=Math.log(POP_MIX[k]||0.01);F.forEach(function(f){if(f[1]<=0)return;var q=clampN(ARCH_STATS[k][f[2]],0.02,0.98);ll+=0.5*(f[0]*Math.log(q)+(f[1]-f[0])*Math.log(1-q));});lp[k]=ll;if(ll>mx)mx=ll;});
   Object.keys(lp).forEach(function(k){probs[k]=Math.exp(lp[k]-mx);tot+=probs[k];});
   var top=Object.keys(probs).map(function(k){return [k,probs[k]/tot];}).sort(function(a,b){return b[1]-a[1];});return {top:top,n:r.h};}
-function modelKeyP(p){if(!p||oppMode()==="revealed"||p.hero||p.human)return liveKey(p);var rd=readOpp(p);return rd&&rd.top[0][1]>=0.35?rd.top[0][0]:"weekend";}
+function modelKeyP(p){if(FORCE_KEY&&p&&!p.hero&&!p.human)return FORCE_KEY;if(!p||oppMode()==="revealed"||p.hero||p.human)return liveKey(p);var rd=readOpp(p);return rd&&rd.top[0][1]>=0.35?rd.top[0][0]:"weekend";}
 function modelKey(i){return modelKeyP(T.players[i]);}
 function viewKey(p){return modelKeyP(p);}
 function viewLabel(p){if(oppMode()==="revealed"||p.hero||p.human)return ((ARCH[liveKey(p)]||{}).n||"player").toLowerCase();var rd=readOpp(p);return rd&&rd.top[0][1]>=0.5?ARCH[rd.top[0][0]].n.toLowerCase():"player";}
@@ -2645,9 +2653,9 @@ function canonTraits(k){var PR=ARCH_PRIOR[k]||ARCH_PRIOR.weekend,A=ARCH[k]||ARCH
     mBluff:1,mProbe:1,mTrap:1,dHonest:0,sizeNoise:PR.sizeNoise,pairBias:PR.pairBias,cap:PR.cap,xr:PR.xr,adapt:PR.adapt,attn:PR.attn,preShift:0,pfRaise:PR.pfRaise,fold3:14,threeBet:1};}
 function canonProf(k){var A=ARCH[k]||ARCH.weekend;return liveProf({name:"canon-"+k,arch:LP[k]?k:"weekend",skill:A.skill,st:Object.assign({},A.st),tr:canonTraits(LP[k]?k:"weekend"),tilt:0});}
 /* the profile the ANALYSIS assumes for an opponent: the real one when revealed, a typical player of the estimated type when observed */
-function modelProfAt(i){var p=T.players[i];if(oppMode()==="revealed"||!p||p.hero||p.human)return liveProfAt(i);return canonProf(modelKeyP(p));}
-function modelMem(i){return oppMode()==="revealed"?liveMem(i):0;}
-function observedLine(p){var r=T&&T.hud&&T.hud[p.name];if(!r||!r.h)return "Not enough hands seen yet.";var pc=function(a,b){return b?Math.round(a/b*100)+"%":"n/a";};
+function modelProfAt(i){var p=T.players[i];if(FORCE_KEY&&p&&!p.hero&&!p.human)return canonProf(FORCE_KEY);if(oppMode()==="revealed"||!p||p.hero||p.human)return liveProfAt(i);return canonProf(modelKeyP(p));}
+function modelMem(i){return oppMode()==="revealed"&&!FORCE_KEY?liveMem(i):0;}
+function observedLine(p,stats){var r=stats||(T&&T.hud&&T.hud[p.name]);if(!r||!r.h)return "Not enough hands seen yet.";var pc=function(a,b){return b?Math.round(a/b*100)+"%":"n/a";};
   return "In "+r.h+" hand"+(r.h>1?"s":"")+": plays "+pc(r.vp,r.h)+", raises "+pc(r.pr,r.h)+" before the flop"+(r.agg+r.call?"; bets or raises "+pc(r.agg,r.agg+r.call)+" of the time after the flop":"")+(r.fbO?"; folds to "+pc(r.fb,r.fbO)+" of bets ("+r.fbO+" seen)":"")+".";}
 function readHTML(p){var rd=readOpp(p),h="<div class='tool'><div class='k'>What you have seen</div><div class='v' style='font-size:.9rem'>"+observedLine(p)+"</div>";
   if(!rd)return h+"<div class='muted' style='font-size:.82rem;margin-top:4px'>Fewer than 12 hands seen, so there is no read yet. Watch what they do and what they show down.</div></div>";
@@ -3238,7 +3246,7 @@ function dwSev(lb,same){return same?0:lb<0.2?0:lb<1?1:lb<3?2:3;}
 function dwGcRender(){var el=$("dw-gc");if(!el)return;if(S.settings.gradeLive===false||!DWH||!DWH.dec||!DWH.dec.length){setHTML(el,"none","");return;}
   gcStrip(el,DWH.dec,function(d){return dwStName(d.st);},DWH.gcAt,function(d){gcDetail(d,dwStName(d.st,true));});}
 /* ===== custom table builder ===== */
-var CUSTOM_BLINDS=[[1,2],[2,5],[5,10],[10,20],[25,50],[50,100],[100,200],[200,400],[500,1000],[1000,2000],[2000,4000],[5000,10000],[10000,20000],[25000,50000],[50000,100000],[100000,200000],[250000,500000],[500000,1000000]];
+var CUSTOM_BLINDS=[[1,2],[1,3],[2,5],[5,10],[10,20],[25,50],[50,100],[100,200],[200,400],[500,1000],[1000,2000],[2000,4000],[5000,10000],[10000,20000],[25000,50000],[50000,100000],[100000,200000],[250000,500000],[500000,1000000]];
 function blindTxt(v){return v>=1000000?"$"+(v/1000000)+"M":v>=1000?"$"+(v/1000)+"K":"$"+v;}
 var CUSTOM_TYPES=["station","limper","whale","maniac","nit","weekend","tag","lag","shark","wild","thinker","shorty"];
 function castList(){var out=[];Object.keys(THEMES).forEach(function(k){(THEMES[k].cast||[]).forEach(function(c){if(!out.some(function(x){return x.id===c.id;}))out.push({id:c.id,short:c.short,name:c.name});});});return out;}
@@ -3247,7 +3255,7 @@ function customCfg(){var c=S.customCfg||{};
   S.customCfg=c;return c;}
 function customStake(){var c=customCfg(),b=CUSTOM_BLINDS[c.bi]||CUSTOM_BLINDS[0],spec=c.spec.slice(0,c.seats-1),arch=spec.filter(function(x){return x!=="random"&&x.indexOf("cast:")!==0;});
   return {id:"custom",n:"Custom $"+b[0].toLocaleString()+"/$"+b[1].toLocaleString(),sb:b[0],bb:b[1],buy:b[1]*c.depth,req:0,skill:["regular","tough","beginner"],seats:c.seats,spec:spec,
-    arch:arch.length?arch:CUSTOM_TYPES,casino:c.style==="casino"&&c.seats>=7,home:c.style==="home",venue:"Your custom table",look:{table:c.table,atm:c.atm}};}
+    arch:arch.length?arch:CUSTOM_TYPES,casino:c.style==="casino"&&c.seats>=7,home:c.style==="home",venue:"Your custom table",look:{table:c.table,atm:c.atm},room:roomFor(c.room||"none",b[1])};}
 function customRisk(buy){var r=buy/Math.max(1,S.bankroll);return r<=0.05?["Comfortable","#2e8b57"]:r<=0.2?["Aggressive","#d9a420"]:r<=0.5?["Risky","#e07a2a"]:["Most of your roll","#c8102e"];}
 function customSeatOpt(v){var cl=castList();
   return "<option value='random'"+(v==="random"?" selected":"")+">Random type</option><optgroup label='Player types'>"+CUSTOM_TYPES.map(function(k){return "<option value='"+k+"'"+(v===k?" selected":"")+">"+ARCH[k].n+"</option>";}).join("")+"</optgroup><optgroup label='Characters'>"+
@@ -3264,6 +3272,7 @@ function openCustom(){var c=customCfg();
     "<div class='lbl'>Players at the table</div><div class='seg' id='ct-seats'>"+[2,3,4,5,6,7,8,9].map(function(n){return "<button data-v='"+n+"' aria-pressed='"+(n===c.seats)+"'>"+n+"</button>";}).join("")+"</div>"+
     "<div class='lbl'>Game style</div><div class='seg' id='ct-style'>"+[["casino","Casino"],["home","Home game"],["online","Online"]].map(function(x){return "<button data-v='"+x[0]+"' aria-pressed='"+(x[0]===c.style)+"'>"+x[1]+"</button>";}).join("")+"</div>"+
     "<p class='muted' style='font-size:.78rem;margin:4px 0 0'>"+(c.style==="home"?"Straddles, rebuys, and the night gets looser as it goes.":c.style==="casino"?"Live casino play: big raises, limpers, and nine-handed live coaching at 7+ players.":"Standard online-style play.")+"</p>"+
+    "<div class='lbl'>Rake (example settings, match them to your room)</div><div class='seg' id='ct-room'>"+ROOM_PRESETS.map(function(x){return "<button data-v='"+x.id+"' aria-pressed='"+((c.room||"none")===x.id)+"'>"+x.n+"</button>";}).join("")+"</div>"+
     "<div class='lbl'>Opponents</div><div class='ctquick'><button class='mini' data-q='random'>All random</button><button class='mini' data-q='soft'>Soft</button><button class='mini' data-q='mixed'>Mixed</button><button class='mini' data-q='tough'>Tough</button></div>"+
     "<div class='ctseats'>"+c.spec.slice(0,c.seats-1).map(function(v,i){return "<label><span>Seat "+(i+2)+"</span><select data-si='"+i+"' class='ctsel'>"+customSeatOpt(v)+"</select></label>";}).join("")+"</div>"+
     "<div class='lbl'>Table</div><select id='ct-table' class='ctsel'>"+TABLES.map(function(t){return "<option value='"+t.id+"'"+(t.id===c.table?" selected":"")+">"+t.n+"</option>";}).join("")+"</select>"+
@@ -3276,6 +3285,7 @@ function openCustom(){var c=customCfg();
   M.querySelector("#ct-depth").onchange=function(){c.depth=+this.value;re();};
   M.querySelectorAll("#ct-seats button").forEach(function(x){x.onclick=function(){c.seats=+x.dataset.v;re();};});
   M.querySelectorAll("#ct-style button").forEach(function(x){x.onclick=function(){c.style=x.dataset.v;re();};});
+  M.querySelectorAll("#ct-room button").forEach(function(x){x.onclick=function(){c.room=x.dataset.v;re();};});
   M.querySelectorAll("[data-si]").forEach(function(sel){sel.onchange=function(){c.spec[+sel.dataset.si]=sel.value;save();};});
   M.querySelectorAll("[data-q]").forEach(function(x){x.onclick=function(){var q=x.dataset.q,pool={soft:["station","station","limper","limper","whale","whale","maniac","weekend"],mixed:["station","limper","whale","weekend","nit","tag","maniac","shark"],tough:["shark","shark","lag","tag","tag","weekend","shark","lag"]}[q];
     c.spec=c.spec.map(function(_,i){return q==="random"?"random":pool[i%pool.length];});if(q!=="random")c.spec=shuffle(c.spec);re();};});
@@ -3332,7 +3342,7 @@ function ritNegotiate(done){var opp=live().filter(function(j){return j!==0;});if
   if(ritPref()==="always")return settle(true);
   showModal("<h2>All in. Run it twice?</h2><p>Ask "+(opp.length===1?T.players[opp[0]].name:"the table")+" to deal the rest of the board twice and split the pot by board. Same average result, smaller swings.</p>",[["Ask to run it twice",function(){settle(true);},"brass"],["Run it once",function(){done(false);},"ghost"]]);}
 /* ===== table options: game, blinds, run it twice ===== */
-var GAME_BLINDS=[[1,2],[2,5],[5,10],[10,20],[25,50],[50,100],[100,200],[200,400],[500,1000],[1000,2000],[2000,4000],[5000,10000],[10000,20000],[25000,50000],[50000,100000],[100000,200000]];
+var GAME_BLINDS=[[1,2],[1,3],[2,5],[5,10],[10,20],[25,50],[50,100],[100,200],[200,400],[500,1000],[1000,2000],[2000,4000],[5000,10000],[10000,20000],[25000,50000],[50000,100000],[100000,200000]];
 function openTableMenu(game){var inDraw=game==="draw",cur=inDraw?[DW.sb,DW.bb]:[T.sb,T.bb],mid=inDraw?(DWH&&!DWH.done):(H&&!H.done),canSwitch=inDraw||T.mode==="cash";
   var html="<h2>Table options</h2>"+
     (canSwitch?"<div class='lbl'>Game</div><div class='seg' id='tm-game'><button data-v='holdem' aria-pressed='"+!inDraw+"'>Hold'em</button><button data-v='draw' aria-pressed='"+inDraw+"'>5-card draw</button></div><p class='muted' style='font-size:.78rem;margin:4px 0 0'>Same players, same stacks."+(!inDraw&&T.players.length>6?" Draw seats 6, so seats 7 and up sit out and keep their chips until you switch back.":"")+(mid?" Switches after this hand.":"")+"</p>":"")+
@@ -3367,7 +3377,10 @@ function pfWeights(i){var p=T.players[i],lv=T.live?1:0,pos=H.pos[i],pg=i===H.bbI
     acts.forEach(function(e){var sit=e.raises>=2?"3b":e.raises===1?"r":(e.pot>T.sb+T.bb+(H.straddle>=0?T.bb*2:0)+0.5)?"l":"o";
       var S=A&&(A[sit]||A.r),cell=S&&(S[pg]||S["*"]);if(!cell){return;}
       var x=[1,(EQ[code]-50)/10,ch,code.length===2?1:0,code[2]==="s"?1:0],z1=0,z2=0;for(var t=0;t<5;t++){z1+=cell[0][t]*x[t];z2+=cell[1][t]*x[t];}
-      var pp=1/(1+Math.exp(-z1)),pr=1/(1+Math.exp(-z2));w*=e.a==="raise"||e.a==="bet"?pp*pr:e.a==="call"||e.a==="check"?pp*(1-pr):(1-pp);});
+      var pp=1/(1+Math.exp(-z1)),pr=1/(1+Math.exp(-z2));var fac=1,tl=(T.room&&T.room.sizeTilt!==undefined)?T.room.sizeTilt:SIZE_TILT;
+      if(e.a==="raise"&&e.to&&tl){var lb=0,hh=H.hist||[];for(var q=0;q<hh.length&&hh[q]!==e;q++)if(hh[q].st===0&&hh[q].a==="call"&&hh[q].toCall<=T.bb*1.001)lb++;   /* limpers before this raise */
+        var nrm=e.raises===0?T.bb*(4+lb):3*Math.max(e.toCall,T.bb);fac=Math.exp(tl*Math.log(clampN(e.to/nrm,0.5,4))*(EQ[code]-55)/10);}   /* a raise bigger than usual is assumed stronger */
+      w*=e.a==="raise"||e.a==="bet"?pp*pr*fac:e.a==="call"||e.a==="check"?pp*(1-pr):(1-pp);});
     out[code]=w;});
   return out;}
 /* ===== expected value of every option, by simulation against the opponent's weighted range ===== */
@@ -3440,7 +3453,7 @@ function evAnalyze(){if(!H||H.street<1||H.done)return null;RESP_MEMO={};var L=le
       o.se=eqSE*(1-allF)*rakeNet(pot+eb*(1+callers),flop)*rh;}
     o.ev=ev;o.eb=eb;opts.push(o);}
   if(toCall===0){opts.push({k:"check",lab:"Check",amt:0,ev:checkEV(),se:eqSE*rakeNet(pot,flop)*rho});
-    [0.33,0.5,0.75,1].forEach(function(f){var b=Math.min(stack,Math.max(bb,Math.round(pot*f)));if(opts.some(function(o){return o.amt===b;}))return;aggress("bet","Bet "+Math.round(f*100)+"% pot",b,b,b>=stack);});
+    (st===3&&eqAll>=0.8?[0.33,0.5,0.75,1,1.5,2]:[0.33,0.5,0.75,1])   /* overbets are considered only on the river and only with a hand that beats at least 80% of the range */.forEach(function(f){var b=Math.min(stack,Math.max(bb,Math.round(pot*f)));if(opts.some(function(o){return o.amt===b;}))return;aggress("bet","Bet "+Math.round(f*100)+"% pot",b,b,b>=stack);});
     if(L.canRaise&&!opts.some(function(o){return o.amt===stack;}))aggress("bet","All in "+money(stack),stack,stack,true);}
   else{opts.push({k:"fold",lab:"Fold",amt:0,ev:0,se:0});
     var callAmt=Math.min(toCall,stack);opts.push({k:"call",lab:"Call",amt:callAmt,ev:evCallPure(eqAll,pot,callAmt,rho,flop),se:eqSE*rakeNet(pot+callAmt,flop)*rho});
@@ -3460,6 +3473,153 @@ function evAnalyze(){if(!H||H.street<1||H.done)return null;RESP_MEMO={};var L=le
   return {opts:opts,best:best,mBest:mBest,blend:false,eqR:eqR,eqAll:eqAll,eqSE:eqSE,eqRand:eqRandom(hero,board,opps.length,600),potOdds:potOdds,pot:pot,toCall:toCall,spr:stack/Math.max(1,pot),
     hc:hcInfo(hero,board),opps:opps,R:R,ip:ip,rho:rho,runs:runs.length||(st===3?1:0),combos:combosN,ms:Date.now()-t0,hu:hu,assumptions:assumptions,
     horizon:"this street, with showdown equity scaled by an assumed realization factor",method:hu?(runs.length?runs.length+" sampled runouts":"all runouts, exact"):"sequential importance sampling, "+(mwD&&mwD.n)+" valid trials (ESS "+Math.round(mwD&&mwD.ess)+")"};}
+/* ===== room economics: rake, drop, and live sizing are settings, never hard-coded ===== */
+var ROOM_PRESETS=[{id:"none",n:"No rake",rake:null},{id:"light",n:"Light: 5%, cap 2 bb",rake:{pct:0.05,capBB:2,dropBB:0}},{id:"standard",n:"Standard: 10%, cap 3 bb, 0.5 bb drop",rake:{pct:0.10,capBB:3,dropBB:0.5}}];
+var LIVE_SIZES={open:[3,4,5],threebet:[3,4]};   /* typical live sizes: open in big blinds (plus one per limper), 3-bet as a multiple of the raise */
+function roomFor(id,bb){var pr=ROOM_PRESETS.find(function(x){return x.id===id;})||ROOM_PRESETS[0],r=pr.rake;
+  return {preset:pr.id,rake:r?{pct:r.pct,cap:Math.round(r.capBB*bb),drop:Math.round((r.dropBB||0)*bb),noFlopNoDrop:true}:null,sizes:LIVE_SIZES};}
+function roomSizes(){var r=T&&T.room&&T.room.sizes;return r||LIVE_SIZES;}
+function roomText(){var rk=roomRake(),z=roomSizes();return "Room assumptions (settings, not facts about any casino): "+(rk?"rake "+Math.round((rk.pct||0)*1000)/10+"%"+(rk.cap?" up to "+money(rk.cap):"")+(rk.drop?" plus "+money(rk.drop)+" drop":"")+", none if no flop":"no rake")+"; open to "+z.open.join(", ")+" bb (plus one per limper); 3-bet to "+z.threebet.join("x or ")+"x the raise.";}
+/* ===== pre-flop EV analysis, from the same opponent model the range charts use ===== */
+var FORCE_KEY=null,PREMIUM_PRE={AA:1,KK:1,QQ:1,AKs:1,AKo:1};   /* FORCE_KEY: analysis-only override that treats every opponent as one type (baseline and what-if views) */
+function withKey(k,fn){var o=FORCE_KEY;FORCE_KEY=k;try{return fn();}finally{FORCE_KEY=o;}}
+function pfPos(i){var pos=H.pos[i];return i===H.bbI?"BB":i===H.sbI?"SB":["CO","BTN"].indexOf(pos)>=0?"LP":["MP","HJ"].indexOf(pos)>=0?"MP":"EP";}
+function pfCell(key,sit,pg){var M=PFM[T.live?"1":"0"]||PFM["1"],A=(M&&M[key])||(PFM["1"]&&PFM["1"][key])||(M&&M.weekend)||PFM["1"].weekend,S=A&&(A[sit]||A.r||A.o);return (S&&(S[pg]||S["*"]))||null;}
+function pfProbs(c,code,ch){var x=[1,(EQ[code]-50)/10,ch,code.length===2?1:0,code[2]==="s"?1:0],z1=0,z2=0;for(var t=0;t<5;t++){z1+=c[0][t]*x[t];z2+=c[1][t]*x[t];}
+  var pp=1/(1+Math.exp(-z1)),pr=1/(1+Math.exp(-z2));return {play:pp,raise:pp*pr,call:pp*(1-pr),fold:1-pp};}
+function relPW(pw){var mx=0;Object.keys(pw).forEach(function(c){if(pw[c]>mx)mx=pw[c];});var o={};Object.keys(pw).forEach(function(c){o[c]=mx>0?pw[c]/mx:1;});return o;}
+function preRangeOf(j,hole,PW){var pw=PW[j]||(PW[j]=relPW(pfWeights(j))),dead={};hole.forEach(function(c){dead[c]=1;});var cb=[],w=[],tot=0;
+  Object.keys(pw).forEach(function(code){var w0=pw[code];if(!(w0>0.0005))return;combosOfCode(code).forEach(function(x){if(!dead[x[0]]&&!dead[x[1]]){cb.push(x);w.push(w0);tot+=w0;}});});return {combos:cb,w:w,tot:tot};}
+function preResp(j,sit,hole,PW,rhoSize){var pw=PW[j]||(PW[j]=relPW(pfWeights(j))),p=T.players[j],key=FORCE_KEY||modelKeyP(p),c=pfCell(key,sit,pfPos(j)),pos=H.pos[j],dead={},f=0,cl=0,r=0,tot=0,cb=[],w=[],ct=0;
+  hole.forEach(function(x){dead[x]=1;});
+  Object.keys(pw).forEach(function(code){var w0=pw[code];if(!(w0>0.0005))return;var cs=combosOfCode(code).filter(function(x){return !dead[x[0]]&&!dead[x[1]];});if(!cs.length)return;
+    var pr=c?pfProbs(c,code,inChart(pos,code)?1:0):{play:0.3,raise:0.08,call:0.22,fold:0.7},ww=w0*cs.length;
+    if(rhoSize&&rhoSize!==1){var g=(T.room&&T.room.sizeGamma!==undefined)?T.room.sizeGamma:SIZE_GAMMA,lp=Math.log(Math.max(1e-6,pr.play)/Math.max(1e-6,1-pr.play))-g*Math.log(rhoSize),np=1/(1+Math.exp(-lp)),sh=pr.play>0?pr.raise/pr.play:0;pr={play:np,raise:np*sh,call:np*(1-sh),fold:1-np};}   /* a bigger raise folds out more hands */tot+=ww;f+=ww*pr.fold;cl+=ww*pr.call;r+=ww*pr.raise;
+    cs.forEach(function(x){cb.push(x);w.push(w0*pr.play);ct+=w0*pr.play;});});
+  if(!(tot>0))return {fold:0.5,call:0.4,raise:0.1,cont:{combos:[],w:[],tot:0}};
+  return {fold:f/tot,call:cl/tot,raise:r/tot,cont:{combos:cb,w:w,tot:ct}};}
+function realizePre(code,ip){var pair=code.length===2,su=code[2]==="s",hi=rkv(code[0]),lo=rkv(code[1]),r;
+  if(pair)r=lo>=7?1.0:0.93;else if(su)r=(hi===12||lo>=9||hi-lo<=2)?0.97:0.88;else r=lo>=9?0.95:hi===12?0.82:0.72;
+  return ip?r:r*0.9;}
+var SIZE_TILT=0.7,SIZE_GAMMA=1.2;   /* live-room assumptions: bigger raises are stronger, and fold out more hands. Set T.room.sizeTilt / sizeGamma to change them; 0 turns them off. */
+function rhoShort(r,commit){return r+(1-r)*clampN((commit-0.15)/0.45,0,1);}   /* committing most of a short stack means the equity is realized, with no later folding */
+function preEq(hole,ranges){var r=eqVsRangesD(hole,[],ranges,500);return r.n?r:{eq:0.5,se:0.1,n:0};}
+function preAnalyze(){if(!H||H.street!==0||H.done||H.toAct!==0||!H.s[0]||H.s[0].folded)return null;var t0=Date.now(),L=legal(0),hs=H.s[0],hole=hs.cards,code=codeOf(hole),bb=T.bb,pot0=potTotal(),toCall=L.toCall,heroSb=hs.sb,stack=T.players[0].stack,
+    opps=live().filter(function(j){return j!==0;}),pos=H.pos[0],ip=pos==="BTN"||pos==="CO",PW={},inv=opps.filter(function(j){return H.s[j].sb>0;}),limpers=opps.filter(function(j){return j!==H.bbI&&j!==H.sbI&&H.s[j].sb>0&&H.s[j].sb<=bb;}).length;
+  if(!opps.length)return null;var rho0=realizePre(code,ip),opts=[],callAmt=Math.min(toCall,stack);
+  function rhoK(k){return rho0*(1-0.07*(Math.max(1,k)-1));}
+  /* fold, or check for the big blind */
+  if(toCall>0)opts.push({k:"fold",lab:"Fold",amt:0,ev:0,seBB:0});
+  /* call, limp, or check: equity against the ranges of everyone already in the pot */
+  var R=inv.map(function(j){return preRangeOf(j,hole,PW);}),cq=R.length?preEq(hole,R):{eq:1,se:0,n:0},K=Math.max(1,inv.length);
+  var potCall=pot0+callAmt,rC=rhoShort(rhoK(K),callAmt/Math.max(1,stack+heroSb)),cev=cq.eq*rakeNet(potCall,true)*rC-callAmt;
+  opts.push({k:toCall>0?"call":"check",lab:toCall>0?(H.raises>0?"Call":"Limp"):"Check",amt:callAmt,ev:cev,seBB:cq.se*rakeNet(potCall,true)*rC/bb,eqC:cq.eq});
+  /* raises */
+  var sit=(H.raises+1>=2)?"3b":"r",sizes=[];
+  if(L.canRaise){if(H.raises>=1)roomSizes().threebet.forEach(function(m){sizes.push(Math.round(H.cur*m));});else roomSizes().open.forEach(function(s){sizes.push(Math.round(bb*(s+limpers)));});
+    if((stack+heroSb)/bb<=40||H.raises>=2)sizes.push(L.maxTo);}
+  var seen={};sizes.forEach(function(raw){var to=Math.min(L.maxTo,Math.max(L.minTo,raw));if(seen[to])return;seen[to]=1;
+    var norm=H.raises>=1?3*H.cur:bb*(4+limpers),resp=opps.map(function(j){return {j:j,r:preResp(j,sit,hole,PW,to/Math.max(1,norm))};}),pFold=resp.reduce(function(a,x){return a*x.r.fold;},1),pNoRaise=resp.reduce(function(a,x){return a*(1-x.r.raise);},1),heroAdd=Math.min(to-heroSb,stack),ev,o;
+    if(pFold>0.9995){ev=pot0;o={fe:1,cont:0,callers:0,pr4:0,eqC:null,seBB:0};}
+    else{var cont=resp.slice().sort(function(a,b){return (b.r.call+b.r.raise)-(a.r.call+a.r.raise);}),kExp=resp.reduce(function(a,x){return a+(1-x.r.fold);},0)/(1-pFold),k=Math.max(1,Math.min(3,Math.round(kExp))),ch=cont.slice(0,k),
+        adds=ch.map(function(x){return Math.max(0,Math.min(to-H.s[x.j].sb,T.players[x.j].stack));}),maxAdd=Math.max.apply(null,adds),hAdd=Math.min(heroAdd,maxAdd+0),
+        eq=preEq(hole,ch.map(function(x){return x.r.cont;})),potF=pot0+hAdd+adds.reduce(function(a,b){return a+b;},0),rR=rhoShort(rhoK(k),hAdd/Math.max(1,stack+heroSb)),evC=eq.eq*rakeNet(potF,true)*rR-hAdd,pRC=Math.min(1,(1-pNoRaise)/(1-pFold)),fourFold=PREMIUM_PRE[code]?evC:-hAdd;
+      ev=pFold*pot0+(1-pFold)*((1-pRC)*evC+pRC*fourFold);o={fe:pFold,cont:1-pFold,callers:k,pr4:pRC,eqC:eq.eq,seBB:eq.se*rakeNet(potF,true)*rR*(1-pFold)/bb};}
+    opts.push(Object.assign({k:"raise",lab:to>=L.maxTo&&(stack+heroSb)/bb<=40?"All in "+money(to):"Raise to "+money(to),amt:to,ev:ev,allIn:to>=L.maxTo},o));});
+  opts.forEach(function(o){o.bb=o.ev/bb;if(o.seBB===undefined)o.seBB=0;});
+  var best=opts.slice().sort(function(a,b){return b.ev-a.ev;})[0],oppNames=opps.map(function(j){return T.players[j].name;});
+  return {pre:true,opts:opts,best:best,mBest:best,code:code,pos:pos,ip:ip,pot:pot0,toCall:toCall,potOdds:toCall?toCall/(pot0+toCall):0,eqAll:cq.eq,eqSE:cq.se,nInv:inv.length,opps:opps,limpers:limpers,rho:rho0,hu:opps.length===1,
+    ms:Date.now()-t0,method:"equity against posterior ranges, "+cq.n+" sampled boards",
+    assumptions:["Opponents respond using a model fit to simulated players' pre-flop decisions (by type, position, and situation) and updated by what each did this hand. It is not a solver.",
+      "Opponents are treated as continuing independently, and a call ignores players behind who could squeeze. Raises are valued against at most three continuing opponents.",
+      "Raise size: a raise bigger than the usual size (4 big blinds plus one per limper, or 3x a raise) is assumed to be stronger and to fold out more hands. These are live-room assumptions, not something the simulated players do, and they can be set or turned off in the room settings.",
+      "After the flop a hand collects about "+Math.round(rho0*100)+"% of its raw equity ("+(ip?"in":"out of")+" position, by hand type), less 7% per extra opponent.",roomText()]};}
+function prePick(A,d){var a=d[0],o=A.opts;if(a==="fold")return o.find(function(x){return x.k==="fold";})||o.find(function(x){return x.k==="check";});
+  if(a==="call"||a==="check")return o.find(function(x){return x.k==="call"||x.k==="check";});
+  var c=o.filter(function(x){return x.k==="raise";});if(!c.length)return null;var amt=d[1]||0;return c.sort(function(x,y){return Math.abs(x.amt-amt)-Math.abs(y.amt-amt);})[0];}
+function preGet(sync){if(!H||H.done||H.street!==0||!H.s[0]||H.s[0].folded)return null;var k="p"+H.id+"|"+(H.hist||[]).length+"|"+(FORCE_KEY||"");if(H.preA&&H.preA.k===k)return H.preA.A;if(!sync)return null;
+  var A=null;try{A=preAnalyze();}catch(e){A=null;}H.preA={k:k,A:A};return A;}
+function preExplain(A){var b=A.best,s=A.opts.slice().sort(function(x,y){return y.ev-x.ev;})[1],nm=A.opps.length===1?T.players[A.opps[0]].name:"The table",out;
+  if(b.k==="fold")out="Fold. "+A.code+" wins about "+evPct(A.eqAll)+" against the hands "+(A.nInv?"already in the pot":"in the pot")+", and after paying to see a flop it collects too little of that equity to cover the price.";
+  else if(b.k==="call"||b.k==="check")out=(b.k==="check"?"Check.":(A.toCall?"Call.":"Limp."))+" "+A.code+" wins about "+evPct(A.eqAll)+" against the ranges already in the pot. Raising does not earn more here: "+(s&&s.k==="raise"?(s.fe!==undefined?nm+" folds only about "+evPct(s.fe)+" and the hands that continue are ahead of you often enough.":""):"");
+  else out="Raise to "+money(b.amt)+". "+nm+" folds about "+evPct(b.fe||0)+" of the time"+(b.eqC!==null&&b.eqC!==undefined?", and when "+(b.callers>1?"someone calls ("+b.callers+" players expected)":"called")+" you win about "+evPct(b.eqC)+" of the time with the initiative.":".");
+  if(s){var gap=b.bb-s.bb,noise=Math.sqrt((b.seBB||0)*(b.seBB||0)+(s.seBB||0)*(s.seBB||0));out+=gap<Math.max(0.15,noise)?" "+b.lab+" and "+s.lab.toLowerCase()+" are about equal here.":" "+b.lab+" is worth about "+gap.toFixed(1)+" big blinds more than "+s.lab.toLowerCase()+".";}
+  return out;}
+/* ===== baseline vs exploitative play, evidence, and confidence (shared by the analysis panel and the grader) ===== */
+function analyzeNow(){return H.street===0?preAnalyze():evAnalyze();}
+function altView(main,key,tolMin){var A2=withKey(key,function(){H._ar={};try{return analyzeNow();}finally{H._ar={};}});if(!A2)return null;
+  var mo=A2.opts.find(function(o){return o.lab===main.best.lab;}),bb=T.bb,gap=mo?(A2.best.ev-mo.ev)/bb:0,noise=Math.sqrt(Math.pow(A2.best.seBB||0,2)+Math.pow(mo&&mo.seBB||0,2));
+  return {key:key,best:A2.best.lab,A:A2,differs:A2.best.lab!==main.best.lab&&gap>Math.max(tolMin||0.15,1.5*noise),gap:gap};}
+function stratExtras(A,lite){if(A.extras&&(A.extras.full||lite))return A.extras;var base=A.extras?A.extras.base:altView(A,"weekend"),sens=lite?[]:["nit","station","maniac"].map(function(k){return altView(A,k);}).filter(Boolean);
+  var hands=A.opps.map(function(j){var r=T.hud&&T.hud[T.players[j].name];return r?r.h:0;}),minH=hands.length?Math.min.apply(null,hands):0,sorted=A.opts.filter(function(o){return !o.extrap;}).sort(function(a,b){return b.ev-a.ev;}),
+    second=sorted[1],bb=T.bb,gap=second?(sorted[0].ev-second.ev)/bb:99,noise=second?Math.sqrt(Math.pow(sorted[0].seBB||0,2)+Math.pow(second.seBB||0,2)):0,tol=Math.max(0.15,1.5*noise),baseDiff=base&&base.differs,anyDiff=sens.some(function(s){return s.differs;});
+  var label,why;
+  if(oppMode()!=="revealed"&&minH<12&&(baseDiff||anyDiff)){label="Low-information";why="Only "+minH+" hand"+(minH===1?"":"s")+" seen on the least-known opponent, and the best play changes with their type ("+sens.filter(function(s){return s.differs;}).map(function(s){return ARCH[s.key].n.toLowerCase()+": "+s.best;}).join("; ")+"). Watch more hands before relying on this.";}
+  else if(baseDiff||anyDiff){label="Opponent-dependent";why=baseDiff?"Against a typical player the best play is "+base.best+"; against this read it is "+A.best.lab+".":"The best play changes if the opponent is a different type ("+sens.filter(function(s){return s.differs;}).map(function(s){return ARCH[s.key].n.toLowerCase()+": "+s.best;}).join("; ")+").";}
+  else if(gap<tol){label="Close";why="The top two options differ by "+gap.toFixed(2)+" big blinds, inside the estimate's noise (tolerance "+tol.toFixed(2)+").";}
+  else{label="Clear";why="The best option leads the next by "+gap.toFixed(2)+" big blinds, beyond the estimate's noise (tolerance "+tol.toFixed(2)+"), and stays best against every opponent type tried.";}
+  return (A.extras={base:base,sens:sens,minHands:minH,label:label,why:why,tol:tol,gap:gap,full:!lite});}
+function evidenceHTML(A){return "<div style='font-weight:700;font-size:.82rem;margin:8px 0 2px'>What the read is based on</div><ul class='muted' style='font-size:.78rem;margin:0 0 4px;padding-left:18px'>"+A.opps.map(function(j){var p=T.players[j],r=T.hud&&T.hud[p.name],h=r?r.h:0,rd=oppMode()==="revealed"?null:readOpp(p);
+    var what=oppMode()==="revealed"?"revealed type: "+viewLabel(p):rd&&rd.top[0][1]>=0.35?"reads as "+viewLabel(p)+" ("+Math.round(rd.top[0][1]*100)+"%)":"no clear read";
+    var kind=h>=30?"player-specific read":h>=12?"weak read, mostly the population average":"population assumption only";return "<li><b>"+p.name+"</b>: "+what+", "+h+" hand"+(h===1?"":"s")+" seen ("+kind+")</li>";}).join("")+"</ul>";}
+function stratHTML(A){var X=stratExtras(A),b=X.base,same=!b||!b.differs;
+  return (A.best.k==="raise"&&A.toCall>0&&A.eqAll<0.15?"<div class='muted' style='font-size:.8rem;margin:8px 0 0'><b>Pure bluff-raise.</b> It works only if this player folds hands that beat you. Treat it as a high-variance exploit of the model's opponent assumptions, not a safe play.</div>":"")+"<div style='font-weight:700;font-size:.82rem;margin:8px 0 2px'>Baseline and adjustment</div><div style='font-size:.85rem'>"+(b?"<b>Baseline</b> (a typical player): "+b.best+". ":"")+"<b>Against this table</b>: "+A.best.lab+". "+(same?"No adjustment is needed.":"<b>Adjustment:</b> the difference comes from the read below, not from a general rule.")+"</div>"+
+    evidenceHTML(A)+"<div style='font-weight:700;font-size:.82rem;margin:8px 0 2px'>Confidence: "+X.label+"</div><div class='muted' style='font-size:.8rem'>"+X.why+"</div>"+
+    (X.sens.length?"<div style='font-weight:700;font-size:.82rem;margin:8px 0 2px'>What could change it</div><ul class='muted' style='font-size:.78rem;margin:0 0 4px;padding-left:18px'>"+X.sens.map(function(s){return "<li>If they are a "+ARCH[s.key].n.toLowerCase()+": "+(s.differs?"<b>"+s.best+"</b>":"still "+A.best.lab)+"</li>";}).join("")+"</ul>":"");}
+function preAnalysisHTML(){var A=preGet(true);if(!A)return "";
+  var rows=A.opts.map(function(o){return "<tr><td>"+o.lab+(o===A.best?" \u2605":"")+"</td><td>"+(o.bb>=0?"+":"")+o.bb.toFixed(2)+(o.seBB>=0.05?" \u00b1"+o.seBB.toFixed(2):"")+" bb</td><td>"+(o.fe!=null?evPct(o.fe):"\u2013")+"</td><td>"+(o.eqC!=null?evPct(o.eqC):"\u2013")+"</td></tr>";}).join("");
+  return "<div class='tool anl'><div class='k'>Pre-flop model \u00b7 "+A.code+" in "+A.pos+"</div><div class='anl-best'>"+A.best.lab+" <span>"+(A.best.bb>=0?"+":"")+A.best.bb.toFixed(1)+" bb</span></div><div class='anl-hi'>"+preExplain(A)+"</div>"+evChartSVG(A)+stratHTML(A)+
+    "<details class='anl-lo'><summary>The numbers behind it</summary><table class='st evt'><tr><th>Option</th><th>EV</th><th>They all fold</th><th>Your equity if called</th></tr>"+rows+"</table>"+
+    "<div style='font-weight:700;font-size:.82rem;margin:8px 0 2px'>How to read these numbers</div><ul class='muted' style='font-size:.78rem;margin:0 0 4px;padding-left:18px'>"+A.assumptions.map(function(t){return "<li>"+t+"</li>";}).join("")+"</ul><p class='muted' style='font-size:.75rem;margin:6px 0 0'>Method: "+A.method+". Computed in "+A.ms+" ms. This is a simulation-backed estimate under the assumptions above, not a solver and not a proof of real-world profit.</p></details></div>";}
+/* ===== coaching: decision quality with tolerance, EV-based leak categories, analytics, personalized drills ===== */
+function blankCoach(){return {v:1,N:0,sum:0,sum2:0,dims:{pos:{},street:{},pot:{},opp:{},stack:{},cat:{}},cats:{}};}
+function coachOf(){if(!S.coach)S.coach=blankCoach();return S.coach;}
+function cAdd(m,k,x){var e=m[k]||(m[k]={n:0,sum:0,sum2:0});e.n++;e.sum+=x;e.sum2+=x*x;}
+function ciOf(n,sum,sum2,N){/* mean per decision and 95% interval. N is the denominator (all decisions) when the numerator is a subset */N=N||n;var m=sum/N;if(N<2)return {mean:m,lo:-Infinity,hi:Infinity};var v=Math.max(0,sum2/N-m*m)*N/(N-1),se=Math.sqrt(v/N);return {mean:m,lo:m-1.96*se,hi:m+1.96*se};}
+function leakOf(rec,A,ch,hiS){var b=A.best,k=ch.k,bk=b.k,aggr=function(x){return x==="bet"||x==="raise";};
+  if(rec.st===0){if(k==="fold")return "ev_pre_tight";if(aggr(k)&&!aggr(bk))return "ev_pre_loose";if(k==="call"&&bk==="fold")return "ev_pre_loose";if((k==="call"||k==="check")&&aggr(bk))return "ev_pre_passive";if(aggr(k)&&aggr(bk))return "ev_size";return "ev_other";}
+  if(aggr(k)&&aggr(bk))return "ev_size";if(k==="fold")return "ev_fold";if(k==="call"&&bk==="fold")return "ev_call";if((k==="check"||k==="call")&&aggr(bk))return "ev_value";
+  if(aggr(k))return hiS!==null&&hiS<2.5?"ev_bluff":"ev_overplay";return "ev_other";}
+function coachGrade(rec,A,ch){var bb=T.bb,b=A.best,raw=Math.max(0,(b.ev-ch.ev)/bb),se=Math.sqrt(Math.pow(b.seBB||0,2)+Math.pow(ch.seBB||0,2)),tol=Math.max(0.15,1.5*se),sev=raw<tol?0:raw<1?1:raw<3?2:3,X=stratExtras(A,true),bl=null,hiS=null;
+  if(X.base){var bo=X.base.A.opts.find(function(o){return o.lab===ch.lab;});if(bo)bl=Math.max(0,(X.base.A.best.ev-bo.ev)/bb);}
+  if(rec.st>0){try{hiS=hcInfo(H.s[0].cards,H.board).S;}catch(e){}}
+  var tags=[];if(rec.nOpp>=2)tags.push("multiway");if(bl!==null&&bl<tol&&raw>=tol)tags.push("no_adjust");if(bl!==null&&bl>=tol&&raw<tol)tags.push("good_adjust");
+  return {G:{sev:sev,best:ch===b||raw<0.05,loss:sev?raw:0},leak:sev?leakOf(rec,A,ch,hiS):null,fields:{tol:tol,se:se,raw:raw,base:bl,conf:X.label,confWhy:X.why,tags:tags}};}
+function coachDims(rec){var pre=H.hist.filter(function(e){return e.st===0&&(e.a==="raise"||e.a==="bet");}).length,kind=pre===0?"Limped":pre===1?"Single-raised":"3-bet or more",mw=rec.nOpp>=2?"multiway":"heads-up",
+    ops=live().filter(function(j){return j!==0;}),eff=Math.min(T.players[0].stack+H.s[0].sb,Math.max.apply(null,ops.map(function(i){return T.players[i].stack+H.s[i].sb;}).concat([0])))/T.bb,opp;
+  if(ops.length!==1)opp="Multiway";else{var p=T.players[ops[0]],rd=oppMode()==="revealed"?null:readOpp(p);opp=oppMode()==="revealed"?(ARCH[liveKey(p)]||{n:"Unknown"}).n:(rd&&rd.top[0][1]>=0.5?ARCH[rd.top[0][0]].n+" (read)":"No clear read");}
+  return {pos:rec.pos||"?",street:["Pre-flop","Flop","Turn","River"][rec.st],pot:kind+", "+mw,opp:opp,stack:eff<40?"Under 40 bb":eff<=100?"40 to 100 bb":"Over 100 bb"};}
+function coachRecord(rec){var C=coachOf(),d=coachDims(rec),x=rec.raw||0;C.N++;C.sum+=x;C.sum2+=x*x;["pos","street","pot","opp","stack"].forEach(function(k){cAdd(C.dims[k],d[k],x);});cAdd(C.dims.cat,rec.leak||"no_leak",x);if(rec.leak)cAdd(C.cats,rec.leak,x);}
+function leakReport(){var C=coachOf(),rows=[];Object.keys(C.cats).forEach(function(k){var e=C.cats[k],ci=ciOf(e.n,e.sum,e.sum2,C.N);rows.push({id:k,n:e.n,share:C.N?e.n/C.N:0,per100:100*ci.mean,lo:100*ci.lo,hi:100*ci.hi,flag:C.N>=30&&e.n>=6&&100*ci.lo>=3});});rows.sort(function(a,b){return b.per100-a.per100;});return rows;}
+var LEAK_DRILLS={ev_fold:["raiseDrill","callDrill"],ev_call:["foldDrill","raiseDrill"],ev_value:["thinDrill","value3Drill","sizeDrill"],ev_bluff:["cbetDrill","mwCbetDrill","foldDrill"],ev_overplay:["mwCbetDrill","foldDrill","thinDrill"],ev_size:["sizeDrill"],
+  ev_pre_loose:["raiseDrill","open9Drill"],ev_pre_tight:["open9Drill","raiseDrill","limpDrill"],ev_pre_passive:["limpDrill","value3Drill"],ev_other:["callDrill"]};
+function practiceLeak(id){var names=LEAK_DRILLS[id]||["callDrill"],fns={raiseDrill:raiseDrill,callDrill:callDrill,foldDrill:foldDrill,thinDrill:thinDrill,value3Drill:value3Drill,sizeDrill:sizeDrill,cbetDrill:cbetDrill,mwCbetDrill:mwCbetDrill,open9Drill:open9Drill,limpDrill:limpDrill};(fns[pick(names)]||callDrill)();}
+function coachLinesHTML(d){if(!d||!d.model)return "";var L=[];
+  L.push("<b>Decision quality:</b> "+(d.sev?"about "+(d.raw||d.loss).toFixed(2)+" big blinds below the best option":"within tolerance of the best option")+(d.tol?" (tolerance "+d.tol.toFixed(2)+" bb, from how noisy the estimate is)":"")+".");
+  if(d.base!==null&&d.base!==undefined)L.push("<b>Against a typical player:</b> "+(d.base<(d.tol||0.15)?"this choice is fine":"about "+d.base.toFixed(2)+" big blinds below the best option")+".");
+  if(d.conf)L.push("<b>Confidence: "+d.conf+".</b> "+(d.confWhy||""));
+  if(d.res!==undefined)L.push("<b>Hand result:</b> "+(d.res>=0?"+":"")+d.res+" bb. The result is separate from the decision quality: a good decision can lose, and a bad one can win.");
+  if(d.leak&&LEAKS[d.leak])L.push("<b>Pattern:</b> "+LEAKS[d.leak][0]+". "+LEAKS[d.leak][1]);
+  return "<div class='muted' style='font-size:.82rem;display:grid;gap:5px;margin:8px 0'>"+L.map(function(x){return "<div>"+x+"</div>";}).join("")+"</div>";}
+function coachTable(title,map,N){var keys=Object.keys(map).sort(function(a,b){return map[b].n-map[a].n;});if(!keys.length)return "";
+  return "<div class='lbl'>"+title+"</div><table class='st'><tr><th>Group</th><th>Decisions</th><th>EV lost per 100 decisions</th></tr>"+keys.map(function(k){var e=map[k],ci=ciOf(e.n,e.sum,e.sum2);
+    return "<tr><td>"+k+"</td><td>"+e.n+"</td><td>"+(e.n<15?"<span class='muted'>too few to say</span>":(100*ci.mean).toFixed(1)+" bb <span class='muted'>("+(100*ci.lo).toFixed(1)+" to "+(100*ci.hi).toFixed(1)+")</span>")+"</td></tr>";}).join("")+"</table>";}
+function coachTabHTML(){var C=coachOf(),h="<div class='panel glass'><h2>Coach</h2><p class='muted' style='font-size:.85rem'>These figures are the model's estimates from your practice games: how many big blinds your decisions gave up compared with the best option, with a 95% interval. They are simulated performance, not your real-world win rate, and a short sample proves nothing about profitability.</p>";
+  if(C.N<30)return h+"<p><b>"+C.N+" graded decision"+(C.N===1?"":"s")+" so far.</b> No leak is named until there are at least 30 (and at least 6 examples of a pattern).</p></div>"+identCardHTML();
+  var all=ciOf(C.N,C.sum,C.sum2),rows=leakReport(),flagged=rows.filter(function(r){return r.flag;});
+  h+="<p><b>"+C.N+" decisions.</b> Estimated EV lost: "+(100*all.mean).toFixed(1)+" bb per 100 decisions <span class='muted'>(95% interval "+(100*all.lo).toFixed(1)+" to "+(100*all.hi).toFixed(1)+")</span>.</p>";
+  h+="<div class='lbl'>Patterns</div>"+(rows.length?"<table class='st'><tr><th>Pattern</th><th>Times</th><th>EV lost per 100 decisions</th></tr>"+rows.map(function(r){return "<tr><td>"+((LEAKS[r.id]||[r.id])[0])+(r.flag?" \u2691":"")+"</td><td>"+r.n+" <span class='muted'>("+Math.round(r.share*100)+"%)</span></td><td>"+r.per100.toFixed(1)+" bb <span class='muted'>("+r.lo.toFixed(1)+" to "+r.hi.toFixed(1)+")</span></td></tr>";}).join("")+"</table><p class='muted' style='font-size:.78rem'>\u2691 marks a pattern with at least 6 examples whose estimated loss is clearly above zero (at least 3 bb per 100 decisions even at the low end). Unflagged rows are observations, not diagnoses.</p>":"<p class='muted'>No decisions fell outside the tolerance.</p>");
+  h+=(flagged.length?"<button class='btn brass pill' id='co-practice' data-id='"+flagged[0].id+"' style='margin-top:6px'>Practice: "+LEAKS[flagged[0].id][0]+"</button>":"")+"</div>";
+  h+="<div class='panel glass'>"+coachTable("By position",C.dims.pos)+coachTable("By street",C.dims.street)+coachTable("By pot type",C.dims.pot)+coachTable("By opponent",C.dims.opp)+coachTable("By effective stack",C.dims.stack)+"</div>";
+  return h+identCardHTML();}
+function identCardHTML(){var d=(S.drills&&S.drills.ident)||{n:0,ok:0};return "<div class='panel glass'><h2>Reading opponents</h2><p class='muted' style='font-size:.85rem'>You see a player's stats after a number of hands and pick the type. It trains the same read the Observed-only mode uses."+(d.n?" Your record: "+d.ok+" of "+d.n+" right.":"")+"</p><button class='btn ghost pill' id='co-ident'>Reading drill</button></div>";}
+function wireCoach(){var b=$("co-practice");if(b)b.onclick=function(){practiceLeak(b.dataset.id);};var c=$("co-ident");if(c)c.onclick=identDrill;}
+function identDrill(){var types=Object.keys(ARCH_STATS),k=pick(types),n=pick([40,60,90]),st=ARCH_STATS[k],bi=function(N,q){var c=0;for(var i=0;i<N;i++)if(RNG()<q)c++;return c;};
+  var vp=bi(n,st[0]),pr=Math.min(vp,bi(n,st[1])),ag=bi(60,st[2]),fbo=40,fb=bi(fbo,st[4]),r={h:n,vp:vp,pr:pr,agg:ag,call:60-ag,fbO:fbo,fb:fb},rd=readFromStats(r),opts=shuffle([k].concat(shuffle(types.filter(function(x){return x!==k;})).slice(0,3)));
+  drillOpen("<h2>Who is this player?</h2><div class='muted' style='font-size:.85rem'>"+n+" hands seen.</div><div class='tool'><div class='v' style='font-size:.9rem'>"+observedLine({name:"x"},r)+"</div></div><div id='dq'><div class='dq'>Which type fits best?</div>"+opts.map(function(o){return "<button class='btn ghost dopt' data-o='"+o+"'>"+ARCH[o].n+"</button>";}).join("")+"</div>",function(el){
+    el.querySelectorAll("[data-o]").forEach(function(b){b.onclick=function(){var ok=b.dataset.o===k;dstat("ident",ok);var top=rd?rd.top.slice(0,3).map(function(x){return ARCH[x[0]].n+" "+Math.round(x[1]*100)+"%";}).join(", "):"too few hands";
+      $("dq").innerHTML="<div class='"+(ok?"dgood":"dbad")+"'><b>"+(ok?"Right.":"Not quite.")+"</b> It was a "+ARCH[k].n.toLowerCase()+". "+ARCH[k].tip+"</div><p class='muted' style='font-size:.82rem'>The reader's top guesses from these stats: "+top+". Several regular types look alike on stats alone, so a near miss among them is normal.</p><button class='btn brass pill' id='dn'>Another</button> <button class='btn ghost pill' id='dx'>Done</button>";
+      $("dn").onclick=identDrill;$("dx").onclick=function(){$("modal").hidden=true;$("scrim").hidden=true;};};});});}
 /* ===== analysis panel: model recommendation, reasons at two levels, EV chart, range charts ===== */
 var MODEL_MW=true;
 function evPick(A,d){var a=d[0],o=A.opts;if(a==="fold")return o.find(function(x){return x.k==="fold";})||o.find(function(x){return x.k==="check";});
@@ -3525,7 +3685,7 @@ function wireRanges(root,j){var box=root.querySelector("#rs"+j);if(!box)return;v
   box.querySelectorAll("[data-rt]").forEach(function(b){b.onclick=function(){show(+b.dataset.rt);};});show(0);}
 function analysisHTML(){var A=evGet(true);if(!A)return "";
   return "<div class='tool anl'><div class='k'>Model</div><div class='anl-best'>"+A.best.lab+" <span>"+(A.best.bb>=0?"+":"")+A.best.bb.toFixed(1)+" bb</span></div>"+
-    "<div class='anl-hi'>"+evExplain(A)+"</div>"+evChartSVG(A)+
+    "<div class='anl-hi'>"+evExplain(A)+"</div>"+evChartSVG(A)+stratHTML(A)+
     "<details class='anl-lo'><summary>The numbers behind it</summary>"+evLowHTML(A)+"</details></div>"+
     A.opps.map(function(j){return rangesHTML(j);}).join("");}
 /* table math */
@@ -3749,7 +3909,7 @@ function gcRender(){var el=$("g-gc");if(!el)return;if(!gcOn()||!H||!H.dec||!H.de
   gcStrip(el,H.dec,function(d){return ["Pre","Flop","Turn","River"][d.st]||"";},H.gcAt,function(d){gcDetail(d,["Preflop","Flop","Turn","River"][d.st]||"");});}
 function gcDetail(d,stName){if(!d)return;var st=stName||["Preflop","Flop","Turn","River"][d.st]||"",you=d.you?d.you:d.act==="raise"?(d.toCall>0?"Raise":"Bet"):d.act.charAt(0).toUpperCase()+d.act.slice(1);
   showModal("<h2>"+st+": <span style='color:"+gcColor(d)+"'>"+(d.best?"Matches the model":d.sev===0?"Differs from the model":"Differs from the model ("+GRADES[d.sev].n.toLowerCase()+")")+"</span></h2>"+
-    (!d.best&&d.sev===0?"<p class='muted' style='font-size:.85rem'>Not counted as a mistake. The difference costs under 0.2 big blinds on average.</p>":"")+
+    (!d.best&&d.sev===0?"<p class='muted' style='font-size:.85rem'>Not counted as a mistake. The estimated difference is within the tolerance"+(d.tol?" (about "+d.tol.toFixed(2)+" big blinds)":"")+".</p>":"")+coachLinesHTML(d)+
     "<table class='st'><tr><td>Your hand</td><td><b>"+(d.cards?d.cards.map(cardTxtC).join(" "):d.code)+"</b>"+(d.board&&d.board.length?" on "+d.board.map(cardTxtC).join(" "):"")+"</td></tr><tr><td>You</td><td><b>"+you+"</b></td></tr><tr><td>Model</td><td><b>"+d.advice+"</b></td></tr>"+
     (d.toCall>0&&d.need!==undefined?"<tr><td>Price</td><td>"+p1(d.need)+" equity needed, you had about "+p1(d.eq)+"</td></tr>":"")+(d.sev?"<tr><td>Cost</td><td>About "+d.loss.toFixed(1)+" big blinds on average</td></tr>":"")+"</table>"+
     "<p style='font-size:.92rem'>"+(d.why||"")+"</p>",[["Back to the table",function(){},"brass"]]);}
@@ -4529,7 +4689,7 @@ function renderCashTab(){
 }
 var CTAB="overview";
 function renderCareer(){
-  var c=car(),tabs=[["overview","Overview"],["course","Course"],["drills","Drills"],["charts","Charts"],["progress","Progress"],["rivals","Rivals"],["ach","Achievements"],["record","Record"]];
+  var c=car(),tabs=[["overview","Overview"],["course","Course"],["drills","Drills"],["charts","Charts"],["progress","Progress"],["coach","Coach"],["rivals","Rivals"],["ach","Achievements"],["record","Record"]];
   var bar="<div class='seg ltabs ctabs' id='c-tabs'>"+tabs.map(function(t){return "<button data-c='"+t[0]+"' aria-pressed='"+(CTAB===t[0])+"'>"+t[1]+"</button>";}).join("")+"</div>";
   var wire=function(){$("l-body").querySelectorAll("#c-tabs [data-c]").forEach(function(b){b.onclick=function(){CTAB=b.dataset.c;renderCareer();};});};
   var TG={course:["TAG course"],drills:["Drills","Daily puzzles"],charts:["Call or fold guide","Push or fold charts"],progress:["Session history","Missions","Leak finder","Reads","Hand review"]};
@@ -4540,13 +4700,14 @@ function renderCareer(){
   var h="";
   if(CTAB==="overview"){h+=rankPanelHTML();
   h+="<div class='panel glass'><h2>Trophy case</h2>"+(c.trophies.length?"<div class='trophies'>"+c.trophies.map(function(t){return "<div class='trophy'><div class='cup'>\ud83c\udfc6</div><div><b>"+t.n+"</b><div class='muted' style='font-size:.82rem'>"+money(t.prize)+" \u00b7 "+t.date+"</div></div></div>";}).join("")+"</div>":"<p class='muted'>Win an event to put your first trophy here.</p>")+"</div>";}
+  else if(CTAB==="coach"){h+=coachTabHTML();}
   else if(CTAB==="rivals"){h+=renderRivals();}
   else if(CTAB==="ach"){
   h+="<div class='panel glass'><h2>Achievements</h2><p class='muted' style='font-size:.85rem'>"+Object.keys(c.ach).length+" of "+ACH.length+" unlocked. Each one is worth 100 XP, and some unlock exclusive table looks.</p><div class='achgrid'>"+ACH.map(function(a){var on=!!c.ach[a[0]],rw=rewardFor(a[0]);return "<div class='ach"+(on?" on":"")+"'><div class='ai'>"+(on?"\u2605":"\u2606")+"</div><div><b>"+a[1]+"</b><div class='muted' style='font-size:.8rem'>"+a[2]+(rw?" \u00b7 Unlocks "+rw:"")+"</div></div></div>";}).join("")+"</div></div>";}
   else{
   h+="<div class='panel glass'><h2>Circuit record</h2><table class='st'>"+EVENTS.filter(function(e){return !e.hidden;}).map(function(e){var r=c.events[e.id];return "<tr><td>"+e.n+"</td><td>"+(r&&r.entries?(r.wins?r.wins+" won":r.cashes?"best "+ordinal(r.best):"best "+ordinal(r.best))+" \u00b7 "+r.entries+" played":"not played")+"</td></tr>";}).join("")+"</table></div>";
   h+="<div class='panel glass'><h2>Stats</h2><div id='l-stats'></div></div>";}
-  $("l-body").innerHTML=bar+h;wire();if($("l-stats"))renderStats();if($("pr-go"))$("pr-go").onclick=doPrestige;
+  $("l-body").innerHTML=bar+h;wire();if(CTAB==="coach")wireCoach();if($("l-stats"))renderStats();if($("pr-go"))$("pr-go").onclick=doPrestige;
 }
 function renderStats(){
   var c=S.stats.cash,t=S.stats.tour;

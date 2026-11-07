@@ -13,8 +13,13 @@ MUTS = [
  ('a bot peeks at the hero hole cards', 'var d=liveDecide(P,hcInfo(s.cards,H.board),c,RNG),S=d[2];', 'var d=liveDecide(P,hcInfo(s.cards,H.board),Object.assign(c,{memAdj:(H.s[0].cards[0]>>2)*0.05-0.3}),RNG),S=d[2];', 'test_opponents'),
  ('no call cap: everything folds to a shove', 'need=Math.min(need,P.cap||99);', '', 'test_opponents'),
  ('adaptation without evidence', 'function beliefWt(p,k){var t=beliefTrials(p,k);return t/(t+20);}', 'function beliefWt(p,k){return 1;}', 'test_opponents'),
- ('observed mode secretly uses the true type', 'function modelKeyP(p){if(!p||oppMode()==="revealed"||p.hero||p.human)return liveKey(p);', 'function modelKeyP(p){return liveKey(p);', 'test_opponents'),
+ ('observed mode secretly uses the true type', 'function modelKeyP(p){if(FORCE_KEY&&p&&!p.hero&&!p.human)return FORCE_KEY;if(!p||oppMode()==="revealed"||p.hero||p.human)return liveKey(p);', 'function modelKeyP(p){return liveKey(p);', 'test_opponents'),
  ('attention ignored', 'var a=trOf(p).attn,foldIdx=', 'var a=1,foldIdx=', 'test_opponents'),
+ ('grading tolerance removed', 'tol=Math.max(0.15,1.5*se),sev=raw<tol?0:raw<1?1:raw<3?2:3,X=stratExtras(A,true)', 'tol=0,sev=raw<0.001?0:raw<1?1:raw<3?2:3,X=stratExtras(A,true)', 'test_coaching'),
+ ('leaks named without a sample-size check', 'flag:C.N>=30&&e.n>=6&&100*ci.lo>=3', 'flag:true', 'test_coaching'),
+ ('raise-size assumption removed', 'var SIZE_TILT=0.7,SIZE_GAMMA=1.2;', 'var SIZE_TILT=0,SIZE_GAMMA=0;', 'test_strategy'),
+ ('rake ignored in the pre-flop call', 'cev=cq.eq*rakeNet(potCall,true)*rC-callAmt', 'cev=cq.eq*potCall*rC-callAmt', 'test_strategy'),
+ ('overbets offered for any hand', '(st===3&&eqAll>=0.8?', '(st>=2?', 'test_strategy'),
  ('posterior ignores bet size', 'n+=sized?sizeProbs(P,d[2],d[1])[bk]:1;', 'n+=1;', 'test_ranges'),
 ]
 bad = 0
