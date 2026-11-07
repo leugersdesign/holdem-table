@@ -7,8 +7,8 @@ This was done by the same agent that built the app, so it is not independent in 
 ## How to reproduce
 
 ```
-python3 tests/run_all.py                 # 124 tests, about 1 minute; each test sets its own seed with seedRNG(n)
-python3 tests/mutation_check.py          # 22 deliberate breakages, about 8 minutes
+python3 tests/run_all.py                 # 126 tests, about 1 minute; each test sets its own seed with seedRNG(n)
+python3 tests/mutation_check.py          # 23 deliberate breakages, about 8 minutes
 python3 tools/benchmark.py               # performance profile, writes docs/performance.json
 python3 tools/calibrate_ev.py 500 30 "shark,station,limper,whale,tag" out.json 16 x revealed && python3 tools/score_calibration.py out.json
 python3 tools/make_opponent_doc.py       # regenerates docs/opponent-model.md
@@ -26,12 +26,12 @@ python3 tools/make_opponent_doc.py       # regenerates docs/opponent-model.md
 | Opponent simulation | test_opponents (25) | Pass: distinct types, individual variation, size and street effects, gradual skill-dependent adaptation, no access to hidden cards (twin runs), **smooth response to bet size** |
 | Strategy scenarios ($1/$2 and $1/$3 style spots) | test_strategy (16) | Pass: each changes one tendency, size, stack, or the rake and checks the direction |
 | Adversarial recommendations | test_adversarial (10) | Pass: high equity but check, bluff with low equity, small beats large, call good against one range and bad against another, one observation does not justify an exploit, similar-EV options graded monotonically, explanations contain only computed numbers |
-| Coaching | test_coaching (13) + test_adversarial | Pass: result separate from decision, tolerance, leak categories, no leak from small samples, adjusting versus failing to adjust |
+| Coaching | test_coaching (15) + test_adversarial | Pass: result separate from decision, tolerance, leak categories, no leak from small samples, adjusting versus failing to adjust |
 | Reliability | test_reliability (8) | Pass: illegal actions rejected, bots always legal, refresh loses no chips, precompute transparent, 4 table types x 500 hands |
-| Mutation checks | 22 | All caught (0 missed, 0 skipped) |
+| Mutation checks | 23 | All caught (0 missed, 0 skipped) |
 | UI scripts (phone viewport) | 9 plus 2 refresh checks | Pass (the draw-game script is intermittent in v39 as well, see 06) |
 
-Total: 124 tests, 0 failed, 0 known failures. Test tolerances were not loosened to pass; where a test encoded an assumption that changed (a call-cap threshold written for the old hard threshold), the test was rewritten to check the intended relationship, and a mutation check confirms it still catches the defect.
+Total: 126 tests, 0 failed, 0 known failures. Test tolerances were not loosened to pass; where a test encoded an assumption that changed (a call-cap threshold written for the old hard threshold), the test was rewritten to check the intended relationship, and a mutation check confirms it still catches the defect.
 
 ## Defects found during validation
 
@@ -50,7 +50,7 @@ Refresh loses the pot; no action validation; duplicate bot actions; hard-thresho
 
 | Criterion | Assessment |
 | --- | --- |
-| Critical correctness tests pass | Met: 124 of 124; 22 of 22 mutations caught |
+| Critical correctness tests pass | Met: 126 of 126; 23 of 23 mutations caught |
 | Known failures documented | Met: none open in the suite; limitations below |
 | Core scenarios behave in the expected direction | Met within the modelled opponents; two caveats below |
 | No material regression | Met for behavior (type stats moved 5 points or less), the UI scripts, and the EV benchmark (re-run above) |
@@ -69,3 +69,4 @@ Assessment: the app passes this gate **for its stated scope, a training simulato
 6. Mobile testing is emulated (viewport and CPU throttle).
 7. Replay under a different assumption and a manual observation notebook are not built.
 8. A refresh voids the hand instead of resuming it.
+9. Pre-flop grading uses the opening charts by default. The EV model for pre-flop is optional and has not been validated as a grader against the charts (the two can disagree; the report does not claim either is better).

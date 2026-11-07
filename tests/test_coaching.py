@@ -5,7 +5,7 @@ from harness import engine as _engine
 
 class engine:
     def run(self, js):
-        return _engine().run('S.settings.oppInfo="revealed";' + js)      # every test sets its own opponent-info mode
+        return _engine().run('S.settings.oppInfo="revealed";S.settings.preModel=true;' + js)      # every test sets its own opponent-info mode
 
 def grade(hero, to_act, cfg_extra=''):
     """record the hero's decision in a pre-flop spot and return the stored record"""
@@ -91,3 +91,19 @@ def test_the_reading_drill_runs_and_scores():
       var rd=readFromStats({h:90,vp:90*ARCH_STATS.nit[0],pr:90*ARCH_STATS.nit[1],agg:60*ARCH_STATS.nit[2],call:60*(1-ARCH_STATS.nit[2]),fbO:40,fb:40*ARCH_STATS.nit[4]});
       return {ok1:ok1,top:rd&&rd.top[0][0],few:readFromStats({h:5,vp:2})};''')
     assert r['ok1'] and r['top'] in ('nit', 'tag', 'thinker', 'weekend') and r['few'] is None
+
+
+def test_pre_flop_play_is_graded_against_the_opening_charts_by_default():
+    run = lambda setting, act: _engine().run('''S.settings.oppInfo="revealed";%s;__t.preSpot({hero:"KhQd",pos:"BTN",opps:[{arch:"station",pos:"UTG"},{arch:"tag",pos:"SB"},{arch:"tag",pos:"BB"}],actions:[{i:1,a:"call"}]});
+      S.coach=blankCoach();var chart=adviseHero(false).advice;recordDecision(%s);var r=H.dec[0];return {model:!!r.model,advice:r.advice,chart:chart,coachN:S.coach.N,opt:r.alts?r.alts.length:0};''' % (setting, act))
+    d = run('delete S.settings.preModel', '["fold"]')                       # the default
+    assert d['model'] is False and d['advice'] == d['chart'] and d['coachN'] == 0, d     # graded by the charts and rules the app always used
+    c = run('S.settings.preModel=false', '["fold"]')
+    assert c['model'] is False and c['advice'] == c['chart'], c
+    m = run('S.settings.preModel=true', '["fold"]')                         # opting in to the EV model
+    assert m['model'] is True and m['coachN'] == 1 and m['opt'] >= 3, m
+
+def test_the_analysis_sheet_shows_the_ev_model_even_when_grading_uses_the_charts():
+    r = _engine().run('''S.settings.oppInfo="revealed";delete S.settings.preModel;__t.preSpot({hero:"KhQd",pos:"BTN",opps:[{arch:"station",pos:"UTG"},{arch:"tag",pos:"SB"},{arch:"tag",pos:"BB"}],actions:[{i:1,a:"call"}]});
+      var html=preAnalysisHTML();return {has:/Pre-flop model/i.test(html)&&/Confidence:/.test(html),graded:(function(){S.coach=blankCoach();recordDecision(["call"]);return !!H.dec[0].model;})()};''')
+    assert r['has'] and r['graded'] is False

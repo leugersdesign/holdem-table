@@ -4,7 +4,7 @@ from harness import engine as _engine
 
 class engine:
     def run(self, js):
-        return _engine().run('S.settings.oppInfo="revealed";' + js)
+        return _engine().run('S.settings.oppInfo="revealed";S.settings.preModel=true;' + js)
 
 START = 'seedRNG(%d);__t.table({seats:4});H=null;startHand();__t.q.length=0;var who=H.toAct,L=legal(who),snap=function(){return JSON.stringify([(H.hist||[]).length,H.cur,T.players[who].stack,potTotal(),H.s[who].sb]);};'
 

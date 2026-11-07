@@ -5,7 +5,7 @@ from test_strategy import post, pre, call_ev, BARREL
 
 class engine:
     def run(self, js):
-        return _engine().run('S.settings.oppInfo="revealed";' + js)
+        return _engine().run('S.settings.oppInfo="revealed";S.settings.preModel=true;' + js)
 
 def ev(r, k, only_ok=True):
     return [o['bb'] for o in r['opts'] if o['k'] == k and not o.get('extrap')]

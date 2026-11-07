@@ -751,7 +751,7 @@ function save(){try{
 function migrateS(s){if(!s.version||s.version<2){s.version=2;s.coach=s.coach||blankCoach();if(s.customCfg&&s.customCfg.bi>=1)s.customCfg.bi++;}return s;}
 S=migrateS(S);
 var PREWARM=0;
-function prewarmNow(){if(!H||H.done||H.toAct!==0||!T||T.mode!=="cash"||T.pass)return;var A=H.street>=1?evGet(true):(S.settings.preModel!==false?preGet(true):null);if(A&&(A.pre||A.hu||MODEL_MW))stratExtras(A,true);}
+function prewarmNow(){if(!H||H.done||H.toAct!==0||!T||T.mode!=="cash"||T.pass)return;var A=H.street>=1?evGet(true):(S.settings.preModel===true?preGet(true):null);if(A&&(A.pre||A.hu||MODEL_MW))stratExtras(A,true);}
 function prewarm(){var id=H&&H.id,n=H&&(H.hist||[]).length;clearTimeout(PREWARM);PREWARM=setTimeout(function(){try{if(H&&H.id===id&&(H.hist||[]).length===n)prewarmNow();}catch(e){}},150);}   /* the grade and the analysis sheet then find their numbers already computed */
 var _renderControls=renderControls;renderControls=function(){var r=_renderControls.apply(this,arguments);try{if(H&&H.toAct===0&&!H.done)prewarm();}catch(e){}return r;};
 var _mkCash=makeCash;makeCash=function(st){var t=_mkCash(st);if(st&&st.room)t.room=st.room;return t;};
@@ -2180,7 +2180,7 @@ function recordDecision(d){
     rec.leak=classify(rec);var G=gradeDec(rec);rec.sev=G.sev;rec.loss=G.loss;rec.triv=G.trivial;rec.best=G.best;
     var MA=null,ch=null;
     if(H.street>=1){MA=evGet(true);if(MA&&(MA.hu||MODEL_MW))ch=evPick(MA,d);else MA=null;}
-    else if(T.mode==="cash"&&!T.pass&&S.settings.preModel!==false){MA=preGet(true);ch=MA?prePick(MA,d):null;}
+    else if(T.mode==="cash"&&!T.pass&&S.settings.preModel===true){MA=preGet(true);ch=MA?prePick(MA,d):null;}
     if(MA&&ch){var Q=coachGrade(rec,MA,ch);rec.advice=MA.best.lab;rec.why=MA.pre?preExplain(MA):evExplain(MA);rec.eq=MA.eqAll;rec.need=MA.potOdds;G=Q.G;rec.sev=G.sev;rec.loss=G.loss;rec.best=G.best;rec.model=true;Object.assign(rec,Q.fields);rec.leak=G.sev?Q.leak:null;}
     if(G.sev===0)rec.leak=null;else if(!rec.leak)rec.leak=rec.toCall>0&&rec.act==="raise"?"raise_no_odds":"off_line";
     var lu=liveUnitOf(rec);if(lu)cpush(lu,"l",rec.sev===0);liveUnitsExtra(rec).forEach(function(x){cpush(x[0],"l",x[1]);});
@@ -4761,6 +4761,7 @@ function renderSettings(){
     "<div class='panel glass'><h2>Live mode</h2><p class='muted' style='font-size:.85rem'>Applies to Home Game Night on the Cash tab: nine-handed, loose, with straddles and big raises.</p>"+
     "<div class='lbl' style='margin-top:0'>Difficulty</div><div class='seg' id='l-diff'><button data-v='relaxed'>Relaxed</button><button data-v='realistic'>Realistic</button><button data-v='brutal'>Brutal</button></div><p class='muted' style='font-size:.8rem' id='l-diffdesc'></p>"+
     "<div class='lbl'>Opponent info</div><div class='seg' id='l-oppinfo'><button data-v='observed'>Observed only</button><button data-v='revealed'>Revealed</button></div><p class='muted' style='font-size:.8rem' id='l-oppdesc'></p>"+
+    "<div class='lbl'>Pre-flop grading</div><div class='seg' id='l-pregrade'><button data-v='charts'>Opening charts</button><button data-v='model'>EV model</button></div><p class='muted' style='font-size:.8rem'>Opening charts grades your pre-flop play against the charts and rules the app has always used. EV model grades it by estimated value against the players at your table. The Analysis sheet shows the EV model either way.</p>"+
     "<div class='lbl'>Sharks per table (Casino $1/$2 and Home Game Night)</div><div class='seg' id='l-sharks'><button data-v='0'>None</button><button data-v='1'>One</button><button data-v='2'>Two</button></div><p class='muted' style='font-size:.8rem'>Strong regulars who adapt to how you play. Takes effect at your next new table.</p>"+
     [["liveChips","Pot as chips","Show the pot as chip stacks so you count it yourself. Tap the pot to check your count."],["liveHelp","Allow helpers","Lets the Tools panel give advice in live mode. Off is closer to a real game."]].map(function(x){return "<div class='toggle' style='border-top:0;margin-top:0'><div><b>"+x[1]+"</b><div class='muted' style='font-size:.85rem'>"+x[2]+"</div></div><button class='switch' role='switch' data-sw='"+x[0]+"' aria-checked='"+(!!S.settings[x[0]])+"' aria-label='"+x[1]+"'></button></div>";}).join("")+(S.liveStats&&S.liveStats.peeks?"<p class='muted' style='font-size:.82rem'>Pot checks so far: "+S.liveStats.peeks+"</p>":"")+"</div>"+
     "<div class='panel glass'><h2>Backup and transfer</h2><p class='muted' style='font-size:.85rem'>Move your bankroll, stats, career, and settings to another copy of the game, like the home screen app on your phone. Copy the save code here, then paste it into the other copy.</p>"+
@@ -4774,6 +4775,7 @@ function renderSettings(){
   var OPPD={observed:"Like a real table: you see only what you have watched (hands played, raises, folds, hands shown). The analysis reads each player from those stats and never uses their hidden type.",revealed:"Training wheels: the sheet names each player's type and tendencies, and the analysis uses the real player."};
   $("l-oppdesc").textContent=OPPD[oppMode()];
   $("l-oppinfo").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",oppMode()===b.dataset.v?"true":"false");b.onclick=function(){S.settings.oppInfo=b.dataset.v;save();renderLobby();toast(b.textContent+": "+(b.dataset.v==="observed"?"hidden types stay hidden.":"types and tendencies are shown."));};});
+  $("l-pregrade").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",(S.settings.preModel===true?"model":"charts")===b.dataset.v?"true":"false");b.onclick=function(){S.settings.preModel=b.dataset.v==="model";save();renderLobby();toast(b.dataset.v==="model"?"Pre-flop play is graded by the EV model.":"Pre-flop play is graded against the opening charts.");};});
   $("l-diffdesc").textContent=DIFFD[difficulty()];
   $("l-diff").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",difficulty()===b.dataset.v?"true":"false");b.onclick=function(){S.settings.difficulty=b.dataset.v;save();renderLobby();toast(b.textContent+" difficulty. Bot skill levels change at your next new table.");};});
   $("l-sharks").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",String(sharkCount())===b.dataset.v?"true":"false");b.onclick=function(){S.settings.sharks=+b.dataset.v;save();renderLobby();};});

@@ -25,6 +25,7 @@ MUTS = [
  ('stale bot action allowed to fire', 'H.sn!==tok||H.done||(H.hist||[]).length!==hl)return;', 'H.sn!==tok||H.done)return;', 'test_reliability'),
  ('players decide with a hard threshold again', 'S=hi.S+THRESH_S*Math.log(u/(1-u))', 'S=hi.S+(u*0.4-0.2)', 'test_opponents'),
  ('idle precompute does not warm the grade', 'if(A&&(A.pre||A.hu||MODEL_MW))stratExtras(A,true);', 'if(A&&(A.pre||A.hu||MODEL_MW)){}', 'test_reliability'),
+ ('the EV model silently replaces the opening charts for pre-flop grading', 'S.settings.preModel===true){MA=preGet(true);', 'S.settings.preModel!==false){MA=preGet(true);', 'test_coaching'),
  ('posterior ignores bet size', 'n+=sized?sizeProbs(P,d[2],d[1])[bk]:1;', 'n+=1;', 'test_ranges'),
 ]
 bad = 0
