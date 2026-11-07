@@ -26,6 +26,9 @@ MUTS = [
  ('players decide with a hard threshold again', 'S=hi.S+THRESH_S*Math.log(u/(1-u))', 'S=hi.S+(u*0.4-0.2)', 'test_opponents'),
  ('idle precompute does not warm the grade', 'if(A&&(A.pre||A.hu||MODEL_MW))stratExtras(A,true);', 'if(A&&(A.pre||A.hu||MODEL_MW)){}', 'test_reliability'),
  ('the EV model silently replaces the opening charts for pre-flop grading', 'S.settings.preModel===true){MA=preGet(true);', 'S.settings.preModel!==false){MA=preGet(true);', 'test_coaching'),
+ ('limped pots ignore the rule', '      else if(limpersIn()>0){var LR=limpRule(code,pos,limpersIn());', '      else if(false){var LR=limpRule(code,pos,limpersIn());', 'test_rules'),
+ ('course and drill keep their own limper logic', 'isoDecide=function(code,ip,n){if(ip==="BB")return', 'isoDecide=function(code,ip,n){return _isoDecideOld(code,ip,n);if(ip==="BB")return', 'test_rules'),
+ ('post-flop graded against the read by default', 'if(S.settings.postGrade!=="read"){var X0=stratExtras(MA,true);', 'if(false){var X0=stratExtras(MA,true);', 'test_rules'),
  ('posterior ignores bet size', 'n+=sized?sizeProbs(P,d[2],d[1])[bk]:1;', 'n+=1;', 'test_ranges'),
 ]
 bad = 0

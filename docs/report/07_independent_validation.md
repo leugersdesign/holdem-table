@@ -7,8 +7,8 @@ This was done by the same agent that built the app, so it is not independent in 
 ## How to reproduce
 
 ```
-python3 tests/run_all.py                 # 126 tests, about 1 minute; each test sets its own seed with seedRNG(n)
-python3 tests/mutation_check.py          # 23 deliberate breakages, about 8 minutes
+python3 tests/run_all.py                 # 136 tests, about 1 minute; each test sets its own seed with seedRNG(n)
+python3 tests/mutation_check.py          # 26 deliberate breakages, about 8 minutes
 python3 tools/benchmark.py               # performance profile, writes docs/performance.json
 python3 tools/calibrate_ev.py 500 30 "shark,station,limper,whale,tag" out.json 16 x revealed && python3 tools/score_calibration.py out.json
 python3 tools/make_opponent_doc.py       # regenerates docs/opponent-model.md
@@ -27,11 +27,12 @@ python3 tools/make_opponent_doc.py       # regenerates docs/opponent-model.md
 | Strategy scenarios ($1/$2 and $1/$3 style spots) | test_strategy (16) | Pass: each changes one tendency, size, stack, or the rake and checks the direction |
 | Adversarial recommendations | test_adversarial (10) | Pass: high equity but check, bluff with low equity, small beats large, call good against one range and bad against another, one observation does not justify an exploit, similar-EV options graded monotonically, explanations contain only computed numbers |
 | Coaching | test_coaching (15) + test_adversarial | Pass: result separate from decision, tolerance, leak categories, no leak from small samples, adjusting versus failing to adjust |
+| Memorable rules | test_rules (10) | Pass: hand score, seat ladder matches the charts at every seat (90% or more), limper rule decisions, the course and drill use the same rule, typical-opponent grading by default, exact price math |
 | Reliability | test_reliability (8) | Pass: illegal actions rejected, bots always legal, refresh loses no chips, precompute transparent, 4 table types x 500 hands |
-| Mutation checks | 23 | All caught (0 missed, 0 skipped) |
+| Mutation checks | 26 | All caught (0 missed, 0 skipped) |
 | UI scripts (phone viewport) | 9 plus 2 refresh checks | Pass (the draw-game script is intermittent in v39 as well, see 06) |
 
-Total: 126 tests, 0 failed, 0 known failures. Test tolerances were not loosened to pass; where a test encoded an assumption that changed (a call-cap threshold written for the old hard threshold), the test was rewritten to check the intended relationship, and a mutation check confirms it still catches the defect.
+Total: 136 tests, 0 failed, 0 known failures. Test tolerances were not loosened to pass; where a test encoded an assumption that changed (a call-cap threshold written for the old hard threshold), the test was rewritten to check the intended relationship, and a mutation check confirms it still catches the defect.
 
 ## Defects found during validation
 
@@ -50,7 +51,7 @@ Refresh loses the pot; no action validation; duplicate bot actions; hard-thresho
 
 | Criterion | Assessment |
 | --- | --- |
-| Critical correctness tests pass | Met: 126 of 126; 23 of 23 mutations caught |
+| Critical correctness tests pass | Met: 136 of 136; 26 of 26 mutations caught |
 | Known failures documented | Met: none open in the suite; limitations below |
 | Core scenarios behave in the expected direction | Met within the modelled opponents; two caveats below |
 | No material regression | Met for behavior (type stats moved 5 points or less), the UI scripts, and the EV benchmark (re-run above) |

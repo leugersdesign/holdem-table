@@ -754,6 +754,9 @@ var PREWARM=0;
 function prewarmNow(){if(!H||H.done||H.toAct!==0||!T||T.mode!=="cash"||T.pass)return;var A=H.street>=1?evGet(true):(S.settings.preModel===true?preGet(true):null);if(A&&(A.pre||A.hu||MODEL_MW))stratExtras(A,true);}
 function prewarm(){var id=H&&H.id,n=H&&(H.hist||[]).length;clearTimeout(PREWARM);PREWARM=setTimeout(function(){try{if(H&&H.id===id&&(H.hist||[]).length===n)prewarmNow();}catch(e){}},150);}   /* the grade and the analysis sheet then find their numbers already computed */
 var _renderControls=renderControls;renderControls=function(){var r=_renderControls.apply(this,arguments);try{if(H&&H.toAct===0&&!H.done)prewarm();}catch(e){}return r;};
+var _isoDecideOld=isoDecide,_isoWhyOld=isoWhy;
+isoDecide=function(code,ip,n){if(ip==="BB")return _isoDecideOld(code,ip,n);var r=limpRule(code,ip,n,SEAT9[ip]||8);return r.adv==="Raise"?"Raise":r.adv==="Call"?(ip==="SB"?"Complete":"Limp behind"):"Fold";};
+isoWhy=function(a,code,ip,n){if(ip==="BB")return _isoWhyOld(a,code,ip,n);return limpRule(code,ip,n,SEAT9[ip]||8).why;};
 var _mkCash=makeCash;makeCash=function(st){var t=_mkCash(st);if(st&&st.room)t.room=st.room;return t;};
 if(S.tour&&!S.tour.ev){S.tour.ev="legacy";S.tour.stage=0;S.tour.minBB=999;}
 if(S.cash&&!S.cash.stake){S.cash.stake="micro";S.cash.buy=200;}
@@ -2179,9 +2182,11 @@ function recordDecision(d){
     var rec={code:A.code,st:H.street,act:d[0],to:d[1]||0,toCall:A.L.toCall,pot:A.pot,need:A.need,eq:A.eq,advice:A.advice,why:A.why,raises:H.raises,pos:A.pos,nOpp:A.opp.length,canRaise:A.L.canRaise,board:H.board.slice()};
     rec.leak=classify(rec);var G=gradeDec(rec);rec.sev=G.sev;rec.loss=G.loss;rec.triv=G.trivial;rec.best=G.best;
     var MA=null,ch=null;
-    if(H.street>=1){MA=evGet(true);if(MA&&(MA.hu||MODEL_MW))ch=evPick(MA,d);else MA=null;}
+    if(H.street>=1){MA=evGet(true);if(MA&&(MA.hu||MODEL_MW)){
+        if(S.settings.postGrade!=="read"){var X0=stratExtras(MA,true);if(X0.base&&X0.base.A){var GA=X0.base.A;GA.extras=GA.extras||{base:null,sens:[],minHands:X0.minHands,label:X0.label,why:X0.why,tol:X0.tol,gap:X0.gap,full:true};GA.gradedVs="typical";MA=GA;}}   /* graded against a typical opponent unless the player chooses reads */
+        ch=evPick(MA,d);}else MA=null;}
     else if(T.mode==="cash"&&!T.pass&&S.settings.preModel===true){MA=preGet(true);ch=MA?prePick(MA,d):null;}
-    if(MA&&ch){var Q=coachGrade(rec,MA,ch);rec.advice=MA.best.lab;rec.why=MA.pre?preExplain(MA):evExplain(MA);rec.eq=MA.eqAll;rec.need=MA.potOdds;G=Q.G;rec.sev=G.sev;rec.loss=G.loss;rec.best=G.best;rec.model=true;Object.assign(rec,Q.fields);rec.leak=G.sev?Q.leak:null;}
+    if(MA&&ch){var Q=coachGrade(rec,MA,ch);rec.advice=MA.best.lab;rec.why=MA.pre?preExplain(MA):evExplain(MA);rec.eq=MA.eqAll;rec.need=MA.potOdds;G=Q.G;rec.sev=G.sev;rec.loss=G.loss;rec.best=G.best;rec.model=true;Object.assign(rec,Q.fields);rec.leak=G.sev?Q.leak:null;if(!MA.pre){rec.gradedVs=MA.gradedVs||"read";var bo=ch.k==="bet"||ch.k==="raise"?ch.amt:0;rec.math=priceLine(potTotal(),legal(0).toCall,MA.eqAll,legal(0).toCall>0?0:(MA.best.k==="bet"?MA.best.amt:bo));}}
     if(G.sev===0)rec.leak=null;else if(!rec.leak)rec.leak=rec.toCall>0&&rec.act==="raise"?"raise_no_odds":"off_line";
     var lu=liveUnitOf(rec);if(lu)cpush(lu,"l",rec.sev===0);liveUnitsExtra(rec).forEach(function(x){cpush(x[0],"l",x[1]);});
     if(T.live&&rec.st===3&&rec.toCall>0){T.heroRv=T.heroRv||{face:0,fold:0};T.heroRv.face++;if(rec.act==="fold")T.heroRv.fold++;}
@@ -2771,6 +2776,7 @@ function adviseHero(full){
   else if(H.street===0){
     if(H.raises===0){
       if(pos==="BB"){advice="Check";why="Nobody raised. See the flop for free.";if(EQ[code]>=62){advice="Raise";why="Strong hand and only limpers in. Raise to about "+chips(T.bb*(3+opp.length-1))+".";}}
+      else if(limpersIn()>0){var LR=limpRule(code,pos,limpersIn());advice=LR.adv==="Call"?(L.toCall>0?"Call":"Check"):LR.adv;why=LR.why;}
       else if(SETS[ck]&&SETS[ck][code]){advice="Raise";why=code+" is in your "+ck+" opening chart"+(ck!==pos?" (the closest chart for "+pos+" at a full table)":"")+". Raise to about "+chips(T.bb*(T.home?4:2.5))+(T.home?" since home games call a lot,":"")+" plus 1 big blind per limper.";}
       else{advice=L.toCall===0?"Check":"Fold";why=code+" isn't in your "+ck+" opening chart.";}
     }else if(H.raises===1&&H.preAgg>0&&VSOPEN[chartKey(H.pos[H.preAgg])]){
@@ -3587,7 +3593,7 @@ function stratHTML(A){var X=stratExtras(A),b=X.base,same=!b||!b.differs;
     (X.sens.length?"<div style='font-weight:700;font-size:.82rem;margin:8px 0 2px'>What could change it</div><ul class='muted' style='font-size:.78rem;margin:0 0 4px;padding-left:18px'>"+X.sens.map(function(s){return "<li>If they are a "+ARCH[s.key].n.toLowerCase()+": "+(s.differs?"<b>"+s.best+"</b>":"still "+A.best.lab)+"</li>";}).join("")+"</ul>":"");}
 function preAnalysisHTML(){var A=preGet(true);if(!A)return "";
   var rows=A.opts.map(function(o){return "<tr><td>"+o.lab+(o===A.best?" \u2605":"")+"</td><td>"+(o.bb>=0?"+":"")+o.bb.toFixed(2)+(o.seBB>=0.05?" \u00b1"+o.seBB.toFixed(2):"")+" bb</td><td>"+(o.fe!=null?evPct(o.fe):"\u2013")+"</td><td>"+(o.eqC!=null?evPct(o.eqC):"\u2013")+"</td></tr>";}).join("");
-  return "<div class='tool anl'><div class='k'>Pre-flop model \u00b7 "+A.code+" in "+A.pos+"</div><div class='anl-best'>"+A.best.lab+" <span>"+(A.best.bb>=0?"+":"")+A.best.bb.toFixed(1)+" bb</span></div><div class='anl-hi'>"+preExplain(A)+"</div>"+evChartSVG(A)+stratHTML(A)+
+  return "<div class='tool anl'><div class='k'>Pre-flop model \u00b7 "+A.code+" in "+A.pos+"</div><div class='anl-best'>"+A.best.lab+" <span>"+(A.best.bb>=0?"+":"")+A.best.bb.toFixed(1)+" bb</span></div><div class='anl-hi'>"+preExplain(A)+"</div>"+(limpersIn()>0&&A.pos!=="BB"?(function(){var LR=limpRule(A.code,A.pos,limpersIn());return "<p style='font-size:.85rem;margin:6px 0 0'><b>Your limped-pot rule says: "+(LR.adv==="Call"?"limp behind":LR.adv.toLowerCase())+".</b> "+LR.why+"</p>";})():"")+evChartSVG(A)+stratHTML(A)+
     "<details class='anl-lo'><summary>The numbers behind it</summary><table class='st evt'><tr><th>Option</th><th>EV</th><th>They all fold</th><th>Your equity if called</th></tr>"+rows+"</table>"+
     "<div style='font-weight:700;font-size:.82rem;margin:8px 0 2px'>How to read these numbers</div><ul class='muted' style='font-size:.78rem;margin:0 0 4px;padding-left:18px'>"+A.assumptions.map(function(t){return "<li>"+t+"</li>";}).join("")+"</ul><p class='muted' style='font-size:.75rem;margin:6px 0 0'>Method: "+A.method+". Computed in "+A.ms+" ms. This is a simulation-backed estimate under the assumptions above, not a solver and not a proof of real-world profit.</p></details></div>";}
 /* ===== coaching: decision quality with tolerance, EV-based leak categories, analytics, personalized drills ===== */
@@ -3616,6 +3622,8 @@ function practiceLeak(id){var names=LEAK_DRILLS[id]||["callDrill"],fns={raiseDri
 function coachLinesHTML(d){if(!d||!d.model)return "";var L=[];
   L.push("<b>Decision quality:</b> "+(d.sev?"about "+(d.raw||d.loss).toFixed(2)+" big blinds below the best option":"within tolerance of the best option")+(d.tol?" (tolerance "+d.tol.toFixed(2)+" bb, from how noisy the estimate is)":"")+".");
   if(d.base!==null&&d.base!==undefined)L.push("<b>Against a typical player:</b> "+(d.base<(d.tol||0.15)?"this choice is fine":"about "+d.base.toFixed(2)+" big blinds below the best option")+".");
+  if(d.math)L.push(d.math);
+  if(d.gradedVs)L.push("<b>Graded against:</b> "+(d.gradedVs==="typical"?"a typical opponent (not your read of this player)":"the read of this player")+".");
   if(d.alts&&d.alts.length)L.push("<b>Options (estimated EV, big blinds):</b> "+d.alts.map(function(a){return a[0]+" "+(a[1]>=0?"+":"")+a[1].toFixed(1);}).join(", ")+".");
   if(d.baseBest)L.push("<b>Against a typical player</b> the best play was "+d.baseBest+".");
   if(d.conf)L.push("<b>Confidence: "+d.conf+".</b> "+(d.confWhy||""));
@@ -3625,7 +3633,8 @@ function coachLinesHTML(d){if(!d||!d.model)return "";var L=[];
 function coachTable(title,map,N){var keys=Object.keys(map).sort(function(a,b){return map[b].n-map[a].n;});if(!keys.length)return "";
   return "<div class='lbl'>"+title+"</div><table class='st'><tr><th>Group</th><th>Decisions</th><th>EV lost per 100 decisions</th></tr>"+keys.map(function(k){var e=map[k],ci=ciOf(e.n,e.sum,e.sum2);
     return "<tr><td>"+k+"</td><td>"+e.n+"</td><td>"+(e.n<15?"<span class='muted'>too few to say</span>":(100*ci.mean).toFixed(1)+" bb <span class='muted'>("+(100*ci.lo).toFixed(1)+" to "+(100*ci.hi).toFixed(1)+")</span>")+"</td></tr>";}).join("")+"</table>";}
-function coachTabHTML(){var C=coachOf(),h="<div class='panel glass'><h2>Coach</h2><p class='muted' style='font-size:.85rem'>These figures are the model's estimates from your practice games: how many big blinds your decisions gave up compared with the best option, with a 95% interval. They are simulated performance, not your real-world win rate, and a short sample proves nothing about profitability.</p>";
+function coachTabHTML(){return rulesCardHTML()+coachTabBody();}
+function coachTabBody(){var C=coachOf(),h="<div class='panel glass'><h2>Coach</h2><p class='muted' style='font-size:.85rem'>These figures are the model's estimates from your practice games: how many big blinds your decisions gave up compared with the best option, with a 95% interval. They are simulated performance, not your real-world win rate, and a short sample proves nothing about profitability.</p>";
   if(C.N<30)return h+"<p><b>"+C.N+" graded decision"+(C.N===1?"":"s")+" so far.</b> No leak is named until there are at least 30 (and at least 6 examples of a pattern).</p></div>"+identCardHTML();
   var all=ciOf(C.N,C.sum,C.sum2),rows=leakReport(),flagged=rows.filter(function(r){return r.flag;});
   h+="<p><b>"+C.N+" decisions.</b> Estimated EV lost: "+(100*all.mean).toFixed(1)+" bb per 100 decisions <span class='muted'>(95% interval "+(100*all.lo).toFixed(1)+" to "+(100*all.hi).toFixed(1)+")</span>.</p>";
@@ -3641,6 +3650,31 @@ function identDrill(){var types=Object.keys(ARCH_STATS),k=pick(types),n=pick([40
     el.querySelectorAll("[data-o]").forEach(function(b){b.onclick=function(){var ok=b.dataset.o===k;dstat("ident",ok);var top=rd?rd.top.slice(0,3).map(function(x){return ARCH[x[0]].n+" "+Math.round(x[1]*100)+"%";}).join(", "):"too few hands";
       $("dq").innerHTML="<div class='"+(ok?"dgood":"dbad")+"'><b>"+(ok?"Right.":"Not quite.")+"</b> It was a "+ARCH[k].n.toLowerCase()+". "+ARCH[k].tip+"</div><p class='muted' style='font-size:.82rem'>The reader's top guesses from these stats: "+top+". Several regular types look alike on stats alone, so a near miss among them is normal.</p><button class='btn brass pill' id='dn'>Another</button> <button class='btn ghost pill' id='dx'>Done</button>";
       $("dn").onclick=identDrill;$("dx").onclick=function(){$("modal").hidden=true;$("scrim").hidden=true;};};});});}
+/* ===== rules a player can remember: hand score (Chen formula) and seat numbers ===== */
+function chenScore(code){var v={A:10,K:8,Q:7,J:6,T:5,"9":4.5,"8":4,"7":3.5,"6":3,"5":2.5,"4":2,"3":1.5,"2":1},hi=code[0],lo=code[1];
+  if(code.length===2)return Math.max(5,Math.ceil(v[hi]*2));
+  var s=v[hi]+(code[2]==="s"?2:0),gap=rkv(hi)-rkv(lo)-1;s-=gap<=0?0:gap===1?1:gap===2?2:gap===3?4:5;if(gap<=1&&rkv(hi)<rkv("Q"))s+=1;return Math.ceil(s);}
+var SEAT9={UTG:9,UTG1:8,UTG2:8,MP:8,LJ:8,HJ:7,CO:6,BTN:5,SB:6},SEAT6={UTG:7,MP:7,LJ:7,HJ:7,CO:6,BTN:5,SB:5};
+function seatNum(pos){if(T&&T.live&&typeof SETS9!=="undefined"&&SETS9[pos])return SEAT9[pos]||7;return SEAT6[pos]||SEAT6[chartKey(pos)]||7;}
+function limpBehindHand(code){return code.length===2||(code[2]==="s"&&chenScore(code)>=6);}   /* any pair, or any suited hand that scores 6 or more */
+function limpersIn(){if(!H||H.street!==0||H.raises!==0)return 0;return H.seats.filter(function(j){return j!==0&&j!==H.sbI&&j!==H.bbI&&!H.s[j].folded&&H.s[j].sb>0;}).length;}
+function limpRule(code,pos,k,seat){var sc=chenScore(code),sn=seat||seatNum(pos),need=sn+k-1,lim=k+" limper"+(k>1?"s":"");
+  if(sc>=need)return {adv:"Raise",score:sc,need:need,why:code+" scores "+sc+". Against "+lim+", raise when the score is at least your seat number ("+sn+")"+(k>1?" plus 1 for each limper after the first":"")+": "+need+". Raise to about "+(4+k)+" big blinds."};
+  if(limpBehindHand(code))return {adv:"Call",score:sc,need:need,why:code+" scores "+sc+", short of the "+need+" needed to raise. "+(code.length===2?"Any pair":"A suited hand that scores 6 or more")+" can make a big hand that gets paid in a multiway pot, so "+(pos==="SB"?"complete the small blind":"limp behind")+"."};
+  return {adv:"Fold",score:sc,need:need,why:code+" scores "+sc+", short of the "+need+" needed to raise, and it is not a pair or a suited hand that scores 6 or more, so it rarely makes a hand worth a multiway pot."};}
+function priceLine(pot,toCall,eq,betAmt){var p=function(x){return Math.round(x*100)+"%";};
+  if(toCall>0){var price=toCall/(pot+toCall),before=Math.max(1,pot-toCall),mdf=before/(before+toCall);
+    return "The math: calling "+money(toCall)+" to win a pot of "+money(pot+toCall)+" needs you to win "+p(price)+" of the time. Your equity against their likely range is about "+p(eq)+(eq>=price?", above the price.":", below the price.")+" Against a bet this size, a player who cannot be bluffed off has to keep about "+p(mdf)+" of their range.";}
+  if(betAmt>0)return "The math: a bet of "+money(betAmt)+" into "+money(pot)+" makes a profit as a pure bluff if they fold more than "+p(betAmt/(pot+betAmt))+" of the time. Your equity against their likely range is about "+p(eq)+".";
+  return "The math: your equity against their likely range is about "+p(eq)+".";}
+function rulesCardHTML(){var t=function(r){return "<tr>"+r.map(function(c){return "<td>"+c+"</td>";}).join("")+"</tr>";};
+  return "<div class='panel glass'><h2>Rules to remember</h2>"+
+    "<div class='lbl'>Hand score (Chen formula)</div><p style='font-size:.86rem;margin:4px 0'>Highest card: A 10, K 8, Q 7, J 6, others half their number (T 5, 9 4.5, and so on). Pairs: double it, at least 5. Suited: +2. Gap between the cards: one gap -1, two -2, three -4, more -5. Both cards below a queen with no gap or one gap: +1. Round up.</p>"+
+    "<p class='muted' style='font-size:.8rem;margin:0'>Examples: AA 20, AKs 12, KQs 10, AKo 10, JTs 9, 76s 7, A5s 7, 22 5, T9o 6.</p>"+
+    "<div class='lbl'>Seat numbers</div><table class='st'>"+t(["","UTG","Early, middle","HJ","CO","BTN","SB"])+t(["9-handed","9","8","7","6","5","6"])+t(["6-handed","7","7","7","6","5","5"])+"</table>"+
+    "<div class='lbl'>With limpers in front of you</div><p style='font-size:.86rem;margin:4px 0'><b>Raise</b> if your score is at least your seat number, plus 1 for each limper after the first. Raise to about 4 big blinds plus 1 per limper. <b>Limp behind</b> (or complete the small blind) with any pair, or any suited hand that scores 6 or more. <b>Fold</b> the rest.</p>"+
+    "<p class='muted' style='font-size:.78rem;margin:0'>This is standard live low-stakes practice written as a formula. It is not a solver result. The opening charts still decide your opens.</p>"+
+    "<div class='lbl'>The price after the flop</div><table class='st'>"+t(["Their bet","1/3 pot","1/2 pot","2/3 pot","Pot","2x pot"])+t(["You need to win","20%","25%","29%","33%","40%"])+"</table></div>";}
 /* ===== analysis panel: model recommendation, reasons at two levels, EV chart, range charts ===== */
 var MODEL_MW=true;
 function evPick(A,d){var a=d[0],o=A.opts;if(a==="fold")return o.find(function(x){return x.k==="fold";})||o.find(function(x){return x.k==="check";});
@@ -3706,7 +3740,7 @@ function wireRanges(root,j){var box=root.querySelector("#rs"+j);if(!box)return;v
   box.querySelectorAll("[data-rt]").forEach(function(b){b.onclick=function(){show(+b.dataset.rt);};});show(0);}
 function analysisHTML(){var A=evGet(true);if(!A)return "";
   return "<div class='tool anl'><div class='k'>Model</div><div class='anl-best'>"+A.best.lab+" <span>"+(A.best.bb>=0?"+":"")+A.best.bb.toFixed(1)+" bb</span></div>"+
-    "<div class='anl-hi'>"+evExplain(A)+"</div>"+evChartSVG(A)+stratHTML(A)+
+    "<div class='anl-hi'>"+evExplain(A)+"</div><p class='muted' style='font-size:.8rem;margin:6px 0 0'>"+priceLine(potTotal(),legal(0).toCall,A.eqAll,0)+"</p>"+evChartSVG(A)+stratHTML(A)+
     "<details class='anl-lo'><summary>The numbers behind it</summary>"+evLowHTML(A)+"</details></div>"+
     A.opps.map(function(j){return rangesHTML(j);}).join("");}
 /* table math */
@@ -4762,6 +4796,7 @@ function renderSettings(){
     "<div class='lbl' style='margin-top:0'>Difficulty</div><div class='seg' id='l-diff'><button data-v='relaxed'>Relaxed</button><button data-v='realistic'>Realistic</button><button data-v='brutal'>Brutal</button></div><p class='muted' style='font-size:.8rem' id='l-diffdesc'></p>"+
     "<div class='lbl'>Opponent info</div><div class='seg' id='l-oppinfo'><button data-v='observed'>Observed only</button><button data-v='revealed'>Revealed</button></div><p class='muted' style='font-size:.8rem' id='l-oppdesc'></p>"+
     "<div class='lbl'>Pre-flop grading</div><div class='seg' id='l-pregrade'><button data-v='charts'>Opening charts</button><button data-v='model'>EV model</button></div><p class='muted' style='font-size:.8rem'>Opening charts grades your pre-flop play against the charts and rules the app has always used. EV model grades it by estimated value against the players at your table. The Analysis sheet shows the EV model either way.</p>"+
+    "<div class='lbl'>Post-flop grading</div><div class='seg' id='l-postgrade'><button data-v='typical'>Typical opponent</button><button data-v='read'>Read-based</button></div><p class='muted' style='font-size:.8rem'>Typical opponent grades every street the same way, whoever is at the table, so you learn the fundamentals (price, equity, what bets need to work). Read-based grades against the model's read of each player.</p>"+
     "<div class='lbl'>Sharks per table (Casino $1/$2 and Home Game Night)</div><div class='seg' id='l-sharks'><button data-v='0'>None</button><button data-v='1'>One</button><button data-v='2'>Two</button></div><p class='muted' style='font-size:.8rem'>Strong regulars who adapt to how you play. Takes effect at your next new table.</p>"+
     [["liveChips","Pot as chips","Show the pot as chip stacks so you count it yourself. Tap the pot to check your count."],["liveHelp","Allow helpers","Lets the Tools panel give advice in live mode. Off is closer to a real game."]].map(function(x){return "<div class='toggle' style='border-top:0;margin-top:0'><div><b>"+x[1]+"</b><div class='muted' style='font-size:.85rem'>"+x[2]+"</div></div><button class='switch' role='switch' data-sw='"+x[0]+"' aria-checked='"+(!!S.settings[x[0]])+"' aria-label='"+x[1]+"'></button></div>";}).join("")+(S.liveStats&&S.liveStats.peeks?"<p class='muted' style='font-size:.82rem'>Pot checks so far: "+S.liveStats.peeks+"</p>":"")+"</div>"+
     "<div class='panel glass'><h2>Backup and transfer</h2><p class='muted' style='font-size:.85rem'>Move your bankroll, stats, career, and settings to another copy of the game, like the home screen app on your phone. Copy the save code here, then paste it into the other copy.</p>"+
@@ -4776,6 +4811,7 @@ function renderSettings(){
   $("l-oppdesc").textContent=OPPD[oppMode()];
   $("l-oppinfo").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",oppMode()===b.dataset.v?"true":"false");b.onclick=function(){S.settings.oppInfo=b.dataset.v;save();renderLobby();toast(b.textContent+": "+(b.dataset.v==="observed"?"hidden types stay hidden.":"types and tendencies are shown."));};});
   $("l-pregrade").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",(S.settings.preModel===true?"model":"charts")===b.dataset.v?"true":"false");b.onclick=function(){S.settings.preModel=b.dataset.v==="model";save();renderLobby();toast(b.dataset.v==="model"?"Pre-flop play is graded by the EV model.":"Pre-flop play is graded against the opening charts.");};});
+  $("l-postgrade").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",(S.settings.postGrade==="read"?"read":"typical")===b.dataset.v?"true":"false");b.onclick=function(){S.settings.postGrade=b.dataset.v;save();renderLobby();toast(b.dataset.v==="read"?"Post-flop play is graded against your read of each player.":"Post-flop play is graded against a typical opponent.");};});
   $("l-diffdesc").textContent=DIFFD[difficulty()];
   $("l-diff").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",difficulty()===b.dataset.v?"true":"false");b.onclick=function(){S.settings.difficulty=b.dataset.v;save();renderLobby();toast(b.textContent+" difficulty. Bot skill levels change at your next new table.");};});
   $("l-sharks").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",String(sharkCount())===b.dataset.v?"true":"false");b.onclick=function(){S.settings.sharks=+b.dataset.v;save();renderLobby();};});
