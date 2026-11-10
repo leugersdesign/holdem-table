@@ -40,6 +40,8 @@ MUTS = [
  ('deliberate deviations counted in the stats', '  if(rec.dev){var D=devOf()', '  if(false){var D=devOf()', 'test_gt'),
  ('multiway baseline uses player reads', 'Rg=opp.map(gtOn()?neutralRange:actionRange);', 'Rg=opp.map(actionRange);', 'test_gt'),
  ('live 3-bet advice by the openers type in charts mode', '&&S.settings.preModel===true){var op=T.players[H.preAgg]', '){var op=T.players[H.preAgg]', 'test_gt'),
+ ('the straddler counted as a limper', 'j!==H.bbI&&j!==H.straddle&&!H.s[j].folded&&H.s[j].sb>0;}).length;}', 'j!==H.bbI&&!H.s[j].folded&&H.s[j].sb>0;}).length;}', 'test_gt'),
+ ('a straddle does not tighten early seats', 'return straddleOn()&&["CO","BTN","BB"].indexOf(pos)<0?1:0;}', 'return 0;}', 'test_gt'),
  ('posterior ignores bet size', 'n+=sized?sizeProbs(P,d[2],d[1])[bk]:1;', 'n+=1;', 'test_ranges'),
 ]
 bad = 0

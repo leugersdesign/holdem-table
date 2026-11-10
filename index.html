@@ -824,8 +824,11 @@ function startHand(){
   H.cur=T.bb;H.minR=T.bb;
   H.toAct=nextIn(bbI,act);
   if(T.home&&act.length>=4&&RNG()<0.3){var stI=nextIn(bbI,act);if(stI!==0&&T.players[stI].stack>4*T.bb){put(stI,2*T.bb);H.s[stI].label="Straddle";H.cur=2*T.bb;H.minR=2*T.bb;H.toAct=nextIn(stI,act);H.straddle=stI;}}
+  if(T.home&&!T.pass&&act.length>=4&&H.straddle===undefined&&act.indexOf(0)>=0&&T.players[0].stack>4*T.bb){var hsp=heroStraddle();
+    if((hsp==="utg"||hsp==="both")&&nextIn(bbI,act)===0){put(0,2*T.bb);H.s[0].label="Straddle";H.cur=2*T.bb;H.minR=2*T.bb;H.toAct=nextIn(0,act);H.straddle=0;H.straddleKind="utg";}
+    else if((hsp==="btn"||hsp==="both")&&H.button===0&&sbI!==0&&bbI!==0){put(0,2*T.bb);H.s[0].label="Straddle";H.cur=2*T.bb;H.minR=2*T.bb;H.toAct=sbI;H.straddle=0;H.straddleKind="btn";}}   /* a button straddle: the small blind acts first and the button acts last */
   sfx("deal");if(!T._g){T._g=true;setTimeout(greetRivals,700);}else chatterStart();
-  if(H.straddle!==undefined)H.log.push(T.players[H.straddle].name+" straddles "+chips(2*T.bb)+".");
+  if(H.straddle!==undefined)H.log.push((H.straddle===0?"You straddle ":T.players[H.straddle].name+" straddles ")+chips(2*T.bb)+(H.straddleKind==="btn"?" on the button. Action starts with the small blind.":"."));
   logLine("Hand "+(T.handNo+1)+(T.mode==="tour"?" (blinds "+T.sb+"/"+T.bb+")":"")+". "+T.players[H.button].name+" has the button.");
   H.status="";
   render();
@@ -1365,7 +1368,8 @@ function renderControls(){
   if(T.over){c.innerHTML="<div class='waiting glass'>"+(T.players[0].out?"You're out.":"Table finished.")+"</div>";return;}
   if(!H||H.done){
     if(H&&H.skip&&!coachOn()){c.innerHTML="<div class='waiting glass'>Dealing the next hand...</div>";return;}
-    c.innerHTML=coachHTML()+"<div class='actions one'><button class='btn brass' id='c-next'>Deal next hand</button></div>";
+    c.innerHTML=coachHTML()+"<div class='actions one'><button class='btn brass' id='c-next'>Deal next hand</button></div>"+(T.home&&!T.pass?"<div class='devrow'><button id='c-str' aria-pressed='"+(heroStraddle()!=="off")+"'>Straddle: "+({off:"off",utg:"under the gun",btn:"button",both:"UTG and button"}[heroStraddle()])+"</button></div>":"");
+    if($("c-str"))$("c-str").onclick=function(){openTableMenu("holdem");};
     $("c-next").onclick=startHand;if($("ck-ok"))$("ck-ok").onclick=function(){H.coach=null;renderControls();};return;
   }
   if(T.pass){c.innerHTML="<div class='waiting glass'>Pass-and-play: the phone goes to whoever's turn it is.</div>";return;}
@@ -1397,6 +1401,7 @@ function heroDo(d){if(!H||H.done||H.toAct!==0||!actLegal(0,d[0],d[1]))return;sto
   renderControls();}
 function raisePresets(L,pot){/* sizing buttons: pre-flop opens by big blinds, post-flop bets by fractions of the pot, raises by fractions and multiples */
   function frac(f){return Math.round(H.cur+f*(pot+L.toCall));}
+  if(H.street===0&&H.raises===0&&straddleOn()){var U=2*T.bb,lm=limpersIn();return [["3 str",U*(3+lm)],["4 str",U*(4+lm)],["5 str",U*(5+lm)],["Pot",frac(1)]];}
   if(H.street===0&&H.raises<=1&&H.cur<=T.bb)return [["2.5x",T.bb*2.5],["3x",T.bb*3],["4x",T.bb*4],["5x",T.bb*5]];
   if(H.street===0)return [["2.5x",H.cur*2.5],["3x",H.cur*3],["4x",H.cur*4],["Pot",frac(1)]];
   if(H.cur===0)return [["\u00bc pot",frac(0.25)],["\u2153 pot",frac(1/3)],["\u00bd pot",frac(0.5)],["\u2154 pot",frac(2/3)],["\u00be pot",frac(0.75)],["Pot",frac(1)]];
@@ -1413,7 +1418,7 @@ function openRaise(L){
   function set(v){raw=clamp(v);amt=raw>=L.maxTo?L.maxTo:Math.round(raw);sl.value=amt;upd();}
   function upd(){$("c-amt").textContent=chips(amt)+(amt>=L.maxTo?" (all in)":"");
     var add=amt-H.s[0].sb,base=H.cur===0?pot:pot+L.toCall,f=H.cur===0?add/Math.max(1,pot):(amt-H.cur)/Math.max(1,base);   /* bets as a share of the pot; raises as the raise on top of the call, against the pot after calling */
-    $("c-amtp").textContent=hidePot?"":" \u00b7 "+(H.street===0&&H.cur<=bb*1.01?(amt/bb).toFixed(amt%bb?1:0)+" BB":Math.round(f*100)+"% pot")+"";}
+    var su=2*bb;$("c-amtp").textContent=hidePot?"":" \u00b7 "+(H.street===0&&H.raises===0&&straddleOn()?(amt/su).toFixed(amt%su?1:0)+" straddles":H.street===0&&H.cur<=bb*1.01?(amt/bb).toFixed(amt%bb?1:0)+" BB":Math.round(f*100)+"% pot")+"";}
   /* the slider snaps to its step, so its last notch means the whole stack */
   sl.oninput=function(){var v=+sl.value;set(v>=L.maxTo-step?L.maxTo:v);};upd();
   rb.querySelectorAll("[data-to]").forEach(function(b){b.onclick=function(){set(b.dataset.all?L.maxTo:+b.dataset.to);};});
@@ -2822,12 +2827,18 @@ function adviseHero(full){
   if(pfAdv){advice=pfAdv[0];why=pfAdv[1];}
   else if(H.street===0){
     if(H.raises===0){
-      if(pos==="BB"){advice="Check";why="Nobody raised. See the flop for free.";if(EQ[code]>=62){advice="Raise";why="Strong hand and only limpers in. Raise to about "+chips(T.bb*(3+opp.length-1))+".";}}
+      if(H.straddle===0&&L.toCall===0){var U0=2*T.bb,nl=limpersIn();advice="Check";why="Nobody raised your straddle. Check your option and see the flop.";if(EQ[code]>=62){advice="Raise";why="Strong hand and only limpers in. Raise to about "+(3+nl)+" straddles ("+chips(U0*(3+nl))+"). You'll be out of position, so keep it to strong hands.";}}
+      else if(pos==="BB"&&straddleOn()&&L.toCall>0){var sc0=chenScore(code),nl2=limpersIn();if(sc0>=9){advice="Raise";why=code+" scores "+sc0+". Facing the straddle, raise strong hands to about "+(4+nl2)+" straddles ("+chips(2*T.bb*(4+nl2))+").";}
+        else if(sc0>=6||limpBehindHand(code)){advice="Call";why="Calling one more big blind into a pot this size is cheap. "+code+" scores "+sc0+(limpBehindHand(code)&&sc0<6?" and can make a hand that gets paid":"")+", so call.";}
+        else{advice="Fold";why=code+" scores "+sc0+". Even at a small price it plays badly out of position against the straddle.";}}
+      else if(pos==="BB"){advice="Check";why="Nobody raised. See the flop for free.";if(EQ[code]>=62){advice="Raise";why="Strong hand and only limpers in. Raise to about "+chips(T.bb*(3+opp.length-1))+".";}}
       else if(limpersIn()>0){var LR=limpRule(code,pos,limpersIn());advice=LR.adv==="Call"?(L.toCall>0?"Call":"Check"):LR.adv;why=LR.why;}
+      else if(straddleOn()){var SO=straddleOpen(code,pos),U1=2*T.bb;if(SO.open){advice="Raise";why=code+" scores "+SO.sc+". With a straddle on, open when the score is at least your seat number ("+SO.sn+")"+(SO.need>SO.sn?" plus 1 in early and middle seats":"")+": "+SO.need+". Raise to about "+(T.home?4:3)+" straddles ("+chips(U1*(T.home?4:3))+").";}
+        else{advice=L.toCall===0?"Check":"Fold";why=code+" scores "+SO.sc+". With a straddle on, "+pos+" needs "+SO.need+" to open: stacks play half as deep, so speculative hands lose value.";}}
       else if(SETS[ck]&&SETS[ck][code]){advice="Raise";why=code+" is in your "+ck+" opening chart"+(ck!==pos?" (the closest chart for "+pos+" at a full table)":"")+". Raise to about "+chips(T.bb*(T.home?4:2.5))+(T.home?" since home games call a lot,":"")+" plus 1 big blind per limper.";}
       else{advice=L.toCall===0?"Check":"Fold";why=code+" isn't in your "+ck+" opening chart.";}
     }else if(H.raises===1&&H.preAgg>0&&VSOPEN[chartKey(H.pos[H.preAgg])]){
-      var opP=chartKey(H.pos[H.preAgg]),ev=VSOPEN[opP][code],bb=pos==="BB",behind=H.seats.filter(function(j){return j!==0&&!H.s[j].folded&&!H.s[j].acted;}).length;
+      var opP=chartKey(H.pos[H.preAgg]),ev=VSOPEN[opP][code],bb=pos==="BB"||H.straddle===0,behind=H.seats.filter(function(j){return j!==0&&!H.s[j].folded&&!H.s[j].acted;}).length;
       var callers=H.seats.filter(function(j){return j!==0&&j!==H.preAgg&&!H.s[j].folded&&H.s[j].tot>=H.cur;}).length,oop=bb||pos==="SB";
       var junkO=code.length===3&&code[2]==="o"&&rkv(code[1])<8&&code[0]!=="A",real=realizeF(code,oop),evM=ev/100*Math.pow(junkO?0.75:code.length===2||code[2]==="s"?0.88:0.82,callers);
       var thr=need/real+(bb?0:0.03*Math.min(behind,3)),lateOp=["CO","BTN","SB"].indexOf(opP)>=0;eqUse=evM;
@@ -3162,7 +3173,9 @@ function live3Why(ans,code,looseOpp,who,deep){
   return looseOpp?code+" is too weak to play against a raise, even from a loose player. Offsuit hands that make weak top pairs lose money here.":"A "+who+" raises a strong range. "+code+" is usually behind or dominated. Fold and wait for a better spot.";}
 function liveAdvice(code,pos,opp,L,hs){
   if(!T||!T.live||T.mode!=="cash"||!H)return null;
+  if(H.street===0&&H.straddle===0)return null;
   if(H.street===0&&H.raises===0&&pos!=="BB"){var n=liveLimpers();
+    if(n===0&&straddleOn())return null;   /* the straddle open rule in adviseHero applies */
     if(n===0){if(liveOpen(pos,code))return ["Raise",code+" is in the "+pos+" chart for a nine-handed live game. Raise to about "+chips(T.bb*4)+". Live players call more than online players, so open a little bigger."];
       return [L.toCall===0?"Check":"Fold",code+" isn't in your "+pos+" chart for a nine-handed game. With up to 8 players behind you in early seats, play tight."];}
     var a=isoDecide(code,ISO_POS[pos]||"MP",n),why=isoWhy(a,code,ISO_POS[pos]||pos,n);
@@ -3420,9 +3433,11 @@ function openTableMenu(game){var inDraw=game==="draw",cur=inDraw?[DW.sb,DW.bb]:[
   var html="<h2>Table options</h2>"+
     (canSwitch?"<div class='lbl'>Game</div><div class='seg' id='tm-game'><button data-v='holdem' aria-pressed='"+!inDraw+"'>Hold'em</button><button data-v='draw' aria-pressed='"+inDraw+"'>5-card draw</button></div><p class='muted' style='font-size:.78rem;margin:4px 0 0'>Same players, same stacks."+(!inDraw&&T.players.length>6?" Draw seats 6, so seats 7 and up sit out and keep their chips until you switch back.":"")+(mid?" Switches after this hand.":"")+"</p>":"")+
     ((inDraw||T.mode==="cash")?"<div class='lbl'>Blinds</div><div class='tmbl'>"+GAME_BLINDS.map(function(b){var on=b[0]===cur[0]&&b[1]===cur[1];return "<button class='mini' data-bl='"+b[0]+","+b[1]+"' aria-pressed='"+on+"'>"+blindTxt(b[0])+"/"+blindTxt(b[1])+"</button>";}).join("")+"</div><p class='muted' style='font-size:.78rem;margin:4px 0 0'>Changes start "+(mid?"next hand":"now")+". Stacks stay the same.</p>":"")+
+    (!inDraw&&T.home?"<div class='lbl'>Your straddle</div><div class='seg' id='tm-str'><button data-v='off'>Off</button><button data-v='utg'>Under the gun</button><button data-v='btn'>Button</button><button data-v='both'>Both</button></div><p class='muted' style='font-size:.78rem;margin:4px 0 0'>You post 2 big blinds before the cards when you're in that seat (4 or more players, one straddle per hand). On the button, the small blind acts first and you act last before the flop. Usually a losing play under the gun: you play a bigger pot out of position.</p>":"")+
     (!inDraw?"<div class='lbl'>Run it twice</div><div class='seg' id='tm-rit'><button data-v='ask'>Ask me</button><button data-v='always'>Always</button><button data-v='never'>Never</button></div><p class='muted' style='font-size:.78rem;margin:4px 0 0'>When you're all in before the river, opponents may ask to run it twice, and you can ask them.</p>":"");
   var btns=inDraw?[["Draw guide",function(){dwHelp();},"ghost"],["Done",function(){},"brass"]]:[["Table style",function(){openLook();},"ghost"],["Done",function(){},"brass"]];
   showModal(html,btns);var M=$("modal");
+  M.querySelectorAll("#tm-str button").forEach(function(b){b.setAttribute("aria-pressed",heroStraddle()===b.dataset.v?"true":"false");b.onclick=function(){S.settings.straddle=b.dataset.v;save();toast(b.dataset.v==="off"?"No straddles.":"You'll straddle "+(b.dataset.v==="utg"?"under the gun":b.dataset.v==="btn"?"on the button":"under the gun and on the button")+" from the next hand.");openTableMenu(game);};});
   M.querySelectorAll("#tm-rit button").forEach(function(b){b.setAttribute("aria-pressed",ritPref()===b.dataset.v?"true":"false");b.onclick=function(){S.settings.rit=b.dataset.v;save();openTableMenu(game);};});
   M.querySelectorAll("[data-bl]").forEach(function(b){b.onclick=function(){var v=b.dataset.bl.split(",").map(Number);
     if(inDraw){DW.sb=v[0];DW.bb=v[1];DW.buy=v[1]*100;}else{if(mid)T.nextBlinds=v;else{T.sb=v[0];T.bb=v[1];}}
@@ -3707,9 +3722,15 @@ function chenScore(code){var v={A:10,K:8,Q:7,J:6,T:5,"9":4.5,"8":4,"7":3.5,"6":3
 var SEAT9={UTG:9,UTG1:8,UTG2:8,MP:8,LJ:8,HJ:7,CO:6,BTN:5,SB:6},SEAT6={UTG:7,MP:7,LJ:7,HJ:7,CO:6,BTN:5,SB:5};
 function seatNum(pos){if(T&&T.live&&typeof SETS9!=="undefined"&&SETS9[pos])return SEAT9[pos]||7;return SEAT6[pos]||SEAT6[chartKey(pos)]||7;}
 function limpBehindHand(code){return code.length===2||(code[2]==="s"&&chenScore(code)>=6);}   /* any pair, or any suited hand that scores 6 or more */
-function limpersIn(){if(!H||H.street!==0||H.raises!==0)return 0;return H.seats.filter(function(j){return j!==0&&j!==H.sbI&&j!==H.bbI&&!H.s[j].folded&&H.s[j].sb>0;}).length;}
-function limpRule(code,pos,k,seat){var sc=chenScore(code),sn=seat||seatNum(pos),need=sn+k-1,lim=k+" limper"+(k>1?"s":"");
-  if(sc>=need)return {adv:"Raise",score:sc,need:need,why:code+" scores "+sc+". Against "+lim+", raise when the score is at least your seat number ("+sn+")"+(k>1?" plus 1 for each limper after the first":"")+": "+need+". Raise to about "+(4+k)+" big blinds."};
+function limpersIn(){if(!H||H.street!==0||H.raises!==0)return 0;return H.seats.filter(function(j){return j!==0&&j!==H.sbI&&j!==H.bbI&&j!==H.straddle&&!H.s[j].folded&&H.s[j].sb>0;}).length;}
+function heroStraddle(){var v=S.settings.straddle;return v==="utg"||v==="btn"||v==="both"?v:"off";}
+function straddleOn(){return !!(H&&H.street===0&&H.straddle!==undefined&&H.straddle>=0);}
+function preUnit(){return straddleOn()?2*T.bb:T.bb;}   /* pre-flop sizes are counted in straddles when one is on */
+function strAdj(pos){/* with a straddle on, early and middle seats (everyone before the cutoff, and the small blind) add 1 to their seat number */return straddleOn()&&["CO","BTN","BB"].indexOf(pos)<0?1:0;}
+function heroHandCode(code){return !!(H&&!H.done&&H.s[0]&&H.s[0].cards&&codeOf(H.s[0].cards)===code);}
+function straddleOpen(code,pos){var sn=seatNum(pos),need=sn+strAdj(pos),sc=chenScore(code);return {open:sc>=need,sc:sc,need:need,sn:sn};}
+function limpRule(code,pos,k,seat){var stH=heroHandCode(code)&&straddleOn(),sc=chenScore(code),sn=(seat||seatNum(pos))+(stH?strAdj(pos):0),need=sn+k-1,lim=k+" limper"+(k>1?"s":"");
+  if(sc>=need)return {adv:"Raise",score:sc,need:need,why:code+" scores "+sc+". Against "+lim+", raise when the score is at least your seat number ("+sn+")"+(k>1?" plus 1 for each limper after the first":"")+": "+need+"."+(stH?" With the straddle on, early and middle seats add 1 to the seat number. Raise to about "+(4+k)+" straddles ("+chips(2*T.bb*(4+k))+").":" Raise to about "+(4+k)+" big blinds.")};
   if(limpBehindHand(code))return {adv:"Call",score:sc,need:need,why:code+" scores "+sc+", short of the "+need+" needed to raise. "+(code.length===2?"Any pair":"A suited hand that scores 6 or more")+" can make a big hand that gets paid in a multiway pot, so "+(pos==="SB"?"complete the small blind":"limp behind")+"."};
   return {adv:"Fold",score:sc,need:need,why:code+" scores "+sc+", short of the "+need+" needed to raise, and it is not a pair or a suited hand that scores 6 or more, so it rarely makes a hand worth a multiway pot."};}
 function priceLine(pot,toCall,eq,betAmt){var p=function(x){return Math.round(x*100)+"%";};
@@ -3724,6 +3745,7 @@ function rulesCardHTML(){var t=function(r){return "<tr>"+r.map(function(c){retur
     "<div class='lbl'>Seat numbers</div><table class='st'>"+t(["","UTG","Early, middle","HJ","CO","BTN","SB"])+t(["9-handed","9","8","7","6","5","6"])+t(["6-handed","7","7","7","6","5","5"])+"</table>"+
     "<div class='lbl'>With limpers in front of you</div><p style='font-size:.86rem;margin:4px 0'><b>Raise</b> if your score is at least your seat number, plus 1 for each limper after the first. Raise to about 4 big blinds plus 1 per limper. <b>Limp behind</b> (or complete the small blind) with any pair, or any suited hand that scores 6 or more. <b>Fold</b> the rest.</p>"+
     "<p class='muted' style='font-size:.78rem;margin:0'>This is standard live low-stakes practice written as a formula. It is not a solver result. The opening charts still decide your opens.</p>"+
+    "<div class='lbl'>With a straddle on</div><p style='font-size:.86rem;margin:4px 0'>Stacks play half as deep. Add 1 to your seat number in early and middle seats (and the small blind); cutoff and button unchanged. Raise to 3 to 4 straddles plus 1 straddle per limper. The straddler acts last before the flop and checks or raises like a big blind.</p>"+
     "<div class='lbl'>The price after the flop</div><table class='st'>"+t(["Their bet","1/3 pot","1/2 pot","2/3 pot","Pot","2x pot"])+t(["You need to win","20%","25%","29%","33%","40%"])+t(["Defend at least","75%","67%","60%","50%","33%"])+"</table><p class='muted' style='font-size:.78rem;margin:4px 0 0'>Defend: the share of your range that has to continue (call or raise) so a bet of that size can't profit as a pure bluff. Solvers defend close to this; a range that folds more is exploitable.</p></div>";}
 /* ===== heads-up river solver: CFR+ on the real board, exact card removal, no hand abstraction =====
    Players 0 (out of position) and 1 (in position). Money is counted from the start of the river: a player's value at a terminal is what they collect minus what
@@ -3793,10 +3815,10 @@ function rvPreW(j){/* pre-flop range weights by hand class, from the charts and 
   var ev=(H.hist||[]).filter(function(e){return e.st===0;}),mine=ev.filter(function(e){return e.i===j;}),pos=H.pos[j],out={},opener=ev.find(function(e){return e.a==="raise"&&e.raises===0;}),opPos=opener?H.pos[opener.i]:null,ck=opPos?chartKey(opPos):null;
   Object.keys(EQ).forEach(function(c){var w=1,last=mine[mine.length-1];
     if(!last){w=1;}
-    else if(last.a==="raise"&&last.raises===0)w=(j===H.bbI||pos==="BB")?(EQ[c]>=60?1:0.15):(inChart(pos,c)?1:0.02);   /* opened (or raised limpers) */
+    else if(last.a==="raise"&&last.raises===0)w=(j===H.bbI||pos==="BB"||j===H.straddle)?(EQ[c]>=60?1:0.15):(H.straddle>=0?(chenScore(c)>=seatNum(pos)+(["CO","BTN"].indexOf(pos)<0?1:0)?1:0.02):(inChart(pos,c)?1:0.02));   /* opened (or raised limpers) */
     else if(last.a==="raise")w=(PREMIUM_PRE[c]||(ck&&VSOPEN[ck]&&VSOPEN[ck][c]>=57))?1:(c[2]==="s"&&c[0]==="A"&&rkv(c[1])<=3?0.5:0.02);   /* 3-bet */
     else if(last.a==="call"&&last.raises>=2)w=(inChart(pos,c)||!ck)&&EQ[c]>=58?1:0.05;   /* called a 3-bet */
-    else if(last.a==="call"&&last.raises===1){var e2=ck&&VSOPEN[ck]?VSOPEN[ck][c]:EQ[c],lo=(pos==="BB"||j===H.bbI)?36:42;w=e2>=lo&&e2<57&&!PREMIUM_PRE[c]?1:PREMIUM_PRE[c]?0.15:0.03;}   /* flatted a raise */
+    else if(last.a==="call"&&last.raises===1){var e2=ck&&VSOPEN[ck]?VSOPEN[ck][c]:EQ[c],lo=(pos==="BB"||j===H.bbI||j===H.straddle)?36:42;w=e2>=lo&&e2<57&&!PREMIUM_PRE[c]?1:PREMIUM_PRE[c]?0.15:0.03;}   /* flatted a raise */
     else if(last.a==="call")w=chenScore(c)>=4?(chenScore(c)>=12?0.3:1):0.05;   /* limped */
     else if(last.a==="check")w=EQ[c]>=70?0.3:1;   /* big blind checked its option */
     out[c]=w;});return out;}

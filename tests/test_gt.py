@@ -117,3 +117,61 @@ def test_the_raise_box_has_pot_fractions_and_half_and_whole_big_blind_steps():
     q, bb = 5, r['bb']                                                       # a quarter of the 20 pot, then +half, +one, -one big blind
     want = [round(q + bb / 2 + 1e-9), round(q + bb * 1.5 + 1e-9), round(q + bb / 2 + 1e-9)]
     assert [int(r[k][1:]) for k in ('half', 'one', 'back')] == want and r['pot'] == '$20', r
+
+def straddle_hand(pref, want, tries=400):
+    """Deal home-game hands until the hero is in the seat the straddle setting covers, with a human hero and the real timers queued."""
+    return run('''S.customCfg={bi:1,depth:100,seats:9,style:"home",spec:["station","limper","weekend","tag","nit","lag","station","limper"],table:"classic",atm:"vegas"};
+      seedRNG(4);T=makeCash(customStake());T.home=true;S.cash=T;T.noLeave=true;S.settings.straddle="%s";var got=null;
+      for(var k=0;k<%d&&!got;k++){T.players.forEach(function(p){if(p.stack<T.bb*20)p.stack=T.buy;});H=null;startHand();__t.q.length=0;
+        if(H.straddle===0&&H.straddleKind==="%s")got={kind:H.straddleKind,cur:H.cur/T.bb,heroIn:H.s[0].sb/T.bb,toAct:H.toAct,sbI:H.sbI,bbI:H.bbI,button:H.button,pos:H.pos[0],log:H.log.join(" ")};
+        else if(H.straddle===0)got={wrong:H.straddleKind};}
+      return got;''' % (pref, tries, want))
+
+def test_the_hero_can_straddle_under_the_gun():
+    r = straddle_hand('utg', 'utg')
+    assert r and r['kind'] == 'utg' and r['cur'] == 2 and r['heroIn'] == 2 and r['toAct'] not in (0, r['sbI'], r['bbI']) and 'You straddle' in r['log'], r
+
+def test_a_button_straddle_lets_the_small_blind_act_first_and_the_hero_last():
+    r = straddle_hand('btn', 'btn')
+    assert r and r['kind'] == 'btn' and r['button'] == 0 and r['toAct'] == r['sbI'] and 'small blind' in r['log'], r
+
+def test_no_straddle_when_the_setting_is_off():
+    r = straddle_hand('off', 'utg', tries=60)
+    assert r is None, r
+
+STR_SPOT = '''__t.preSpot({hero:"%s",pos:"%s",opps:[{arch:"weekend",pos:"UTG"},{arch:"weekend",pos:"SB"},{arch:"weekend",pos:"BB"}],actions:[]});T.home=true;
+  if(%s){H.s[1].sb=2*T.bb;H.s[1].tot=2*T.bb;T.players[1].stack-=2*T.bb;H.cur=2*T.bb;H.minR=2*T.bb;H.straddle=1;}
+  var A=adviseHero(false);return {adv:A.advice,why:A.why,lim:limpersIn()};'''
+
+def test_a_straddle_tightens_early_seats_but_not_the_button():
+    # Q9s scores 7: an open from the hijack (seat 7) without a straddle, a fold from the hijack with one, still an open from the button
+    no = run(STR_SPOT % ('Qh9h', 'HJ', 'false'))
+    yes = run(STR_SPOT % ('Qh9h', 'HJ', 'true'))
+    btn = run(STR_SPOT % ('Qh9h', 'BTN', 'true'))
+    assert no['adv'] == 'Raise' and yes['adv'] == 'Fold' and btn['adv'] == 'Raise', (no, yes, btn)
+    assert yes['lim'] == 0 and 'straddle' in yes['why'] and 'straddles (' in btn['why'], (yes, btn)   # the straddler is not a limper; sizes are in straddles
+
+def test_the_straddler_checks_its_option_and_the_big_blind_no_longer_sees_a_free_flop():
+    opt = run('''__t.preSpot({hero:"7h2c",pos:"UTG",opps:[{arch:"weekend",pos:"HJ"},{arch:"weekend",pos:"SB"},{arch:"weekend",pos:"BB"}],actions:[]});T.home=true;
+      H.s[0].sb=2*T.bb;H.s[0].tot=2*T.bb;H.cur=2*T.bb;H.straddle=0;H.s[1].sb=2*T.bb;H.s[1].tot=2*T.bb;var A=adviseHero(false);return {adv:A.advice,why:A.why};''')
+    bb = run('''__t.preSpot({hero:"7h2c",pos:"BB",opps:[{arch:"weekend",pos:"UTG"},{arch:"weekend",pos:"BTN"},{arch:"weekend",pos:"SB"}],actions:[]});T.home=true;
+      H.s[1].sb=2*T.bb;H.s[1].tot=2*T.bb;H.cur=2*T.bb;H.straddle=1;H.s[0].sb=T.bb;var A=adviseHero(false);return {adv:A.advice,why:A.why};''')
+    assert opt['adv'] == 'Check' and 'option' in opt['why'], opt
+    assert bb['adv'] == 'Fold' and 'free' not in bb['why'], bb
+
+def test_the_raise_box_counts_opens_in_straddles():
+    r = run(STR_SPOT.replace('var A=adviseHero(false);return {adv:A.advice,why:A.why,lim:limpersIn()};', '''$("g-controls").innerHTML="<div id='c-rb'></div>";openRaise(legal(0));
+      return {labs:[].map.call($("c-rb").querySelectorAll(".presets button"),function(b){return b.textContent;}),amt:$("c-amt").textContent,u:$("c-amtp").textContent,bb:T.bb};''') % ('AhKh', 'HJ', 'true'))
+    assert r['labs'][:3] == ['3 str', '4 str', '5 str'] and r['amt'] == '$%d' % (6 * r['bb']) and '3 straddles' in r['u'], r
+
+def test_hands_with_the_heros_straddle_play_out_and_conserve_chips():
+    r = run('''seedRNG(9);__t.table({seats:9,style:"home"});T.home=true;S.settings.straddle="both";var n=0,btn=0,last=null,orig=startHand;
+      var o=__t.play(400);return {hands:o.hands,errors:o.errors,drift:o.drift,dup:o.dupCards};''')
+    assert r['hands'] >= 380 and r['errors'] == 0 and r['drift'] == 0 and r['dup'] == 0, r
+
+def test_a_button_straddler_gets_the_last_word_before_the_flop():
+    r = run('''seedRNG(4);__t.table({seats:6,style:"home"});T.home=true;S.settings.straddle="btn";var seen=0,lastOk=0;
+      for(var k=0;k<300&&seen<5;k++){T.players.forEach(function(p){if(p.stack<T.bb*20)p.stack=T.buy;});H=null;startHand();__t.drain();
+        if(H.straddleKind==="btn"){seen++;var pre=H.hist.filter(function(e){return e.st===0;});var allFold=pre.every(function(e){return e.a==="fold";});if(pre.length&&pre[0].i===H.sbI&&(pre[pre.length-1].i===0||pre.some(function(e){return e.a==="raise";})||allFold))lastOk++;}}
+      return {seen:seen,ok:lastOk};''')
+    assert r['seen'] >= 3 and r['ok'] == r['seen'], r
