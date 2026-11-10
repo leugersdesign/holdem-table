@@ -41,12 +41,12 @@ def test_a_refresh_in_the_middle_of_a_hand_voids_the_hand_and_loses_no_chips():
     assert r['memoryUnchanged'] and r['savedAfterHand'], r                   # saving does not disturb the live hand, and between hands the current stacks are saved
 
 def test_the_idle_precompute_is_transparent_and_makes_the_grade_a_cache_hit():
-    r = engine().run('''var n=0,o=evAnalyze;evAnalyze=function(){n++;return o.apply(this,arguments);};
+    r = engine().run('''S.settings.postGrade="typical";var n=0,o=evAnalyze;evAnalyze=function(){n++;return o.apply(this,arguments);};
       try{__t.spot({hero:"AhKd",board:"Ks7d2c",opps:[{arch:"weekend"}],pot:20,seed:5});S.coach=blankCoach();
         var cold=(function(){n=0;H.dec=[];recordDecision(["check"]);return n;})();
         __t.spot({hero:"AhKd",board:"Ks7d2c",opps:[{arch:"weekend"}],pot:20,seed:5});prewarmNow();var warm0=n;H.dec=[];recordDecision(["check"]);var warm=n-warm0;var rec=H.dec[0];
         __t.spot({hero:"AhKd",board:"Ks7d2c",opps:[{arch:"weekend"}],pot:20,seed:5});n=0;prewarm();H.id=H.id+1000;__t.drain();var stale=n;
-        return {cold:cold,warm:warm,stale:stale,graded:!!rec.model&&rec.tol>0&&!!rec.conf};}finally{evAnalyze=o;}''')
+        return {cold:cold,warm:warm,stale:stale,graded:!!rec.model&&rec.tol>0&&!!rec.conf};}finally{evAnalyze=o;delete S.settings.postGrade;}''')
     assert r['cold'] >= 2 and r['warm'] == 0, r                              # without it, grading runs the analysis twice; with it, nothing new
     assert r['stale'] == 0 and r['graded'], r                                # a precompute for a hand that has moved on does nothing
 

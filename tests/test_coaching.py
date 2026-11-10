@@ -74,8 +74,8 @@ def test_saved_data_migrates_without_losing_anything():
     r = engine().run('''var old={stats:{cash:{n:5}},settings:{skill:"mixed"},bankroll:1234,car:{xp:99},customCfg:{bi:3,depth:100},review:[{x:1}],drills:{raise:{n:4,ok:3}}};
       var m=migrateS(JSON.parse(JSON.stringify(old)));var again=migrateS(JSON.parse(JSON.stringify(m)));
       return {version:m.version,coach:m.coach&&m.coach.N,bankroll:m.bankroll,xp:m.car.xp,bi:m.customCfg.bi,bi2:again.customCfg.bi,review:m.review.length,drills:m.drills.raise.n,blind:CUSTOM_BLINDS[m.customCfg.bi].join("/")};''')
-    assert r == {'version': 2, 'coach': 0, 'bankroll': 1234, 'xp': 99, 'bi': 4, 'bi2': 4, 'review': 1, 'drills': 4, 'blind': '5/10'} or r['blind'] != '', r
-    assert r['bi'] == 4 and r['bi2'] == 4 and r['bankroll'] == 1234 and r['version'] == 2    # a saved $2/$5 index moves with the list, and migration is idempotent
+    assert r == {'version': 3, 'coach': 0, 'bankroll': 1234, 'xp': 99, 'bi': 4, 'bi2': 4, 'review': 1, 'drills': 4, 'blind': '5/10'} or r['blind'] != '', r
+    assert r['bi'] == 4 and r['bi2'] == 4 and r['bankroll'] == 1234 and r['version'] == 3    # a saved $2/$5 index moves with the list, and migration is idempotent
 
 def test_the_old_blind_still_means_what_it_meant():
     r = engine().run('''return {before:["1/2","2/5"],blinds:CUSTOM_BLINDS.slice(0,3).map(function(b){return b.join("/");}),moved:CUSTOM_BLINDS[migrateS({stats:{},settings:{},customCfg:{bi:1}}).customCfg.bi].join("/")};''')

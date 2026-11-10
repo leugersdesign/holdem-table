@@ -19,3 +19,8 @@ Full report: `../stage-04-05-report.md`.
 
 ## Version 43: river solver
 Heads-up river decisions are now graded against a solver run on your actual board (CFR, no hand abstraction, exact card removal), and the Analysis sheet shows the solver's mix for your hand and the value of each action. It reproduces the textbook river equilibrium in tests. Flop and turn are not solved yet, and the ranges entering the river are built from the charts and board-aware rules rather than solved. Details: `../solver.md`. Settings > Post-flop grading: Solver (default), Typical opponent, or Read-based.
+
+## Version 44: the baseline is the solver, with no reads
+Heads-up flop, turn, and river decisions are graded against a solver on your actual board; multiway pots by the price against chart-based ranges. Nothing in Solver mode's grading or baseline advice uses a read on a player: the typical-opponent fallback, the type-based cushions and live overrides after the flop, and the live pre-flop 3-bet table keyed to the opener's type (in chart mode) are gone from it. The read-based model stays on the Analysis sheet as the Exploit view. A Deviate button logs deliberate departures from the baseline separately. Details: `../solver.md`.
+
+The raise box (version 44) adds quarter, third, two-thirds pot buttons, raise multiples, half and whole big-blind steps, and shows the chosen size as a share of the pot.

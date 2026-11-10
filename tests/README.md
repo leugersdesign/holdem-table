@@ -23,6 +23,7 @@ The files are also plain `pytest` tests.
 | `test_ranges.py` | Range model: normalization, card removal, posterior = prior x likelihood, no underflow on long sequences, collapse falls back to the prior, bet size and raises as evidence, pre-flop prior ordering, size probabilities are proper distributions. |
 | `test_ev.py` | EV accounting by hand arithmetic (fold = 0, sunk chips, refunds), rake arithmetic, all-in candidate, sizing table, fold frequency vs size, multiway vs heads-up, oversized-bet rule, stated assumptions and error. |
 | `test_opponents.py` | Opponent realism: trait validity, individual variation and correlations, behavior of every type over 200,000+ decisions each, distinctness, no universal bluff target, barrels, check-raise, pair over-valuation, short stack, limited observation and gradual adaptation, twin runs proving bots never read the hero's hole cards, Observed-only mode hides the type, reader accuracy. |
+| `test_gt.py` | Flop and turn solver: check-down values against brute-force equity (chance nodes, card removal), card weights, sampling error inside the flop tolerance, convergence, board dependence, solver grading and waiting for the solve, off-tree sizes, solved narrowing, multiway and live baselines with no reads, deviations, settings migration. |
 | `test_engine.py` | Chip conservation over thousands of seeded hands (6 and 9 seats, short stacks, with rake), split pots, odd chips, side pots, rake from the main pot, card uniqueness, replay from a seed. |
 
 ## Tolerances

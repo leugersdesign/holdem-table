@@ -31,8 +31,15 @@ MUTS = [
  ('post-flop graded against the read by default', 'if(S.settings.postGrade!=="read"){var X0=stratExtras(MA,true);', 'if(false){var X0=stratExtras(MA,true);', 'test_rules'),
  ('solver ignores card removal', 'for(var i=0;i<me.cards.length;i++){c=me.cards[i];out[i]=tot-tC[c[0]]-tC[c[1]]+(me.same[i]>=0?r[me.same[i]]:0);}return out;}', 'for(var i=0;i<me.cards.length;i++){out[i]=tot;}return out;}', 'test_solver'),
  ('solver ignores the board', 'rh.rank=rank(rh);rv.rank=rank(rv);', 'rh.rank=rh.cards.map(function(c){return EQ[codeOf(c)];});rv.rank=rv.cards.map(function(c){return EQ[codeOf(c)];});', 'test_solver'),
- ('river grading bypasses the solver', 'RVr=RVwant?rvGet(false):null,', 'RVr=null,', 'test_solver'),
- ('ranges ignore the flop and turn action', '      if(e.a==="bet"||e.a==="raise")wt*=Math.min(1,Math.max(0.08,rvSig((S-3.8)/0.45)+(o>=8?0.45:o>=4?0.15:0)));', '      if(false)wt*=1;', 'test_solver'),
+ ('river grading bypasses the solver', 'var rk=rvKey(),r=rvGet(false);if(!r){', 'var rk=rvKey(),r=null;if(false){', 'test_solver'),
+ ('ranges ignore the flop and turn action', 'if(e.a==="bet"||e.a==="raise")wt*=Math.min(1,Math.max(0.08,rvSig((S2-3.8)/0.45)+(o>=8?0.45:o>=4?0.15:0)));', 'if(false)wt*=1;', 'test_solver'),
+ ('chance nodes ignore card removal', 'for(i=0;i<bo.length;i++)ro[bo[i]]=0;', '', 'test_gt'),
+ ('flop and turn grading bypass the solver', 'var g=gtFor(heroSizeStd(d)?null:{k:H.cur===0?"bet":"raise",amt:d[1]},false);', 'var g=null;', 'test_gt'),
+ ('a decision before the solve lands gets a fallback grade', 'else if(g&&g.pending)pend={kind:"gt",key:g.pending,hist:g.hist};', 'else if(g&&g.pending)solverFallback(rec,"x");', 'test_gt'),
+ ('solved play does not narrow the next street', 'if(M){var m=M[k];wt*=(m===undefined?0:m);continue;}', 'if(false){}', 'test_gt'),
+ ('deliberate deviations counted in the stats', '  if(rec.dev){var D=devOf()', '  if(false){var D=devOf()', 'test_gt'),
+ ('multiway baseline uses player reads', 'Rg=opp.map(gtOn()?neutralRange:actionRange);', 'Rg=opp.map(actionRange);', 'test_gt'),
+ ('live 3-bet advice by the openers type in charts mode', '&&S.settings.preModel===true){var op=T.players[H.preAgg]', '){var op=T.players[H.preAgg]', 'test_gt'),
  ('posterior ignores bet size', 'n+=sized?sizeProbs(P,d[2],d[1])[bk]:1;', 'n+=1;', 'test_ranges'),
 ]
 bad = 0

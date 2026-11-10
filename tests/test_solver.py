@@ -43,9 +43,16 @@ def test_solver_frequencies_are_a_distribution_over_the_legal_actions():
         assert abs(sum(f for _, _, f, _ in r) - 1) < 1e-6 and {k for _, k, _, _ in r} <= {'check', 'bet'}, r
 
 def test_grading_uses_the_solver_when_ready_never_waits_and_never_punishes_a_mixed_action():
+    import time
     base = '__t.spot({hero:"7c6c",board:"Ks7d2c9h4s",opps:[{arch:"weekend"}],pot:40,seed:5,history:%s});S.coach=blankCoach();H.dec=[];' % json.dumps(CHK)
-    cold = run(base + 'H.rv=null;recordDecision(["check"]);var g=H.dec[0];return {vs:g.gradedVs,pending:!!g.solverPending};')
-    assert cold == {'vs': 'typical', 'pending': True}, cold                  # the solve was not ready: no waiting, the fallback says so
+    cold = run(base + 'H.rv=null;H.rvS={};recordDecision(["check"]);var g=H.dec[0];window.__cold=g;return {pending:!!g.pend,vs:g.gradedVs||null,sev:g.sev};')
+    assert cold == {'pending': True, 'vs': None, 'sev': 0}, cold            # the solve was not ready: no waiting and no fallback model, the decision waits
+    for _ in range(40):
+        time.sleep(0.5)
+        landed = _engine().js('(function(){var g=window.__cold;return {pending:!!g.pend,vs:g.gradedVs||null,leaks:H.pend?H.pend.length:0};})()')
+        if not landed['pending']:
+            break
+    assert landed['vs'] == 'solver' and not landed['pending'], landed     # graded by the solver once it landed
     warm = run(base + '''H.rv=null;var r=rvGet(true),mix=r.acts.filter(function(a){return a.freq>=0.1;}).map(function(a){return a.kind==="check"?["check"]:["raise",a.amt];});
       var out=mix.map(function(d){H.dec=[];recordDecision(d);var g=H.dec[0];return {vs:g.gradedVs,sev:g.sev,why:g.why};});return out;''')
     assert len(warm) >= 2 and all(x['vs'] == 'solver' and x['sev'] == 0 and x['why'].startswith('The solver plays your hand') for x in warm), warm

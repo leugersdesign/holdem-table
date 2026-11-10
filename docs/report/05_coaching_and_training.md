@@ -8,3 +8,6 @@ Full report: `../stage-04-05-report.md`.
 - Personalized practice maps the top flagged pattern to an existing drill. A new reading drill trains the same read Observed-only mode uses.
 - Tests: `tests/test_coaching.py` (15) and `tests/test_adversarial.py` (won hand with a bad decision, lost hand with a good one, close-EV alternatives, small samples, adjusting versus failing to adjust).
 - Limits: coaching data starts at version 2 of the saved data; drills reuse the existing ones; no engine-backed generic drill.
+
+## Version 44
+Decisions made before the solver finishes are graded when it lands (the chip shows "..." until then) and are not counted anywhere before that. Decisions marked with Deviate are shown against the solver but kept out of accuracy, leaks, coaching stats, and redo, and logged on the Coach tab. The Rules card adds the minimum-defense row (how much of your range has to continue against each bet size).
