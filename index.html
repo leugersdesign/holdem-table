@@ -2204,7 +2204,7 @@ function render(){
   if($("g-hero").className!==hcls)$("g-hero").className=hcls;
   var info;if(T.pass){info="<b>Pass-and-play</b> \u00b7 Hand "+(T.handNo+(H&&!H.done?1:0))+"<br>$1/$2 \u00b7 "+T.players.filter(function(p){return p.hero||p.human;}).length+" players";}
   else if(T.mode==="cash"){var sk=STK(T.stake),ss=sess();info="<b>"+sk.n+"</b> \u00b7 Hand "+((ss?ss.hands:0)+(H&&!H.done?1:0))+"<br>Session "+(ss&&ss.net<0?"\u2212":"+")+chips(Math.abs(ss?ss.net:0));}
-  else{var ev=EV(T.ev),adv=ev.stages[T.stage];info="<b>"+(T.ladder!==undefined?"Ladder rung "+(T.ladder+1)+": vs "+T.players[1].name:ev.n)+"</b><br>"+(ev.stages.length>1?(adv===0?"Final table":"Stage "+(T.stage+1)+"/"+ev.stages.length+", top "+adv+" advance")+" \u00b7 ":"")+T.sb+"/"+T.bb+" \u00b7 up in "+(8-T.handNo%8);}
+  else{var ev=EV(T.ev),adv=ev.stages[T.stage];info="<b>"+(T.ladder!==undefined?(T.duel?"Duel vs "+T.players[1].name+" \u00b7 "+money(T.duel.prize)+" pot":"Ladder rung "+(T.ladder+1)+": vs "+T.players[1].name):ev.n)+"</b><br>"+(ev.stages.length>1?(adv===0?"Final table":"Stage "+(T.stage+1)+"/"+ev.stages.length+", top "+adv+" advance")+" \u00b7 ":"")+T.sb+"/"+T.bb+" \u00b7 up in "+(8-T.handNo%8);}
   if($("g-info").innerHTML!==info)$("g-info").innerHTML=info;
 }
 function renderControls(){
@@ -3429,10 +3429,28 @@ function seasonalEvent(){var d=new Date(),m=d.getMonth()+1;
 /* heads-up ladder */
 function ladderList(){var all=[];Object.keys(THEMES).forEach(function(k){THEMES[k].cast.forEach(function(c){all.push(c);});});var ord={beginner:0,regular:1,tough:2};return all.sort(function(a,b){return ord[a.skill]-ord[b.skill]||(a.st.agg-b.st.agg);});}
 function ladderRung(){return car().ladder||0;}
-function enterLadder(){var L=ladderList(),r=ladderRung();if(r>=L.length)r=L.length-1;var c=L[r];
+function enterLadder(){var L=ladderList(),r=ladderRung();if(r>=L.length)r=L.length-1;headsUp(r,null);}
+function headsUp(r,duel){var c=ladderList()[r];
   S.tour={mode:"tour",ev:"ladder",ladder:r,stage:0,skill:[c.skill],players:[{name:"You",hero:true,stack:1500,out:false,skill:"hero"},{name:c.short,cid:c.id,skill:c.skill,stack:1500,hero:false,out:false}],button:rnd(2),sb:10,bb:20,level:0,handNo:0,minBB:999};
+  if(duel)S.tour.duel=duel;
   save();T=S.tour;enterTable();}
+/* open duels: after the ladder, challenge anyone for a buy-in; tougher players pay more */
+var DUEL_MULT=[[1,"Standard"],[3,"High"],[10,"Max"]],DUEL_PAY={beginner:2,regular:2.2,tough:2.5};
+function duelsOpen(){return ladderRung()>=ladderList().length;}
+function duelMult(){var m=+S.settings.duelMult;return m===3||m===10?m:1;}
+function duelBase(r){var v=100*Math.pow(1.18,r),st=v<500?50:v<2000?100:250;return Math.max(100,Math.round(v/st)*st);}
+function duelTerms(r,mult){var c=ladderList()[r],buy=duelBase(r)*mult;return {buy:buy,prize:Math.round(buy*(DUEL_PAY[c.skill]||2))};}
+function duelRec(){var C=car();C.duels=C.duels||{w:0,l:0,net:0};return C.duels;}
+function enterDuel(r){if(S.tour)return toast("Finish your current event first.");var m=duelMult(),t=duelTerms(r,m);
+  if(S.bankroll<t.buy)return toast("You need "+money(t.buy)+" to buy in.");
+  S.bankroll-=t.buy;headsUp(r,{buy:t.buy,prize:t.prize,mult:m});}
+function duelEnd(place){var L=ladderList(),r=T.ladder,c=L[r],d=T.duel,won=place===1,rec=duelRec();S.tour=null;
+  if(won){S.bankroll+=d.prize;rec.w++;rec.net+=d.prize-d.buy;addXP(25+5*r);}else{rec.l++;rec.net-=d.buy;}
+  checkBank();save();if(won)confetti(60);
+  showModal("<h2>"+(won?"You beat "+c.name:c.name+" takes the pot")+"</h2><p>"+(won?"You won "+money(d.prize)+" on a "+money(d.buy)+" buy-in.":"\u201c"+pick(c.lines.win)+"\u201d Your "+money(d.buy)+" buy-in is gone.")+" Duel record "+rec.w+"-"+rec.l+", net "+money(rec.net)+".</p>",
+    [["Rematch "+money(duelTerms(r,d.mult||1).buy),function(){toLobby();enterDuel(r);},"brass"],["Back to lobby",function(){toLobby();},"ghost"]]);}
 function ladderEnd(place){
+  if(T.duel)return duelEnd(place);
   var L=ladderList(),r=T.ladder,c=L[r],won=place===1,prize=won?100*(r+1):0;
   S.tour=null;
   if(won){var C=car();C.ladder=Math.max(C.ladder||0,r+1);S.bankroll+=prize;addXP(60+10*r);mission("ladder");if(C.ladder>=L.length)unlock("ladder_champ");}
@@ -5985,15 +6003,26 @@ function evCard(ev){
 }
 function renderCircuit(){
   var h="",sk=seasonKey();if(sk)h+="<div class='seasonbar'>"+SEASON_NAME[sk]+"! This month's special event is open below.</div>";
-  if(S.tour){var ev=EV(S.tour.ev);h+="<div class='panel glass ev active'><div class='venue'>In progress</div><h2>"+(S.tour.ladder!==undefined?"Ladder: vs "+S.tour.players[1].name:ev.n)+"</h2><div class='evmeta muted'>Stage "+(S.tour.stage+1)+" of "+ev.stages.length+" \u00b7 hand "+(S.tour.handNo+1)+" \u00b7 "+S.tour.players[0].stack.toLocaleString()+" chips</div><div class='row'><button class='btn brass' id='b-tour-r'>Resume</button></div></div>";}
+  if(S.tour){var ev=EV(S.tour.ev);h+="<div class='panel glass ev active'><div class='venue'>In progress</div><h2>"+(S.tour.ladder!==undefined?(S.tour.duel?"Duel: vs ":"Ladder: vs ")+S.tour.players[1].name:ev.n)+"</h2><div class='evmeta muted'>Stage "+(S.tour.stage+1)+" of "+ev.stages.length+" \u00b7 hand "+(S.tour.handNo+1)+" \u00b7 "+S.tour.players[0].stack.toLocaleString()+" chips</div><div class='row'><button class='btn brass' id='b-tour-r'>Resume</button></div></div>";}
   var LL=ladderList(),rg=ladderRung(),nx=LL[Math.min(rg,LL.length-1)];
   h+="<div class='panel glass ev'><div class='evtop'><div><div class='venue'>One on one, free entry</div><h2>Heads-up Ladder</h2></div><div class='tier'>"+Math.min(rg,LL.length)+"/"+LL.length+"</div></div>"+
     "<div class='ladder'><div class='luav'>"+avatarSVG(nx.av)+"</div><div style='min-width:0'><b>"+(rg>=LL.length?"Ladder complete. Rematch: ":"Next: ")+nx.name+"</b><div class='muted' style='font-size:.82rem'>"+SKILL_LABEL[nx.skill]+" \u00b7 "+styleText({name:nx.short,cid:nx.id,skill:nx.skill})+"</div><div class='muted' style='font-size:.82rem'>Win "+money(100*(Math.min(rg,LL.length-1)+1))+" and move up a rung.</div></div></div>"+
     "<div class='row'>"+(S.tour?"<div class='lock'>Finish your current event first</div>":"<button class='btn primary' id='b-ladder'>Challenge "+nx.short+"</button>")+"</div></div>";
+  if(duelsOpen()){var dm=duelMult(),rec=duelRec();
+    h+="<div class='panel glass ev'><div class='evtop'><div><div class='venue'>Ladder cleared \u00b7 open challenges</div><h2>Duels</h2></div><div class='tier'>"+rec.w+"-"+rec.l+"</div></div>"+
+      "<p class='muted' style='font-size:.85rem;margin:0 0 8px'>Challenge anyone from the ladder. You both put up the buy-in and the winner takes the pot. Tougher players pay more when you beat them. Net so far: "+money(rec.net)+".</p>"+
+      "<div class='seg' id='duel-mult'>"+DUEL_MULT.map(function(x){return "<button data-m='"+x[0]+"' aria-pressed='"+(x[0]===dm)+"'>"+(x[0]===1?x[1]:x[1]+" \u00d7"+x[0])+"</button>";}).join("")+"</div></div>";
+    h+="<div class='carhead'><h3>Pick an opponent</h3><span>Swipe for more \u2192</span></div><div class='carousel duels'>"+LL.map(function(c,r){var t=duelTerms(r,dm),ok=!S.tour&&S.bankroll>=t.buy;
+      return "<div class='panel glass ev duelcard'><div class='ladder'><div class='luav'>"+avatarSVG(c.av)+"</div><div style='min-width:0'><b>"+c.name+"</b><div class='muted' style='font-size:.82rem'>"+SKILL_LABEL[c.skill]+" \u00b7 "+styleText({name:c.short,cid:c.id,skill:c.skill})+"</div></div></div>"+
+        "<div class='chips'><span>Buy in "+money(t.buy)+"</span><span>Win "+money(t.prize)+"</span></div>"+
+        "<div class='row'><button class='btn "+(ok?"primary":"ghost")+"' data-duel='"+r+"'"+(ok?"":" disabled")+">"+(S.tour?"Finish your event first":ok?"Duel "+c.short:"Need "+money(t.buy))+"</button></div></div>";}).join("")+"</div>";
+  }
   var evs="";EVENTS.forEach(function(ev){if(!ev.hidden)evs+=evCard(ev);});
   h+="<div class='carhead'><h3>Tournaments</h3><span>Swipe for more \u2192</span></div><div class='carousel'>"+evs+"</div>";
   $("l-body").innerHTML=h;
   if($("b-ladder"))$("b-ladder").onclick=enterLadder;
+  $("l-body").querySelectorAll("[data-duel]").forEach(function(b){b.onclick=function(){enterDuel(+b.dataset.duel);};});
+  $("l-body").querySelectorAll("#duel-mult [data-m]").forEach(function(b){b.onclick=function(){S.settings.duelMult=+b.dataset.m;save();renderLobby();};});
   $("l-body").querySelectorAll("[data-tix]").forEach(function(b){b.onclick=function(){enterEvent(b.dataset.tix,false,true);};});
   $("l-body").querySelectorAll("[data-ev]").forEach(function(b){b.onclick=function(){enterEvent(b.dataset.ev,false);};});
   if($("b-tour-r"))$("b-tour-r").onclick=function(){if(S.tour.ladder!==undefined){T=S.tour;enterTable();}else enterEvent(S.tour.ev,true);};
@@ -6352,6 +6381,10 @@ SEATPOS=[null,{left:"0%",top:"58%"},{left:"1%",top:"6%"},{left:"50%",top:"-6%",t
 SEATPOS9=[null,{left:"0%",top:"68%"},{left:"-1%",top:"39%"},{left:"1%",top:"8%"},{left:"34%",top:"-7%",tx:true},{left:"66%",top:"-7%",tx:true},{right:"1%",top:"8%"},{right:"-1%",top:"39%"},{right:"0%",top:"68%"}];
 DEALERPOS=[{left:"calc(50% - 74px)",top:"calc(100% - 18px)"},{left:"calc(0% + 84px)",top:"calc(58% + 34px)"},{left:"calc(1% + 84px)",top:"calc(6% + 34px)"},{left:"calc(50% + 50px)",top:"calc(-6% + 58px)"},{left:"calc(99% - 108px)",top:"calc(6% + 34px)"},{left:"calc(100% - 108px)",top:"calc(58% + 34px)"}];
 DEALERPOS9=[{left:"calc(50% - 74px)",top:"calc(100% - 18px)"},{left:"calc(0% + 76px)",top:"calc(68% + 34px)"},{left:"calc(-1% + 76px)",top:"calc(39% + 34px)"},{left:"calc(1% + 76px)",top:"calc(8% + 34px)"},{left:"calc(34% + 42px)",top:"calc(-7% + 56px)"},{left:"calc(66% + 20px)",top:"calc(-7% + 56px)"},{left:"calc(99% - 98px)",top:"calc(8% + 34px)"},{left:"calc(101% - 98px)",top:"calc(39% + 34px)"},{left:"calc(100% - 98px)",top:"calc(68% + 34px)"}];
+/* heads-up (ladder and duels): the one opponent sits across the table, top center */
+(function(){var s1=SEATPOS[1],d1=DEALERPOS[1];
+  Object.defineProperty(SEATPOS,1,{configurable:true,get:function(){return NS()===2?{left:"50%",top:"-4%",tx:true}:s1;}});
+  Object.defineProperty(DEALERPOS,1,{configurable:true,get:function(){return NS()===2?{left:"calc(50% + 52px)",top:"calc(-4% + 60px)"}:d1;}});})();
 function pxPos(c){return "--cx:"+(c>>2)+";--cy:"+"shdc".indexOf(suitCh(c));}
 function pxLbl(c){return " role='img' aria-label='"+(rankCh(c)==="T"?"10":rankCh(c))+" of "+({s:"spades",h:"hearts",d:"diamonds",c:"clubs"})[suitCh(c)]+"'";}
 function pcFace(c){return "";}
