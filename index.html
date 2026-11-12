@@ -713,8 +713,10 @@ img.px{display:block;width:100%;height:100%}
 .felt.ring9 .board{height:46px}
 .dwc .pc.lg{width:56px;height:80px;--cw:56px;--ch:80px;--deck:var(--deck-ld);--bk:var(--back-ld)}
 .board{gap:4px}
-.fcin{animation:pxflip .5s cubic-bezier(.3,1.25,.5,1) both}
-@keyframes pxflip{0%{transform:translateY(-22px) rotateY(180deg)}45%{transform:translateY(-6px) rotateY(180deg)}100%{transform:rotateY(0)}}
+.fcin{animation:pxflip .3s cubic-bezier(.3,.9,.4,1) both}
+#g-hcards .fcin{animation-name:pxflipdeal;animation-duration:.5s}
+@keyframes pxflip{0%{transform:rotateY(180deg)}100%{transform:rotateY(0)}}
+@keyframes pxflipdeal{0%{transform:translateY(-22px) rotateY(180deg)}45%{transform:translateY(-6px) rotateY(180deg)}100%{transform:rotateY(0)}}
 .pc.dealin{animation:pxdeal .38s cubic-bezier(.2,.9,.3,1.15) both}
 @keyframes pxdeal{from{transform:translate(var(--fx),var(--fy)) scale(.5);opacity:0}30%{opacity:1}to{transform:none;opacity:1}}
 .hcards>*:first-child{transform:translate(2px,-2px)}
@@ -880,21 +882,8 @@ a{color:var(--sky)}
 .raisebox .amt>span.muted{flex:1 1 auto;min-width:0;line-height:1.1;font-size:.78rem}
 .raisebox .amt .btn{flex:none}
 .raisebox .devrow button{min-height:44px}
-#game:has(.raisebox) .felt{min-height:200px}
-#game:has(.raisebox) .hero .pc.lg{width:38px;height:52px;--cw:38px;--ch:52px;--deck:var(--deck-sm);--bk:var(--back-sm)}
-#game:has(.raisebox) .hcards{min-width:80px;height:58px}
-#game:has(.raisebox) .hinfo .sub,#game:has(.raisebox) .hinfo .act,#game:has(.raisebox) .hinfo .gcrow,#game:has(.raisebox) .hinfo .qrow{display:none}
-#game:has(.raisebox) .hinfo .stk{font-size:var(--j15);margin:0}
-#game:has(.raisebox) .hero{padding-top:0;padding-bottom:0}
 @media (max-height:800px){#game .felt{margin-top:36px}}
-#game:has(.raisebox) .hcards>*{transform:none!important}
-#game:has(.raisebox) .hcards{align-items:center;gap:4px}
-#game:has(.raisebox) .hero{align-items:center}
 @media (max-height:780px){
- #game:has(.raisebox) .hero .pc.lg{width:24px;height:34px;--cw:24px;--ch:34px;--deck:var(--deck-xs);--bk:var(--back-xs)}
- #game:has(.raisebox) .hcards{min-width:56px;height:36px}
- #game:has(.raisebox) .seat .scards{display:none}
- #game:has(.raisebox) .felt{min-height:230px}
 }
 
 svg rect{rx:0;ry:0;shape-rendering:crispEdges}
@@ -948,16 +937,7 @@ svg text{font-family:var(--body);font-size:12px}
 .gchip span{filter:brightness(1.4)}
 
 /* hand-over state: controls carry the grade feedback, so the hero compacts like the raise state */
-#game:has(.actions.one) .felt{min-height:230px}
-#game:has(.actions.one) .hero .pc.lg{width:38px;height:52px;--cw:38px;--ch:52px;--deck:var(--deck-sm);--bk:var(--back-sm)}
-#game:has(.actions.one) .hcards{min-width:80px;height:58px;align-items:center;gap:4px}
-#game:has(.actions.one) .hcards>*{transform:none!important}
-#game:has(.actions.one) .hinfo .act,#game:has(.actions.one) .hinfo .qrow{display:none}
-#game:has(.actions.one) .hinfo .stk{font-size:var(--j15);margin:0}
-#game:has(.actions.one) .hero{padding-top:0;padding-bottom:0;align-items:center}
 .gcrow{height:auto;min-height:44px;overflow:visible;flex-wrap:nowrap}
-#game:has(.actions.one) .hcards>*+*,#game:has(.raisebox) .hcards>*+*{margin-left:-8px}
-@media (max-height:780px){#game:has(.actions.one) .felt{min-height:190px}#game:has(.actions.one) .seat .scards{display:none}}
 /* the table stage is exactly one screen: nothing in it can scroll the page */
 #game:not([hidden]),#draw:not([hidden]){overflow:hidden}
 @media (max-height:780px){#game .felt,#draw .felt{min-height:190px}}
@@ -974,16 +954,59 @@ svg text{font-family:var(--body);font-size:12px}
 .bubble{max-width:140px}
 
 /* compact hero: the flip wrappers shrink with their sprites */
-#game:has(.raisebox) .hero .fc.lg,#game:has(.actions.one) .hero .fc.lg{width:38px;height:52px}
 @media (max-height:780px){
- #game:has(.raisebox) .hero .fc.lg{width:24px;height:34px}
- #game:has(.raisebox) .felt.ring9 .seat .av{display:none}
- #game:has(.raisebox) .felt.ring9 .seat .meta{margin-top:0}
 }
 .switch::after,.switch[aria-checked="true"]::after{transform:none!important}
 
 .pxfan{display:flex;align-items:flex-start;width:110px;height:64px;flex:none;overflow:hidden;padding-top:4px}
 .pxfan .pc{flex:none}
+
+/* ===== static table stage: nothing changes size during a hand ===== */
+#game .hero{height:214px;flex:none;align-items:center;overflow:hidden}
+#game .hinfo{align-self:center}
+#game .hinfo .sub,#game .hinfo .act{display:inline}
+#game .hinfo .act{margin-left:6px}
+#game .controls{height:112px;flex:none;position:relative;overflow:visible;padding-top:0;padding-bottom:0}
+#game .controls>.waiting{min-height:48px;display:flex;align-items:center;justify-content:center}
+#game .controls .actions{min-height:48px}
+#game .controls .clockwrap{position:absolute;left:0;right:0;top:-8px;margin:0;z-index:7}
+#game .controls .readrow{position:absolute;left:0;right:0;bottom:calc(100% + 4px);margin:0;z-index:7;border:6px solid transparent;border-image:var(--f-panel) 3 fill/6px;padding:2px 4px}
+#game .controls .coach{position:absolute;left:0;right:0;bottom:calc(100% + 4px);margin:0;max-height:222px;overflow:auto;z-index:8}
+#game #c-rb .raisebox{position:absolute;left:136px;right:0;bottom:calc(100% + 4px);margin:0;z-index:8;padding:2px}
+#game #c-rb .raisebox .presets{grid-template-columns:repeat(auto-fill,minmax(44px,1fr))!important}
+#game #c-rb .raisebox .steps button{font-size:.72rem}
+#game #c-rb .raisebox .amt{flex-wrap:wrap;gap:4px}
+#game #c-rb .raisebox .amt>span.muted{flex:1 0 100%;font-size:.78rem}
+#game #c-rb .raisebox .amt .devrow{flex:1 1 auto;margin:0}
+#game #c-rb .raisebox .amt .devrow button{width:100%}
+#game #c-rb .raisebox .amt .btn{flex:1 1 auto}
+#game .felt{min-height:200px}
+#game #c-rb .raisebox{left:122px}
+#game #c-rb .raisebox .presets{gap:3px}
+#game #c-rb .raisebox .amt .devrow{flex:0 0 42%}
+#game #c-rb .raisebox .amt .btn{flex:1 1 0;min-width:0;padding-left:2px;padding-right:2px}
+/* short or narrow phones: one fixed compact profile, picked by screen size and never by game state */
+@media (max-height:780px),(max-width:380px){
+ #game .hero{height:164px}
+ #game .hero .pc.lg{width:38px;height:52px;--cw:38px;--ch:52px;--deck:var(--deck-sm);--bk:var(--back-sm)}
+ #game .hero .fc.lg{width:38px;height:52px}
+ #game .hcards{min-width:84px;height:60px}
+ #game .hcards>*:first-child{transform:translateX(3px)}
+ #game .hcards>*:nth-child(2){transform:translateX(-3px)}
+ #game .hinfo .qrow{display:none}
+ #game #c-rb .raisebox{left:96px}
+}
+@media (max-height:780px){
+ .felt.ring9 .seat .av{width:28px;height:28px}
+ .felt.ring9 .seat .scards{margin-bottom:-26px}
+ .felt.ring9 .seat .tag{min-height:18px;line-height:18px}
+}
+#game #c-rb .raisebox .presets{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:3px}
+@media (max-height:780px),(max-width:380px){#game #c-rb .raisebox{left:92px}}
+#draw .hero{height:248px;flex:none;overflow:hidden}
+#game #c-rb .raisebox{left:112px}
+#game #c-rb .raisebox .presets button,#game #c-rb .raisebox .steps button{height:44px;min-height:44px;padding:0 1px}
+@media (max-height:780px),(max-width:380px){#game #c-rb .raisebox{left:82px}}
 </style>
 <style id="looks"></style>
 </head>
@@ -1377,6 +1400,11 @@ function fanArt(){var l=document.querySelectorAll(".themehead svg");for(var i=0;
   var d=document.createElement("div");d.className="pxfan pxart";d.setAttribute("aria-hidden","true");var h="",R=[12,11,10,9,8];
   for(var k=0;k<5;k++)h+="<div class='pc sm' style='--cx:"+R[k]+";--cy:0;margin-left:"+(k?-22:0)+"px;margin-top:"+(Math.abs(2-k)*4)+"px'></div>";
   d.innerHTML=h;s.replaceWith(d);}}
+
+/* a deal plays once: after it ends the class comes off, so re-showing a card can never replay it */
+document.addEventListener("animationend",function(e){var t=e.target;if(!t||!t.classList)return;
+  if(t.classList.contains("dealin")||t.classList.contains("deal")){t.classList.remove("dealin","deal");t.style.animationDelay="";}
+  else if(t.classList.contains("fcin")){t.style.animation="none";}},true);
 var sweepQ=false;
 function sweep(){sweepQ=false;fanArt();var l=document.querySelectorAll(PXSEL);for(var i=0;i<l.length;i++)pixelize(l[i]);sweepGrad();tagSeats();}
 function qSweep(){if(!sweepQ){sweepQ=true;Promise.resolve().then(sweep);}}
