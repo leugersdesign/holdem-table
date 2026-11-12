@@ -1007,6 +1007,17 @@ svg text{font-family:var(--body);font-size:12px}
 #game #c-rb .raisebox{left:112px}
 #game #c-rb .raisebox .presets button,#game #c-rb .raisebox .steps button{height:44px;min-height:44px;padding:0 1px}
 @media (max-height:780px),(max-width:380px){#game #c-rb .raisebox{left:82px}}
+
+/* six lobby tabs on one row: slim frames, labels sized to content, settings as a gear */
+#l-tabs{gap:2px;justify-content:space-between}
+#l-tabs button{flex:1 1 auto;min-width:44px;border-width:4px;border-image-slice:2 fill;border-image-width:4px;padding:5px 3px 3px;white-space:nowrap}
+#l-tabs button[data-v="settings"]{flex:0 0 44px;font-size:0;color:transparent;background:var(--gear) center/18px 18px no-repeat}
+#l-tabs button[data-v="settings"][aria-pressed="true"]{background-image:var(--gear-on)}
+#l-tabs button{min-height:44px}
+@media (max-width:339px){#l-tabs button{flex:0 0 auto}}
+#l-tabs button[data-v="settings"]{position:relative;background:none}
+#l-tabs button[data-v="settings"]::after{content:"";position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-12px 0 0 -11px;background:var(--gear) 0 0/22px 22px no-repeat}
+#l-tabs button[data-v="settings"][aria-pressed="true"]::after{background-image:var(--gear-on)}
 </style>
 <style id="looks"></style>
 </head>
@@ -1019,7 +1030,7 @@ svg text{font-family:var(--body);font-size:12px}
       <h1>Hold'em Table</h1>
     </header>
     <div class="panel glass prof" id="l-prof"></div>
-    <div class="seg ltabs" id="l-tabs"><button data-v="circuit">Circuit</button><button data-v="cash">Cash</button><button data-v="draw">Draw</button><button data-v="career">Career</button><button data-v="settings">Settings</button></div>
+    <div class="seg ltabs" id="l-tabs"><button data-v="circuit">Circuit</button><button data-v="hu">Heads-up</button><button data-v="cash">Cash</button><button data-v="draw">Draw</button><button data-v="career">Career</button><button data-v="settings">Settings</button></div>
     <div id="l-body"></div>
   </section>
 
@@ -1405,6 +1416,10 @@ function fanArt(){var l=document.querySelectorAll(".themehead svg");for(var i=0;
 document.addEventListener("animationend",function(e){var t=e.target;if(!t||!t.classList)return;
   if(t.classList.contains("dealin")||t.classList.contains("deal")){t.classList.remove("dealin","deal");t.style.animationDelay="";}
   else if(t.classList.contains("fcin")){t.style.animation="none";}},true);
+
+/* settings gear for the lobby tab bar */
+function gearURL(col){var c=hex(col);return url(paint(11,11,function(x,y){var dx=x-5,dy=y-5,r=Math.sqrt(dx*dx+dy*dy),an=Math.atan2(dy,dx)*180/Math.PI,m=((an%45)+45)%45,tooth=m<14||m>31;
+  return (r>1.5&&r<=3.6)||(r>3.6&&r<=5.3&&tooth)?[c[0],c[1],c[2]]:null;}));}
 var sweepQ=false;
 function sweep(){sweepQ=false;fanArt();var l=document.querySelectorAll(PXSEL);for(var i=0;i<l.length;i++)pixelize(l[i]);sweepGrad();tagSeats();}
 function qSweep(){if(!sweepQ){sweepQ=true;Promise.resolve().then(sweep);}}
@@ -1479,7 +1494,7 @@ function wipe(){if(window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce
   wipeEl.classList.remove("go");void wipeEl.offsetWidth;wipeEl.classList.add("go");}
 
 function init(){
-  buildFrames();setVar("--flychip",chipURL("#feae34","#fee761",1,7));
+  buildFrames();setVar("--gear",gearURL("#f4ecd8"));setVar("--gear-on",gearURL("#3e2731"));setVar("--flychip",chipURL("#feae34","#fee761",1,7));
   new MutationObserver(function(ms){var w=false;for(var i=0;i<ms.length;i++){var m=ms[i];if(m.type==="attributes"){if(m.target.tagName==="SECTION"&&!m.target.hidden)w=true;}}if(w)wipe();qSweep();}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["hidden"]});
   setInterval(sweep,500);
 }
@@ -3456,7 +3471,7 @@ function ladderEnd(place){
   if(won){var C=car();C.ladder=Math.max(C.ladder||0,r+1);S.bankroll+=prize;addXP(60+10*r);mission("ladder");if(C.ladder>=L.length)unlock("ladder_champ");}
   checkBank();save();
   if(won)confetti(won&&r===L.length-1?160:70);
-  showModal("<h2>"+(won?"You beat "+c.name:c.name+" wins this one")+"</h2>"+(won?"<div style='text-align:center'>"+trophySVG()+"</div>":"")+"<p>"+(won?"Rung "+(r+1)+" of "+L.length+" cleared. You won "+money(prize)+"."+(r+1<L.length?" Next up: "+L[r+1].name+".":" You beat the whole ladder."):"\u201c"+pick(c.lines.win)+"\u201d Try again anytime from the Circuit tab.")+"</p>",[["Back to lobby",function(){toLobby();}]]);
+  showModal("<h2>"+(won?"You beat "+c.name:c.name+" wins this one")+"</h2>"+(won?"<div style='text-align:center'>"+trophySVG()+"</div>":"")+"<p>"+(won?"Rung "+(r+1)+" of "+L.length+" cleared. You won "+money(prize)+"."+(r+1<L.length?" Next up: "+L[r+1].name+".":" You beat the whole ladder."):"\u201c"+pick(c.lines.win)+"\u201d Try again anytime from the Heads-up tab.")+"</p>",[["Back to lobby",function(){toLobby();}]]);
 }
 /* missions */
 var MPOOL_D=[["play20","Play 20 hands",20,"hand"],["btnwin","Win 3 pots from the button",3,"btnwin"],["sdwin","Win 2 pots at showdown",2,"sdwin"],["goodfold","Make 3 disciplined folds (no odds to call)",3,"goodfold"],["reads","Make 2 correct reads",2,"readok"],["steal","Win 3 pots without a showdown",3,"nosdwin"],["threebet","3-bet preflop twice",2,"threebet"],["puzzles","Solve all 3 daily puzzles",3,"puzzle"],["bigwin","Win a pot with two pair or better",1,"bigwin"],["valstation","Win 2 showdowns against a calling station",2,"valstation"],["steal","Steal the blinds 3 times from a late seat",3,"steal"],["riverfold","Make 2 good river folds",2,"riverfold"],["3bloose","3-bet a loose player's raise",1,"3bloose"],["foldtight","Fold to a tight player's bet when you're beaten",2,"foldtight"]];
@@ -6004,9 +6019,19 @@ function evCard(ev){
 function renderCircuit(){
   var h="",sk=seasonKey();if(sk)h+="<div class='seasonbar'>"+SEASON_NAME[sk]+"! This month's special event is open below.</div>";
   if(S.tour){var ev=EV(S.tour.ev);h+="<div class='panel glass ev active'><div class='venue'>In progress</div><h2>"+(S.tour.ladder!==undefined?(S.tour.duel?"Duel: vs ":"Ladder: vs ")+S.tour.players[1].name:ev.n)+"</h2><div class='evmeta muted'>Stage "+(S.tour.stage+1)+" of "+ev.stages.length+" \u00b7 hand "+(S.tour.handNo+1)+" \u00b7 "+S.tour.players[0].stack.toLocaleString()+" chips</div><div class='row'><button class='btn brass' id='b-tour-r'>Resume</button></div></div>";}
+  var evs="";EVENTS.forEach(function(ev){if(!ev.hidden)evs+=evCard(ev);});
+  h+="<div class='carhead'><h3>Tournaments</h3><span>Swipe for more \u2192</span></div><div class='carousel'>"+evs+"</div>";
+  $("l-body").innerHTML=h;
+  $("l-body").querySelectorAll("[data-tix]").forEach(function(b){b.onclick=function(){enterEvent(b.dataset.tix,false,true);};});
+  $("l-body").querySelectorAll("[data-ev]").forEach(function(b){b.onclick=function(){enterEvent(b.dataset.ev,false);};});
+  if($("b-tour-r"))$("b-tour-r").onclick=function(){if(S.tour.ladder!==undefined){T=S.tour;enterTable();}else enterEvent(S.tour.ev,true);};
+}
+function renderHeadsUpTab(){
+  var h="";
+  if(S.tour&&S.tour.ladder!==undefined){var ev=EV(S.tour.ev);h+="<div class='panel glass ev active'><div class='venue'>In progress</div><h2>"+(S.tour.ladder!==undefined?(S.tour.duel?"Duel: vs ":"Ladder: vs ")+S.tour.players[1].name:ev.n)+"</h2><div class='evmeta muted'>Stage "+(S.tour.stage+1)+" of "+ev.stages.length+" \u00b7 hand "+(S.tour.handNo+1)+" \u00b7 "+S.tour.players[0].stack.toLocaleString()+" chips</div><div class='row'><button class='btn brass' id='b-tour-r'>Resume</button></div></div>";}
   var LL=ladderList(),rg=ladderRung(),nx=LL[Math.min(rg,LL.length-1)];
   h+="<div class='panel glass ev'><div class='evtop'><div><div class='venue'>One on one, free entry</div><h2>Heads-up Ladder</h2></div><div class='tier'>"+Math.min(rg,LL.length)+"/"+LL.length+"</div></div>"+
-    "<div class='ladder'><div class='luav'>"+avatarSVG(nx.av)+"</div><div style='min-width:0'><b>"+(rg>=LL.length?"Ladder complete. Rematch: ":"Next: ")+nx.name+"</b><div class='muted' style='font-size:.82rem'>"+SKILL_LABEL[nx.skill]+" \u00b7 "+styleText({name:nx.short,cid:nx.id,skill:nx.skill})+"</div><div class='muted' style='font-size:.82rem'>Win "+money(100*(Math.min(rg,LL.length-1)+1))+" and move up a rung.</div></div></div>"+
+    "<div class='ladder'><div class='luav'>"+avatarSVG(nx.av)+"</div><div style='min-width:0'><b>"+(rg>=LL.length?"Ladder complete. Rematch: ":"Next: ")+nx.name+"</b><div class='muted' style='font-size:.82rem'>"+SKILL_LABEL[nx.skill]+" \u00b7 "+styleText({name:nx.short,cid:nx.id,skill:nx.skill})+"</div><div class='muted' style='font-size:.82rem'>Win "+money(100*(Math.min(rg,LL.length-1)+1))+(rg>=LL.length?".":" and move up a rung.")+"</div></div></div>"+
     "<div class='row'>"+(S.tour?"<div class='lock'>Finish your current event first</div>":"<button class='btn primary' id='b-ladder'>Challenge "+nx.short+"</button>")+"</div></div>";
   if(duelsOpen()){var dm=duelMult(),rec=duelRec();
     h+="<div class='panel glass ev'><div class='evtop'><div><div class='venue'>Ladder cleared \u00b7 open challenges</div><h2>Duels</h2></div><div class='tier'>"+rec.w+"-"+rec.l+"</div></div>"+
@@ -6017,15 +6042,11 @@ function renderCircuit(){
         "<div class='chips'><span>Buy in "+money(t.buy)+"</span><span>Win "+money(t.prize)+"</span></div>"+
         "<div class='row'><button class='btn "+(ok?"primary":"ghost")+"' data-duel='"+r+"'"+(ok?"":" disabled")+">"+(S.tour?"Finish your event first":ok?"Duel "+c.short:"Need "+money(t.buy))+"</button></div></div>";}).join("")+"</div>";
   }
-  var evs="";EVENTS.forEach(function(ev){if(!ev.hidden)evs+=evCard(ev);});
-  h+="<div class='carhead'><h3>Tournaments</h3><span>Swipe for more \u2192</span></div><div class='carousel'>"+evs+"</div>";
   $("l-body").innerHTML=h;
   if($("b-ladder"))$("b-ladder").onclick=enterLadder;
   $("l-body").querySelectorAll("[data-duel]").forEach(function(b){b.onclick=function(){enterDuel(+b.dataset.duel);};});
   $("l-body").querySelectorAll("#duel-mult [data-m]").forEach(function(b){b.onclick=function(){S.settings.duelMult=+b.dataset.m;save();renderLobby();};});
-  $("l-body").querySelectorAll("[data-tix]").forEach(function(b){b.onclick=function(){enterEvent(b.dataset.tix,false,true);};});
-  $("l-body").querySelectorAll("[data-ev]").forEach(function(b){b.onclick=function(){enterEvent(b.dataset.ev,false);};});
-  if($("b-tour-r"))$("b-tour-r").onclick=function(){if(S.tour.ladder!==undefined){T=S.tour;enterTable();}else enterEvent(S.tour.ev,true);};
+  if($("b-tour-r"))$("b-tour-r").onclick=function(){T=S.tour;enterTable();};
 }
 function renderCashTab(){
   var h="";
@@ -6139,7 +6160,7 @@ function renderLobby(){
   car();if(S.settings.venueLooks===undefined)S.settings.venueLooks=true;if(S.settings.season===undefined)S.settings.season=true;if(S.settings.coach===undefined)S.settings.coach=true;if(S.settings.hud===undefined)S.settings.hud=true;if(S.settings.tilt3d===undefined)S.settings.tilt3d=false;applySeason();["sound","haptics","fx2","liveChips"].forEach(function(k){if(S.settings[k]===undefined)S.settings[k]=true;});if(S.settings.clock===undefined)S.settings.clock=0;if(S.settings.liveHelp===undefined)S.settings.liveHelp=false;
   renderProfile();
   $("l-tabs").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.v===LTAB?"true":"false");b.onclick=function(){LTAB=b.dataset.v;renderLobby();window.scrollTo({top:0});};});
-  if(LTAB==="circuit")renderCircuit();else if(LTAB==="cash")renderCashTab();else if(LTAB==="challenge")renderChallengeTab();else if(LTAB==="draw")renderDrawTab();else if(LTAB==="home")renderHomeTab();else if(LTAB==="train")renderTrainTab();else if(LTAB==="real")renderRealTab();else if(LTAB==="career")renderCareer();else renderSettings();
+  if(LTAB==="circuit")renderCircuit();else if(LTAB==="hu")renderHeadsUpTab();else if(LTAB==="cash")renderCashTab();else if(LTAB==="challenge")renderChallengeTab();else if(LTAB==="draw")renderDrawTab();else if(LTAB==="home")renderHomeTab();else if(LTAB==="train")renderTrainTab();else if(LTAB==="real")renderRealTab();else if(LTAB==="career")renderCareer();else renderSettings();
 }
 
 $("g-leave").onclick=leaveTable;
