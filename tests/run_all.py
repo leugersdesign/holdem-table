@@ -5,7 +5,7 @@ not fail the run, but they are never hidden. Seeds are fixed inside the tests, s
 """
 import importlib, os, sys, time, traceback
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-MODULES = ['test_evaluator', 'test_equity', 'test_ranges', 'test_ev', 'test_engine', 'test_opponents', 'test_strategy', 'test_coaching', 'test_reliability', 'test_adversarial', 'test_rules', 'test_solver', 'test_gt', 'test_autofold_budget', 'test_calling']
+MODULES = ['test_evaluator', 'test_equity', 'test_ranges', 'test_ev', 'test_engine', 'test_opponents', 'test_strategy', 'test_coaching', 'test_reliability', 'test_adversarial', 'test_rules', 'test_solver', 'test_gt', 'test_autofold_budget', 'test_calling', 'test_headsup']
 
 def main(only=None):
     passed = []; failed = []; known = []; t0 = time.time()
