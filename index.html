@@ -2449,6 +2449,10 @@ function preRangeCodes(i){
   if(i===H.preAgg)return codes.filter(function(c){return sk==="beginner"?EQ[c]>=66:sk==="regular"?inChart(pos,c)||EQ[c]>=62:inChart(pos,c)||EQ[c]>=57;});
   return codes.filter(function(c){return sk==="beginner"?EQ[c]>=42:sk==="regular"?EQ[c]>=55:EQ[c]>=50;});
 }
+/* facing a 3-bet in solver mode: the chart-based 3-bet range (the hands this app tells you to 3-bet against that open, plus suited wheel aces), not a player-type read */
+function neutral3Combos(i){var W=rvPreW(i),dead={},out=[];H.s[0].cards.concat(H.board).forEach(function(c){dead[c]=1;});
+  Object.keys(W).forEach(function(c){if(!(W[c]>=0.5))return;combosOfCode(c).forEach(function(x){if(!dead[x[0]]&&!dead[x[1]])out.push(x);});});
+  return out.length>=12?out:villainCombos(i);}
 function villainCombos(i){
   var dead={};H.s[0].cards.concat(H.board).forEach(function(c){dead[c]=1;});
   var combos=[];preRangeCodes(i).forEach(function(c){combosOfCode(c).forEach(function(x){if(!dead[x[0]]&&!dead[x[1]])combos.push(x);});});
@@ -3823,15 +3827,15 @@ function rangeCard(r){
     "<div style='font-size:.88rem;margin-top:3px'>Hands that beat you right now: <b>"+Math.round(mx.beats*100)+"%</b> of what they likely hold.</div></div>";}
 /* how much of its raw equity a hand actually wins after the flop */
 function rkv(ch){return 12-R.indexOf(ch);}
-function realizeF(code,oop){var pair=code.length===2,su=code[2]==="s",hi=rkv(code[0]),lo=rkv(code[1]),gap=hi-lo,r;
-  if(pair)r=0.86;else if(su)r=(hi===12||gap<=2)?0.86:0.78;else r=lo>=8?0.78:hi===12?0.68:0.55;
-  return oop?r*0.86:r;}
+function realizeF(code,oop){var pair=code.length===2,su=code[2]==="s",hi=rkv(code[0]),lo=rkv(code[1]),gap=hi-lo,r;   /* share of raw equity a hand turns into winnings when it calls: solver studies put in-position callers near 100% */
+  if(pair)r=0.95;else if(su)r=(hi===12||gap<=2||lo>=8)?0.95:0.85;else r=lo>=8?0.88:hi===12?0.72:0.6;
+  return oop?r*0.78:r;}
 function neutralRange(j){/* chart-based range narrowed by the board and the action, with no read on the player */var dead=(H.s[0]&&H.s[0].cards?H.s[0].cards:[]).concat(H.board),R=gtRangeW(j,Math.min(4,H.street+1),dead,null,0.02),t=0;R.w.forEach(function(x){t+=x;});return {i:j,combos:R.cards,w:R.w,tot:t,prior:R.w,collapsed:false,hist:(H.hist||[]).filter(function(e){return e.i===j&&e.st>0;})};}
 function adviseHero(full){
   var hs=H.s[0],L=legal(0),pot=potTotal(),need=L.toCall>0?L.toCall/(pot+L.toCall):0,code=codeOf(hs.cards),pos=H.pos[0],ck=chartKey(pos);
   var opp=live().filter(function(i){return i!==0;}),nO=Math.max(1,Math.min(opp.length,4)),bettor=H.lastAgg>0&&L.toCall>0?H.lastAgg:-1;
   var dR=eqRandomD(hs.cards,H.board,nO,full?(H.street===0?1500:2000):500),eqR=dR.eq,Rg=null,dV=null,eqV=null,vc=null,cush=0,ip=heroIP();
-  if(H.street===0){if(bettor>0){vc=villainCombos(bettor);dV=vc.length?eqVsCombosD(hs.cards,H.board,vc,full?2500:700):null;eqV=dV?dV.eq:null;}}
+  if(H.street===0){if(bettor>0){vc=gtOn()&&H.raises===2?neutral3Combos(bettor):villainCombos(bettor);dV=vc.length?eqVsCombosD(hs.cards,H.board,vc,full?2500:700):null;eqV=dV?dV.eq:null;}}
   else if(opp.length){Rg=opp.map(gtOn()?neutralRange:actionRange);dV=eqVsRangesD(hs.cards,H.board,Rg,full?2500:800);eqV=dV.n?dV.eq:null;}
   var advice,why,eqUse=eqV!==null?eqV:eqR,premium=["AA","KK","QQ","AKs","AKo"].indexOf(code)>=0;
   var pfK=function(ps){return {UTG:"UTG",UTG1:"UTG",UTG2:"UTG",MP:"UTG",LJ:"HJ",HJ:"HJ",CO:"CO",BTN:"BTN",SB:"SB"}[ps]||null;};
@@ -3859,23 +3863,25 @@ function adviseHero(full){
       var opP=chartKey(H.pos[H.preAgg]),ev=VSOPEN[opP][code],bb=pos==="BB"||H.straddle===0,behind=H.seats.filter(function(j){return j!==0&&!H.s[j].folded&&!H.s[j].acted;}).length;
       var callers=H.seats.filter(function(j){return j!==0&&j!==H.preAgg&&!H.s[j].folded&&H.s[j].tot>=H.cur;}).length,oop=bb||pos==="SB";
       var junkO=code.length===3&&code[2]==="o"&&rkv(code[1])<8&&code[0]!=="A",real=realizeF(code,oop),evM=ev/100*Math.pow(junkO?0.75:code.length===2||code[2]==="s"?0.88:0.82,callers);
-      var thr=need/real+(bb?0:0.03*Math.min(behind,3)),lateOp=["CO","BTN","SB"].indexOf(opP)>=0;eqUse=evM;
+      var thr=need/real+(bb?0:0.015*Math.min(behind,2)),lateOp=["CO","BTN","SB"].indexOf(opP)>=0;eqUse=evM;
       var mw=callers?" With "+callers+" caller"+(callers>1?"s":"")+" already in, your share of the pot drops to about "+p1(evM)+".":"";
       if(premium||ev>=57){advice="Reraise";why=code+" has about "+ev+"% equity against a "+opP+" opening range. That's strong enough to 3-bet to about "+(callers?"4 times their raise plus 1 raise per caller":"3 times their raise")+".";}
       else if((junkO&&!(bb&&lateOp&&callers===0))||(code[2]==="o"&&code[0]==="A"&&rkv(code[1])<8&&(callers>0||!lateOp))){advice=L.toCall===0?"Check":"Fold";why=code+" is a weak offsuit hand. Against a raise it makes second-best pairs and wins less than its raw equity suggests"+(callers?", and with callers in it's even worse":"")+". Fold it, even with a good price.";}
       else if(evM>=thr){advice="Call";why="Against a "+opP+" opening range, "+code+" has about "+ev+"% equity."+mw+" The price needs "+p1(need)+", and about "+p1(thr)+" once you allow for how well this kind of hand plays "+(oop?"out of position":"after the flop")+".";}
       else{advice=L.toCall===0?"Check":"Fold";why="Against a "+opP+" opening range, "+code+" has about "+ev+"% equity."+mw+" A hand like this needs about "+p1(thr)+" here, allowing for how it plays "+(oop?"out of position":"after the flop")+".";}
     }else{
+      var oop3=!ip,real3=realizeF(code,oop3),thr3=need/real3+0.02,junk3=code.length===3&&code[2]==="o"&&!(rkv(code[1])>=9||code==="AQo"||code==="AJo"&&!oop3);
       if(premium&&["AA","KK"].indexOf(code)>=0){advice="Reraise";why="Aces or kings. Get the money in.";}
-      else if(eqV!==null&&eqV>=need+0.04&&(premium||EQ[code]>=63)){advice="Call";why="This is a reraised pot, so their range is strong. Your equity against it is "+p1(eqV)+", above the "+p1(need)+" you need.";}
-      else{advice=L.toCall===0?"Check":"Fold";why="This is a reraised pot, so their range is strong. Your equity against it is "+p1(eqUse)+". You need "+p1(need+0.04)+".";}
+      else if(eqV!==null&&!junk3&&eqV>=thr3){advice="Call";why="This is a reraised pot, so their range is strong. Your equity against it is "+p1(eqV)+". The price needs "+p1(need)+", and about "+p1(thr3)+" once you allow for playing "+(oop3?"out of position":"in position")+". Call.";}
+      else{advice=L.toCall===0?"Check":"Fold";why="This is a reraised pot, so their range is strong. Your equity against it is "+p1(eqUse)+(junk3?", and an offsuit hand like "+code+" plays poorly against a reraising range":"")+". You need about "+p1(thr3)+".";}
     }
   }else{
     if(L.toCall>0){
       var bp=T.players[bettor>0?bettor:opp[0]],E=eff(bp),nm=bp.name;
       if(H.street<3){if(!gtOn()&&E.agg>=1.1)cush+=0.02;if(!ip)cush+=0.02;}
       var need2=need+cush;
-      if(eqUse>=0.65&&L.canRaise){advice="Raise";why="Against the hands "+nm+"'s betting points to, your equity is "+p1(eqUse)+". You're ahead of most of them, so raise for value.";}
+      var facedRaise=(H.hist||[]).some(function(e){return e.i===0&&e.st===H.street&&(e.a==="bet"||e.a==="raise");}),rThr=facedRaise?0.75:0.65;
+      if(eqUse>=rThr&&L.canRaise){advice="Raise";why="Against the hands "+nm+"'s betting points to, your equity is "+p1(eqUse)+". You're ahead of most of them, so "+(facedRaise?"reraise":"raise")+" for value.";}
       else if(eqUse>=need2){advice="Call";why="Against the hands "+nm+"'s betting points to, your equity is "+p1(eqUse)+". You need "+p1(need)+" to call"+(cush?", plus "+Math.round(cush*100)+" points because "+(H.street<3?"more bets can come":"")+(!ip?" and you're out of position":"")+",":"")+" so calling is right.";}
       else{advice="Fold";why="Against the hands "+nm+"'s betting points to, your equity is only "+p1(eqUse)+". You need "+p1(need2)+"."+(eqR>=need2?" You'd be fine against random hands, but this betting says they're much stronger than random.":"");}
     }else{
