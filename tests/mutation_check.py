@@ -4,6 +4,10 @@ import os, subprocess, sys, tempfile
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 SRC = open(os.path.join(ROOT, 'index.html'), encoding='utf-8').read()
 MUTS = [
+ ('auto-fold ignores limpers in front', 'if(H.raises!==0||limpersIn()>0||', 'if(H.raises!==0||', 'test_autofold_budget'),
+ ('the hero can fold for free', 'if(d[0]==="fold"&&legal(0).toCall<=0)return;', '', 'test_autofold_budget'),
+ ('pot budget grows the pot by 2x a street instead of 7/3', 'st.p0*(Math.pow(7/3,N)-1)/2', 'st.p0*(Math.pow(2,N)-1)/2', 'test_autofold_budget'),
+ ('big calls counted as too strong', 'if(d[0]==="raise"){if(!H.pbOver)', 'if(d[0]!=="check"){if(!H.pbOver)', 'test_autofold_budget'),
  ('sampler ignores the importance weight (biased joint)', 'W*=A;used[r.c1[pick]]', 'used[r.c1[pick]]', 'test_equity'),
  ('call EV adds the call instead of paying it', 'return eq*rakeNet(pot+call,flop)*rho-call;}', 'return eq*rakeNet(pot+call,flop)*rho+call;}', 'test_ev'),
  ('flush ranked below a straight in the evaluator', 'return score(5,topBits(sm[i],5,[]));', 'return score(3,topBits(sm[i],5,[]));', 'test_evaluator'),
