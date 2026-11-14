@@ -2142,19 +2142,41 @@ function botPre(i){
    When a bot would fold to a bet heads-up, it continues by hand strength against the bet size, its draws, and its type.
    Targets (half-pot c-bet on the flop): solid players fold about 40%, stations about 20%, nits about 60%. */
 var HU_LK={station:1.3,whale:1.3,limper:1.2,weekend:1.05,shark:1,thinker:1,lag:1,maniac:1.2,wild:1.1,tag:0.95,shorty:0.95,nit:0.8};
-function huPostAdj(i,d){var L=legal(i);if(!(L.toCall>0)||!d||d[0]!=="fold")return d;
-  var k=liveKey(T.players[i]),LK=HU_LK[k]||1,st=H.street,pot0=Math.max(1,potTotal()-L.toCall),f=L.toCall/pot0,I=hcInfo(H.s[i].cards,H.board),S=I.S,o=st<3?(I.outs||0):0;
-  var base=st===3?(f<=0.4?2:f<=0.8?3:4):(f<=0.4?1.5:f<=0.8?2:f<=1.2?3:4)+(st===2?0.5:0);base-=(LK-1)*4;
-  var aggr=["maniac","lag","shark","wild","thinker"].indexOf(k)>=0;
-  if(aggr&&L.canRaise&&(S>=6||(o>=8&&st===1))&&RNG()<0.35)return ["raise",Math.min(L.maxTo,Math.max(L.minTo,Math.round(H.cur*3)))];
+function huPostAdj(i,d){var L=legal(i);if(!(L.toCall>0)||!d)return d;
+  var p=T.players[i],k=liveKey(p),LK=HU_LK[k]||1,st=H.street,pot0=Math.max(1,potTotal()-L.toCall),f=L.toCall/pot0,I=hcInfo(H.s[i].cards,H.board),S=I.S,o=st<3?(I.outs||0):0;
+  var aggr=["maniac","lag","shark","wild","thinker"].indexOf(k)>=0,raiseTo=function(){return ["raise",Math.min(L.maxTo,Math.max(L.minTo,Math.round(H.cur*3)))];};
+  /* facing a shove, or a bet that commits most of the stack: call only with hands that can stand it at this depth */
+  var stk=p.stack,commit=L.toCall>=stk*0.6||H.s[1-i]&&H.s[1-i].allin;
+  if(commit){var spr0=stk/pot0,need=(spr0>8?4.5:spr0>4?4:spr0>2?3.5:3)-(LK-1)*3;
+    if(d[0]==="raise"&&S>=Math.max(need,5))return d;
+    if(S>=need)return ["call"];
+    if(st<3&&((o>=12&&spr0<=4)||(o>=8&&spr0<=2.5)))return ["call"];
+    if(LK>=1.2&&S>=2&&RNG()<0.12)return ["call"];   /* stations sometimes call it off light */
+    return ["fold"];}
+  /* any other bet: the bigger the bet, the stronger the hand it takes to continue */
+  var base=Math.max(0.5,(f<=0.4?1:f<=0.8?1.5:f<=1.2?2:2.5)+(st===2?0.4:st===3?0.6:0)-(LK-1)*3);
+  if(d[0]==="raise"&&S>=5)return d;
+  var chk=(H.hist||[]).some(function(e){return e.i===i&&e.st===st&&e.a==="check";});
+  if(chk&&L.canRaise&&S>=5&&f<=1.2&&RNG()<(aggr?0.55:0.3))return raiseTo();   /* checked a strong hand: check-raise it */
+  if(aggr&&L.canRaise&&(S>=6||(o>=8&&st===1&&f<=0.8))&&RNG()<0.35)return raiseTo();
   if(S>=base)return ["call"];
-  if(st<3&&o>=8&&f<=1.5*LK)return ["call"];
-  if(st===1&&o>=4&&f<=0.55*LK)return ["call"];
+  if(st<3&&o>=8&&f<=1.6*LK)return ["call"];
+  /* light calls with no pair: ace-high, king-high, overcards and backdoors keep a defender from folding too much.
+     Most against small bets on the flop, fewer as the bet grows and the board runs out, by type */
   var hiC=Math.max(H.s[i].cards[0]>>2,H.s[i].cards[1]>>2),hb=hiC===12?0.12:hiC===11?0.06:0;
-  var pf=((st===1?0.25:st===2?0.12:0.05)*Math.pow(LK,3)+(st<3?hb:hb*0.5))*(f<=0.55?1:f<=0.9?0.6:0.35)+(S>=0.8?0.05:0);if(RNG()<pf)return ["call"];   /* floats and bluff-catches: stations float a lot, nits rarely */
-  if(aggr&&st===1&&f<=0.6&&L.canRaise&&RNG()<0.05*LK)return ["raise",Math.min(L.maxTo,Math.max(L.minTo,Math.round(H.cur*3)))];   /* the odd check-raise bluff */
-  return d;}
-function botPost(i){var d=botPost0(i);return huLive()?huPostAdj(i,d):d;}
+  var air=Math.min(0.85,(f<=0.4?0.42:f<=0.8?0.33:f<=1.2?0.27:f<=1.7?0.2:0.04)*(st===1?1:st===2?0.7:0.45)*Math.pow(LK,2)+hb*(f<=1.2?1:0.5)+(S>=0.8?0.08:0));
+  if(RNG()<air)return ["call"];
+  if(aggr&&st===1&&f<=0.6&&L.canRaise&&RNG()<0.05*LK)return raiseTo();   /* the odd check-raise bluff */
+  return ["fold"];}
+/* heads-up leads: ring logic leads out with nearly every strong hand, so a check always meant weak. Out of position and
+   first to act after the other player made the last bet, a bot checks most of the time, strong hands included, by type */
+var HU_DONK={shark:0.27,thinker:0.27,tag:0.3,shorty:0.3,lag:0.38,weekend:0.45,station:0.5,limper:0.5,whale:0.6,nit:0.32,maniac:0.85,wild:0.7};
+function huLeadAdj(i,d){if(!d||d[0]!=="raise"||H.cur>0)return d;var j=H.seats[0]===i?H.seats[1]:H.seats[0];
+  if(H.pos[i]==="BTN"||i===H.sbI)return d;                                      /* in position: betting when checked to is fine */
+  var lastAgg=-1;(H.hist||[]).forEach(function(e){if(e.st<H.street&&(e.a==="raise"||e.a==="bet"))lastAgg=e.i;});
+  if(lastAgg!==j)return d;                                                         /* only a lead into the player who bet last */
+  return RNG()<(HU_DONK[liveKey(T.players[i])]||0.35)?d:["check"];}
+function botPost(i){var d=botPost0(i);if(!huLive())return d;return legal(i).toCall>0?huPostAdj(i,d):huLeadAdj(i,d);}
 function botPost0(i){if(useLive(T.players[i]))return liveBotPost(i);
   var p=T.players[i],s=H.s[i],pr=PROF[p.skill],E=eff(p),L=legal(i),nOpp=live().length-1;
   var dead={};s.cards.concat(H.board).forEach(function(c){dead[c]=1;});
