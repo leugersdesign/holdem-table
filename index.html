@@ -1055,11 +1055,31 @@ svg text{font-family:var(--body);font-size:12px}
  #game .hero.pbon .pbrow.fl .pbtop{flex:1 1 auto;min-width:0}
 }
 /* read prompt: one slim row under the action buttons, beside Deviate */
+.rtsvg{width:100%;height:auto;display:block;margin:8px 0 4px}
+.rtsvg text{font-family:var(--body);font-size:11px}
+.rtsvg .rtl{fill:var(--text)}.rtsvg .rtv{fill:var(--gold);font-size:10.5px}.rtsvg .rty{fill:var(--muted);font-size:10px}.rtsvg .rtqm{fill:var(--gold);font-size:12px}
+.rtsvg .rtn rect{fill:var(--night);stroke:var(--slate);stroke-width:1.5}
+.rtsvg .rt-d rect{fill:var(--slate);stroke:var(--steel)}
+.rtsvg .rt-o.rt-r rect{stroke:var(--red)}.rtsvg .rt-o.rt-c rect{stroke:var(--leaf)}.rtsvg .rt-o.rt-f rect{stroke:var(--fog)}.rtsvg .rt-o.rt-k rect{stroke:var(--sky)}
+.rtsvg .rtn.on rect{stroke:var(--gold);stroke-width:2.5}.rtsvg .rtn.off{opacity:.42}
+.rtsvg .rte line{stroke:var(--steel);stroke-width:1.5}.rtsvg .rte path{fill:var(--steel)}
+.rtsvg .rte.on line{stroke:var(--gold);stroke-width:2.5}.rtsvg .rte.on path{fill:var(--gold)}.rtsvg .rte.off{opacity:.35}
+.rtverd{font-size:.95rem;margin:2px 0}.rtverd b{color:var(--gold)}
+.rtsteps{font-size:.86rem;margin:6px 0;padding-left:20px}.rtsteps li{margin:4px 0}
+.rtnote{font-size:.84rem;border-left:3px solid var(--gold);padding-left:8px;margin:8px 0}
+.rtmath td{text-align:left!important;vertical-align:top;font-size:.84rem}.rtmath td:first-child{white-space:nowrap;padding-right:8px}
+.rtd{margin:4px 0}.rtd summary{cursor:pointer;font-weight:700;font-size:.9rem;padding:4px 0}
+
+.rtfb{font-size:.8rem;color:var(--muted);text-align:center;margin:0 0 6px}
 #game .controls .ctlrow{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px}
 #game .controls .ctlrow .devrow{margin:0;flex:none}
 #game .controls .readrow{position:static;flex:1 1 auto;min-width:0;display:flex;flex-wrap:nowrap;align-items:center;gap:4px;margin:0;padding:0;border:0;background:none;font-size:.75rem}
 #game .controls .readrow span{flex:none;color:var(--fog);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%}
 #game .controls .readrow span:only-child{max-width:none}
+#game .controls .readrow.rtqrow{flex-wrap:wrap;gap:6px;padding:8px 6px;border:6px solid transparent;border-image:var(--f-panel) 3 fill/6px;font-size:.85rem}
+#game .controls .readrow.rtqrow span{flex:1 0 100%;max-width:none;white-space:normal;overflow:visible;color:var(--text);font-size:.92rem;margin-bottom:2px}
+#game .controls .readrow.rtqrow button{flex:1 1 0;min-height:46px;font-size:.9rem}
+#game .controls .readrow.rtqrow .rtskip{flex:0 0 auto;opacity:.75;padding:5px 10px}
 #game .controls .readrow button{flex:1 1 0;min-width:0;padding:4px 2px;min-height:36px;font-size:.75rem;line-height:1}
 </style>
 </head>
@@ -2439,11 +2459,14 @@ function renderControls(){
   if(H.read)rdHTML="<div class='readrow'><span>Read: "+H.read.who+" is "+H.read.guessLabel+".</span></div>";
   var clk=+S.settings.clock?"<div class='clockwrap'><div id='c-clock' class='clockbar'></div></div>":"";
   var dvHTML=gcOn()?"<div class='devrow'><button id='c-dev' aria-pressed='"+(!!H.devNext)+"'>"+(H.devNext?"Deviating: not counted against you":"Deviate")+"</button></div>":"";
-  c.innerHTML=clk+"<div class='actions'><button class='btn b-fold' id='c-fold'"+(L.toCall>0?"":" disabled aria-label='Fold is off: checking is free'")+">Fold</button><button class='btn b-call' id='c-call'>"+(L.toCall>0?"Call "+chips(L.toCall):"Check")+"</button>"+(L.canRaise?"<button class='btn b-raise' id='c-raise'>"+(H.cur===0?"Bet":"Raise")+"</button>":"<button class='btn b-raise' disabled>Raise</button>")+"</div>"+(rdHTML||dvHTML?"<div class='ctlrow'>"+rdHTML+dvHTML+"</div>":"")+"<div id='c-rb'></div>";
+  var rq=rtDrillHTML();if(rq){c.innerHTML=rq;rtDrillWire(c);return;}
+  var rtHTML=rtOn()?"<div class='devrow'><button id='c-rt'>Routine</button></div>":"",fbHTML=rtDrillOn()&&RT_Q.k===rtKey()&&RT_Q.fb&&!rdHTML?"<div class='rtfb'>"+RT_Q.fb+"</div>":"";
+  c.innerHTML=fbHTML+clk+"<div class='actions'><button class='btn b-fold' id='c-fold'"+(L.toCall>0?"":" disabled aria-label='Fold is off: checking is free'")+">Fold</button><button class='btn b-call' id='c-call'>"+(L.toCall>0?"Call "+chips(L.toCall):"Check")+"</button>"+(L.canRaise?"<button class='btn b-raise' id='c-raise'>"+(H.cur===0?"Bet":"Raise")+"</button>":"<button class='btn b-raise' disabled>Raise</button>")+"</div>"+(rdHTML||dvHTML||rtHTML?"<div class='ctlrow'>"+rdHTML+rtHTML+dvHTML+"</div>":"")+"<div id='c-rb'></div>";
   $("c-fold").onclick=function(){if(L.toCall>0)heroDo(["fold"]);};
   $("c-call").onclick=function(){heroDo(L.toCall>0?["call"]:["check"]);};
   if(L.canRaise)$("c-raise").onclick=function(){openRaise(L);};
   if($("c-dev"))$("c-dev").onclick=function(){H.devNext=!H.devNext;renderControls();};
+  if($("c-rt"))$("c-rt").onclick=rtOpen;
   c.querySelectorAll("[data-rd]").forEach(function(b){b.onclick=function(){var q=T.players[bt],tr=H.betCls[bt];H.read={who:q.name,key:readKey(q),guess:b.dataset.rd,guessLabel:{strong:"strong",draw:"on a draw",weak:"weak or medium"}[b.dataset.rd],truth:tr,truthGroup:tr==="strong"?"strong":tr==="draw"?"draw":"weak"};renderControls();};});
   if(clk)startClock();
 }
@@ -4873,7 +4896,7 @@ function coachLinesHTML(d){if(!d||!(d.model||d.gradedVs))return "";var L=[];
 function coachTable(title,map,N){var keys=Object.keys(map).sort(function(a,b){return map[b].n-map[a].n;});if(!keys.length)return "";
   return "<div class='lbl'>"+title+"</div><table class='st'><tr><th>Group</th><th>Decisions</th><th>EV lost per 100 decisions</th></tr>"+keys.map(function(k){var e=map[k],ci=ciOf(e.n,e.sum,e.sum2);
     return "<tr><td>"+k+"</td><td>"+e.n+"</td><td>"+(e.n<15?"<span class='muted'>too few to say</span>":(100*ci.mean).toFixed(1)+" bb <span class='muted'>("+(100*ci.lo).toFixed(1)+" to "+(100*ci.hi).toFixed(1)+")</span>")+"</td></tr>";}).join("")+"</table>";}
-function coachTabHTML(){return rulesCardHTML()+coachTabBody()+devCardHTML();}
+function coachTabHTML(){return rulesCardHTML()+rtCardHTML()+coachTabBody()+devCardHTML();}
 function coachTabBody(){var C=coachOf(),h="<div class='panel glass'><h2>Coach</h2><p class='muted' style='font-size:.85rem'>These figures are the model's estimates from your practice games: how many big blinds your decisions gave up compared with the best option, with a 95% interval. They are simulated performance, not your real-world win rate, and a short sample proves nothing about profitability.</p>";
   if(C.N<30)return h+"<p><b>"+C.N+" graded decision"+(C.N===1?"":"s")+" so far.</b> No leak is named until there are at least 30 (and at least 6 examples of a pattern).</p></div>"+identCardHTML();
   var all=ciOf(C.N,C.sum,C.sum2),rows=leakReport(),flagged=rows.filter(function(r){return r.flag;});
@@ -4922,6 +4945,163 @@ function rulesCardHTML(){var t=function(r){return "<tr>"+r.map(function(c){retur
     "<p class='muted' style='font-size:.78rem;margin:0'>This is standard live low-stakes practice written as a formula. It is not a solver result. The opening charts still decide your opens.</p>"+
     "<div class='lbl'>With a straddle on</div><p style='font-size:.86rem;margin:4px 0'>Stacks play half as deep. Add 1 to your seat number in early and middle seats (and the small blind); cutoff and button unchanged. Raise to 3 to 4 straddles plus 1 straddle per limper. The straddler acts last before the flop and checks or raises like a big blind.</p>"+
     "<div class='lbl'>The price after the flop</div><table class='st'>"+t(["Their bet","1/3 pot","1/2 pot","2/3 pot","Pot","2x pot"])+t(["You need to win","20%","25%","29%","33%","40%"])+t(["Defend at least","75%","67%","60%","50%","33%"])+"</table><p class='muted' style='font-size:.78rem;margin:4px 0 0'>Defend: the share of your range that has to continue (call or raise) so a bet of that size can't profit as a pure bluff. Solvers defend close to this; a range that folds more is exploitable.</p></div>";}
+/* ===== hand routine: the same steps at every decision, drawn as a flowchart with this hand's numbers filled in, plus an optional in-hand drill =====
+   The routine restates the baseline's own rules (hand score, limper rule, equity against the opener's range, price, pot budget) as a fixed order of
+   questions. It never changes the advice or the grade: where its short form and the baseline differ, the sheet says so and shows the baseline's reason. */
+var RT_CH={
+  open:{t:"Folded to you",s:"Folded to you",d:[["d1","Hand score at least your seat number?","y1","Raise to 2.5 to 4bb"]],n:"Fold"},
+  limp:{t:"Limpers in front",s:"Limpers in front",d:[["d1","Score at least seat number, +1 per limper after the first?","y1","Raise to 4bb + 1 per limper"],["d2","Any pair, or suited with a score of 6+?","y2","Limp behind"]],n:"Fold"},
+  raise:{t:"One raise in front",s:"One raise in front",d:[["d1","QQ+, AK, or 57%+ against their opening range?","y1","3-bet: 3x in position, 4x out"],["d2","Offsuit hand with a weak kicker?","y2","Fold"],["d3","Equity at least price ÷ playability?","y3","Call"]],n:"Fold"},
+  rr:{t:"Raised and re-raised",s:"A raise and a re-raise",d:[["d1","AA or KK?","y1","4-bet: get it in"],["d2","Equity at least price ÷ playability + 2 pts?","y2","Call"]],n:"Fold"},
+  opt:{t:"Your free option",s:"No raise, your option",d:[["d1","62%+ against a random hand? (66+, AT+, KJs+)","y1","Raise to 3bb + 1 per limper"]],n:"Check"},
+  bet:{t:"After the flop: facing a bet",pre:[["b","1. Board: dry or wet?"],["h","2. Hand: tier and pot budget"],["c","3. Price: call ÷ (pot + call)"],["e","4. Equity against their range"]],d:[["f1","Equity at least 65%? (75% if they raised you)","y1","Raise for value"],["f2","Equity at least the price? (+2 pts out of position before the river)","y2","Call"]],n:"Fold"},
+  chk:{t:"After the flop: checked to you",pre:[["b","1. Board: dry or wet?"],["h","2. Hand: tier and pot budget"],["c","3. Pot and SPR"],["e","4. Equity against their range"]],d:[["k1","Equity at least 58%?","y1","Value bet: 1/3 to 1/2 pot dry, 2/3 to 3/4 wet"],["k2","8+ outs and 2 or fewer opponents?","y2","Semi-bluff 1/2 pot, or check"]],n:"Check"},
+  whole:{t:"The whole hand",pre:[["w1","1. Before the cards: seat number, effective stack, who's in"],["w2","2. Before the flop: what's in front of you? Follow that branch (charts below)"],["w3","3. Every street after: board, hand tier and pot budget, SPR"]],d:[["w4","4. Facing a bet? Price = call ÷ pot after call","w5","Raise 65%+, call at the price, else fold"]],n:"Checked to you: bet 58%+, semi-bluff 8+ outs, else check",post:[["w6","5. Budget check: over budget? Bet smaller or call"],["w7","6. Next street: back to step 3, then showdown"],["w8","7. After the hand: check the grade, log deviations"]]},
+  chart:{t:"Short stack or heads-up",s:"Short stack or heads-up",d:[],n:"The push-or-fold or heads-up chart decides"},
+  other:{t:"Special spot",s:"Special spot",d:[],n:"Follow the baseline"}
+};
+var RT_C={k:"",M:null},RT_Q={k:"",i:0,qs:null,fb:""};
+function rtOn(){return !!T&&!T.pass&&!(T.live&&!S.settings.liveHelp);}
+function rtKey(){return H?[H.id,H.sn,H.street,(H.hist||[]).length,H.toAct,H.board.length].join("|"):"";}
+function rtP(x){return Math.round(x*100)+"%";}
+function rtWrap(s,n){var w=String(s).split(" "),out=[],cur="";w.forEach(function(x){if(cur&&(cur+" "+x).length>n){out.push(cur);cur=x;}else cur=cur?cur+" "+x:x;});if(cur)out.push(cur);return out;}
+function rtEsc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function rtCls(lab){var l=lab.toLowerCase();return /^fold/.test(l)?"f":/^(check|the push|follow)/.test(l)?"k":/^(call|limp)/.test(l)?"c":"r";}
+/* the flowchart: start (or the four post-flop steps) down the left, each question with its "yes" outcome to the right, the last "no" at the bottom */
+function rtSVG(key,path,vals){var C=RT_CH[key],W=360,mx=6,mw=214,ox=240,ow=114,y=6,parts=[],on={},lit=!!(path&&path.length);vals=vals||{};(path||[]).forEach(function(id){on[id]=1;});
+  var cls=function(id){return lit?(on[id]?" on":" off"):"";},ecl=function(a){return "rte"+(lit?(a?" on":" off"):"");};
+  function box(id,x,y0,w,lab,kind){var o=kind==="o",L=rtWrap(lab,w<150?17:33),V=vals[id]?rtWrap(vals[id],w<150?18:35):[],h=10+L.length*13+V.length*12,t="";
+    L.forEach(function(s,k){t+="<text x='"+(x+7)+"' y='"+(y0+16+k*13)+"' class='rtl'>"+rtEsc(s)+"</text>";});
+    V.forEach(function(s,k){t+="<text x='"+(x+7)+"' y='"+(y0+16+L.length*13+k*12)+"' class='rtv'>"+rtEsc(s)+"</text>";});
+    return {h:h,svg:"<g class='rtn rt-"+kind+(o?" rt-"+rtCls(lab):"")+cls(id)+"'><rect x='"+x+"' y='"+y0+"' width='"+w+"' height='"+h+"' rx='3'/>"+(kind==="d"?"<text x='"+(x+w-13)+"' y='"+(y0+15)+"' class='rtqm'>?</text>":"")+t+"</g>"};}
+  function down(a,b,lab,act){var x=mx+22;parts.push("<g class='"+ecl(act)+"'><line x1='"+x+"' y1='"+a+"' x2='"+x+"' y2='"+(b-5)+"'/><path d='M"+(x-4)+" "+(b-6)+" L"+x+" "+b+" L"+(x+4)+" "+(b-6)+"z'/>"+(lab?"<text x='"+(x+7)+"' y='"+((a+b)/2+4)+"' class='rty'>"+lab+"</text>":"")+"</g>");}
+  var prev=null,prevId=null,heads=C.pre?C.pre:[["s",C.s]];
+  var nextY=6;heads.forEach(function(p){y=nextY;if(prev!==null)down(prev,y,"",on[prevId]&&on[p[0]]);var b=box(p[0],mx,y,mw,p[1],"s");parts.push(b.svg);prev=y+b.h;nextY=prev+16;prevId=p[0];});
+  C.d.forEach(function(d,k){y=nextY;down(prev,y,k?"no":"",on[prevId]&&on[d[0]]);var b=box(d[0],mx,y,mw,d[1],"d"),cy=y+b.h/2;parts.push(b.svg);
+    var probe=box(d[2],ox,0,ow,d[3],"o"),oy=Math.max(y,cy-probe.h/2),bo=box(d[2],ox,oy,ow,d[3],"o");parts.push(bo.svg);
+    parts.push("<g class='"+ecl(on[d[0]]&&on[d[2]])+"'><line x1='"+(mx+mw)+"' y1='"+cy+"' x2='"+(ox-5)+"' y2='"+cy+"'/><path d='M"+(ox-6)+" "+(cy-4)+" L"+ox+" "+cy+" L"+(ox-6)+" "+(cy+4)+"z'/><text x='"+(mx+mw+3)+"' y='"+(cy-4)+"' class='rty'>yes</text></g>");
+    prev=y+b.h;nextY=Math.max(y+b.h,oy+bo.h)+22;prevId=d[0];});
+  y=nextY;down(prev,y,C.d.length?"no":"",on[prevId]&&on.n);var bn=box("n",mx,y,mw,C.n,"o");parts.push(bn.svg);prev=y+bn.h;prevId="n";y+=bn.h+4;
+  (C.post||[]).forEach(function(p){y=prev+16;down(prev,y,"",on[prevId]&&on[p[0]]);var b=box(p[0],mx,y,mw,p[1],"s");parts.push(b.svg);prev=y+b.h;prevId=p[0];y=prev+4;});
+  return "<svg class='rtsvg' viewBox='0 0 "+W+" "+y+"' role='img' aria-label='Routine flowchart: "+rtEsc(C.t)+"'>"+parts.join("")+"</svg>";}
+/* this decision's routine: which chart, the path through it, the numbers at each node, and the step-by-step reasons */
+function rtModel(){
+  if(!H||H.done||!T||T.pass||H.toAct!==0||!H.s[0]||H.s[0].folded||!canAct(0))return null;
+  var k=rtKey();if(RT_C.k===k&&RT_C.M)return RT_C.M;
+  var A;try{A=adviseHero(false);}catch(e){return null;}
+  var M;try{M=H.street===0?rtPre(A):rtPost(A);}catch(e){M=null;}
+  if(!M)M={kind:H.street?"post":"pre",chain:"other",path:["s","n"],vals:{s:H.street?"After the flop":"Before the flop",n:A.advice},steps:[["Baseline",A.advice+". "+A.why]],verdict:A.advice};
+  M.A=A;var nv=function(x){x=String(x||"").toLowerCase();return /^(raise|reraise|bet|3-bet|4-bet|push)/.test(x)?"aggr":/^(call|check|limp)/.test(x)?x.slice(0,5):x.slice(0,4);};
+  if(M.chain!=="chart"&&M.chain!=="other"&&nv(M.verdict)!==nv(A.advice)&&!(nv(A.advice)==="bet o"&&/semi/i.test(M.verdict)))M.note="The app's baseline says <b>"+A.advice+"</b> here: "+A.why;
+  RT_C.k=k;RT_C.M=M;return M;}
+function rtPre(A){var L=A.L,code=A.code,pos=A.pos,sc=chenScore(code),lim=limpersIn(),opp=A.opp,M={kind:"pre",steps:[],vals:{},path:["s"]},st=function(t,v){M.steps.push([t,v]);};
+  var myBB=(T.players[0].stack+H.s[0].sb)/T.bb,big=Math.max.apply(null,opp.map(function(i){return T.players[i].stack+H.s[i].sb;}).concat([0]))/T.bb,effBB=Math.min(myBB,big),U=preUnit(),uN=straddleOn()?"straddles":"bb";
+  if((T.mode==="tour"&&effBB<=15)||H.seats.length===2){M.chain="chart";M.vals.s=H.seats.length===2?"Two players dealt in":"About "+Math.round(effBB)+" big blinds";M.vals.n=A.advice;M.path.push("n");M.verdict=A.advice;
+    st("Spot",H.seats.length===2?"Only two players are dealt in, so the heads-up charts decide.":"With about "+Math.round(effBB)+" big blinds it's push or fold, so the push-or-fold charts decide.");st("Decision",A.advice+". "+A.why);return M;}
+  if(H.raises===0&&L.toCall===0){M.chain="opt";var strong=EQ[code]>=62;M.vals.s=lim?lim+" limper"+(lim>1?"s":"")+", nobody raised":"Folded around to you";M.vals.d1=code+": "+(EQ[code]||"?")+"% against a random hand";
+    M.vals[strong?"y1":"n"]=strong?"About "+chips(T.bb*(3+Math.max(0,opp.length-1))):"Free flop";M.path=M.path.concat(strong?["d1","y1"]:["d1","n"]);M.verdict=strong?"Raise":"Check";
+    st("What's in front","Nobody raised, so you can see the flop for free.");st("Hand",code+" wins "+(EQ[code]||"?")+"% against a random hand. "+(strong?"That's strong enough to raise even out of position.":"Not strong enough to raise out of position; take the free flop."));return M;}
+  if(H.raises===0&&lim===0){M.chain="open";var so=straddleOpen(code,pos),yes=so.sc>=so.need,ck=chartKey(pos),inChart=!!(SETS[ck]&&SETS[ck][code]),size=straddleOn()?(T.home?4:3):(T.home?4:2.5);
+    M.vals.s=pos+", folded to you";M.vals.d1=code+" scores "+so.sc+", seat number "+so.need;M.vals[yes?"y1":"n"]=yes?"About "+chips(U*size):code;M.path=M.path.concat(yes?["d1","y1"]:["d1","n"]);M.verdict=inChart?"Raise":"Fold";
+    st("What's in front","Folded to you in "+pos+".");st("Hand score",code+" scores "+so.sc+". "+formulaLine(code));st("Seat number",pos+" opens "+so.sn+" or better"+(so.need>so.sn?", plus 1 with the straddle on: "+so.need:"")+". "+(yes?so.sc+" is enough.":so.sc+" is short."));
+    st("Size","Raise to about "+size+" "+uN+" ("+chips(U*size)+")"+(T.home?": home games call a lot, so go bigger.":"."));
+    if(inChart!==yes)st("Chart check","Your "+ck+" opening chart says <b>"+(inChart?"raise":"fold")+"</b>. The chart decides opens; the score rule matches it on about 90% of hands, and this is one of the others.");
+    return M;}
+  if(H.raises===0&&lim>0){M.chain="limp";var LR=limpRule(code,pos,lim),sn=LR.need-(lim-1),pb=limpBehindHand(code);M.vals.s=lim+" limper"+(lim>1?"s":"")+" in front";M.vals.d1=code+" scores "+sc+", needs "+LR.need;
+    if(LR.adv==="Raise"){M.path=M.path.concat(["d1","y1"]);M.vals.y1="About "+chips(U*(4+lim));}else{M.vals.d2=pb?(code.length===2?"A pair":"Suited, scores "+sc):"No";M.path=M.path.concat(LR.adv==="Call"?["d1","d2","y2"]:["d1","d2","n"]);}
+    M.verdict=LR.adv==="Call"?(pos==="SB"?"Complete":"Limp behind"):LR.adv;
+    st("What's in front",lim+" limper"+(lim>1?"s":"")+", no raise.");st("Hand score",code+" scores "+sc+". "+formulaLine(code));st("Limper rule","Seat number "+sn+(lim>1?" + "+(lim-1)+" for the extra limper"+(lim>2?"s":""):"")+" = "+LR.need+" to raise. "+LR.why);
+    if(LR.adv==="Raise")st("Size","Raise to about 4 "+uN+" plus 1 per limper: "+(4+lim)+" "+uN+" ("+chips(U*(4+lim))+").");return M;}
+  if(H.raises===1&&H.preAgg>0&&VSOPEN[chartKey(H.pos[H.preAgg])]){M.chain="raise";
+    var opP=chartKey(H.pos[H.preAgg]),ev=VSOPEN[opP][code],bb=pos==="BB"||H.straddle===0,behind=H.seats.filter(function(j){return j!==0&&!H.s[j].folded&&!H.s[j].acted;}).length;
+    var callers=H.seats.filter(function(j){return j!==0&&j!==H.preAgg&&!H.s[j].folded&&H.s[j].tot>=H.cur;}).length,oop=bb||pos==="SB",premium=["AA","KK","QQ","AKs","AKo"].indexOf(code)>=0;
+    var junkO=code.length===3&&code[2]==="o"&&rkv(code[1])<8&&code[0]!=="A",real=realizeF(code,oop),evM=ev/100*Math.pow(junkO?0.75:code.length===2||code[2]==="s"?0.88:0.82,callers),lateOp=["CO","BTN","SB"].indexOf(opP)>=0;
+    var junk=(junkO&&!(bb&&lateOp&&callers===0))||(code[2]==="o"&&code[0]==="A"&&rkv(code[1])<8&&(callers>0||!lateOp)),thr=A.need/real+(bb?0:0.015*Math.min(behind,2));
+    M.vals.s=H.pos[H.preAgg]+" raised"+(callers?", "+callers+" caller"+(callers>1?"s":""):"");M.vals.d1=code+": "+ev+"% against "+opP+"'s range";
+    if(premium||ev>=57){M.path=M.path.concat(["d1","y1"]);M.vals.y1=oop?"4x their raise":"3x their raise";M.verdict="Reraise";}
+    else if(junk){M.vals.d2="Yes: "+code;M.path=M.path.concat(["d1","d2","y2"]);M.verdict="Fold";}
+    else{M.vals.d2="No";M.vals.d3="Have "+rtP(evM)+", need "+rtP(thr);M.path=M.path.concat(evM>=thr?["d1","d2","d3","y3"]:["d1","d2","d3","n"]);M.verdict=evM>=thr?"Call":"Fold";}
+    st("What's in front",H.pos[H.preAgg]+" opened"+(callers?" and "+callers+" called":"")+". You're "+(oop?"out of position":"in position")+".");
+    st("Equity against their range",code+" has about "+ev+"% against a "+opP+" opening range."+(callers?" With "+callers+" caller"+(callers>1?"s":"")+" your share drops to about "+rtP(evM)+".":""));
+    if(M.verdict!=="Reraise"){st("Price","Call "+chips(A.L.toCall)+" to win "+chips(A.pot+A.L.toCall)+": you need "+rtP(A.need)+".");
+      st("Playability",(oop?"Out of position":"In position")+", "+(code.length===2?"a pair":code[2]==="s"?"a suited hand":"an offsuit hand")+" turns about "+rtP(real)+" of its equity into winnings. "+rtP(A.need)+" ÷ "+rtP(real)+(bb?"":" + "+(1.5*Math.min(behind,2)).toFixed(1).replace(".0","")+" pts for players still to act")+" = "+rtP(thr)+" needed.");}
+    else st("Size","3-bet to about "+(callers?"4 times their raise plus 1 raise per caller":oop?"4 times their raise (out of position)":"3 times their raise")+".");
+    return M;}
+  if(H.raises>=2){M.chain="rr";var ip=heroIP(),real3=realizeF(code,!ip),thr3=A.need/real3+0.02,junk3=code.length===3&&code[2]==="o"&&!(rkv(code[1])>=9||code==="AQo"||code==="AJo"&&ip),ak=code==="AA"||code==="KK",eqV=A.eqV!==null?A.eqV:A.eq;
+    M.vals.s="Facing a re-raise";if(ak){M.path=M.path.concat(["d1","y1"]);M.verdict="Reraise";}else{M.vals.d2="Have "+rtP(eqV)+", need "+rtP(thr3)+(junk3?" (offsuit: fold)":"");M.path=M.path.concat(eqV>=thr3&&!junk3?["d1","d2","y2"]:["d1","d2","n"]);M.verdict=eqV>=thr3&&!junk3?"Call":"Fold";}
+    st("What's in front","A raise and a re-raise. Their range is strong now.");if(ak)st("Hand","Aces or kings: get the money in.");
+    else{st("Equity against their range","About "+rtP(eqV)+".");st("Price","Call "+chips(A.L.toCall)+" to win "+chips(A.pot+A.L.toCall)+": "+rtP(A.need)+". Allowing for playability ("+rtP(real3)+") plus 2 points for a re-raised pot: "+rtP(thr3)+"."+(junk3?" Offsuit hands like "+code+" play badly against a re-raising range, so fold.":""));}
+    return M;}
+  return null;}
+function formulaLine(code){var v={A:10,K:8,Q:7,J:6,T:5,"9":4.5,"8":4,"7":3.5,"6":3,"5":2.5,"4":2,"3":1.5,"2":1},hv=v[code[0]];if(code.length===2)return "A pair doubles its card value ("+hv+" x 2), at least 5.";
+  var gap=rkv(code[0])-rkv(code[1])-1;return "High card "+hv+(code[2]==="s"?", +2 suited":"")+(gap>0?", "+(gap===1?"-1":gap===2?"-2":gap===3?"-4":"-5")+" for the gap":"")+(gap<=1&&rkv(code[0])<rkv("Q")?", +1 for connected low cards":"")+", rounded up.";}
+function rtPost(A){var L=A.L,pot=A.pot,toCall=L.toCall,eq=A.eq,need=A.need,P=pbPlan(),B=pbBoard(),I=hcInfo(H.s[0].cards,H.board),nO=A.opp.length,ip=heroIP();
+  var wet=[];if(B.f4)wet.push("four to a flush");else if(B.f3)wet.push("flush possible");if(B.s4)wet.push("four to a straight");else if(B.s3)wet.push("straight possible");
+  var top=0;A.opp.forEach(function(i){top=Math.max(top,T.players[i].stack);});var effS=Math.min(T.players[0].stack,top||T.players[0].stack),spr=effS/Math.max(1,pot);
+  var outs=H.street<3?I.outs:0,face=toCall>0,M={kind:"post",chain:face?"bet":"chk",steps:[],vals:{},path:["b","h","c","e"]},st=function(t,v){M.steps.push([t,v]);},sname=["","flop","turn","river"][H.street];
+  M.vals.b=wet.length?"Wet: "+wet.join(", "):"Dry: no flush or straight draw out there";M.vals.h=P?(P.air?"No hand: bluff or give up":P.draw?P.lab:P.tier+": "+P.lab+", worth "+pbStreets(P.N)):"";
+  M.vals.c=face?"Call "+chips(toCall)+" to win "+chips(pot+toCall)+": need "+rtP(need):"Pot "+chips(pot)+", SPR "+spr.toFixed(1);M.vals.e="About "+rtP(eq)+(outs?" ("+outs+" outs)":"");
+  st("Board",(wet.length?"Wet: "+wet.join(" and ")+". Draws are live, so value bets go bigger and medium hands lose value.":"Dry. Few draws, so small bets work and the preflop raiser can bet often.")+" "+(nO>1?(nO+1)+" players in the pot.":"Heads-up."));
+  if(P)st("Hand and budget",P.air?"No made hand and no real draw. Any money you put in is a bluff.":P.draw?P.lab+". Draws are played by the price.":P.lab+" is "+P.tier.toLowerCase()+": worth "+pbStreets(P.N)+", about "+rtP(P.B)+" of your stack. You have "+rtP(P.now)+" in.");
+  st(face?"Price":"Pot and SPR",(face?"Call "+chips(toCall)+" to win a pot of "+chips(pot+toCall)+": "+chips(toCall)+" ÷ "+chips(pot+toCall)+" = <b>"+rtP(need)+"</b> equity needed."+(A.cush?" Add "+Math.round(A.cush*100)+" points out of position on the "+sname+": "+rtP(need+A.cush)+".":"")+" ":"")+
+    "SPR "+spr.toFixed(1)+" ("+chips(effS)+" behind ÷ "+chips(pot)+" pot): "+(spr<4?"under 4, one good pair can go all in.":spr<=10?"4 to 10, one pair wants about two streets, not three.":"over 10, you want two pair or better to play for stacks."));
+  st("Equity","Against the hands their actions point to you have about <b>"+rtP(eq)+"</b>."+(outs?" Quick check with "+outs+" outs: x2 = about "+Math.min(100,outs*2)+"% on the next card"+(H.street===1?", x4 = about "+Math.min(100,outs*4)+"% by the river if you get it all in":"")+".":""));
+  var verdict;
+  if(face){var faced=(H.hist||[]).some(function(e){return e.i===0&&e.st===H.street&&(e.a==="bet"||e.a==="raise");}),rThr=faced?0.75:0.65,n2=need+(A.cush||0);
+    M.vals.f1=rtP(eq)+" vs "+rtP(rThr);if(eq>=rThr&&L.canRaise){M.path=M.path.concat(["f1","y1"]);verdict="Raise";}
+    else{M.vals.f2=rtP(eq)+" vs "+rtP(n2);if(eq>=n2){M.path=M.path.concat(["f1","f2","y2"]);verdict="Call";}else{M.path=M.path.concat(["f1","f2","n"]);verdict="Fold";}}
+    st("Decide",verdict==="Raise"?"You're ahead of most of their range: "+(faced?"re-raise":"raise")+" for value.":verdict==="Call"?"Equity beats the price: call.":"Equity is under the price: fold."+(outs>=8&&H.street<3&&eq>=n2-0.06&&spr>=4?" It's close, and with deep stacks behind, implied odds (what you win when the draw hits) can cover the gap. The grade accounts for that.":""));}
+  else{M.vals.k1=rtP(eq)+" vs 58%";if(eq>=0.58){M.path=M.path.concat(["k1","y1"]);verdict="Bet";}
+    else{M.vals.k2=outs+" outs, "+nO+" opponent"+(nO>1?"s":"");if(outs>=8&&nO<=2){M.path=M.path.concat(["k1","k2","y2"]);verdict="Semi-bluff or check";}else{M.path=M.path.concat(["k1","k2","n"]);verdict="Check";}}
+    st("Decide",verdict==="Bet"?"You're ahead of what they likely hold: bet for value, "+(wet.length?"2/3 to 3/4 pot on this wet board":"1/3 to 1/2 pot on this dry board")+".":verdict==="Check"?"Not enough equity to bet for value, and no big draw: check.":"Big draw: a half-pot semi-bluff wins the pot now or builds it for when you hit. Checking is fine too.");}
+  if(P&&!P.air&&!P.draw&&P.N<4&&/^(Bet|Raise)/.test(verdict)){var add=verdict==="Raise"?Math.max(0,Math.min(T.players[0].stack,Math.round(3*H.cur)-H.s[0].sb)):Math.min(T.players[0].stack,Math.round(pot*(wet.length?0.7:0.45))),after=(H.s[0].tot+add)/P.eff,over=after>P.B+0.02;
+    M.vals[M.path[M.path.length-1]]=(over?"Over budget: ":"Fits the budget: ")+rtP(after)+" in vs "+rtP(P.B);
+    st("Budget check","A normal "+(verdict==="Raise"?"raise (3x)":"bet")+" puts "+rtP(after)+" of your stack in. "+P.lab+" is worth about "+rtP(P.B)+". "+(over?"<b>Over budget:</b> bet smaller, or check or call and keep the pot to the size your hand can win.":"It fits."));}
+  M.verdict=verdict;
+  if(gcOn())st("After you act",(nO===1?"The grade compares your play to a solver run on this exact board.":"Multiway pots are graded by the price against chart-based ranges.")+" Tap Deviate first if a read says to leave the routine.");
+  return M;}
+function rtOpen(){var M=rtModel();if(!M){toast("The routine shows on your turn.");return;}var C=RT_CH[M.chain];
+  showModal("<h2>Routine: "+C.t+"</h2><div class='rtverd'>Routine says <b>"+M.verdict+"</b></div>"+rtSVG(M.chain,M.path,M.vals)+
+    "<ol class='rtsteps'>"+M.steps.map(function(s){return "<li><b>"+s[0]+".</b> "+s[1]+"</li>";}).join("")+"</ol>"+(M.note?"<p class='rtnote'>"+M.note+"</p>":"")+
+    "<p class='muted' style='font-size:.78rem;margin:6px 0 0'>The routine is the app's baseline written as fixed steps you can run at a real table. The full set is on the Coach tab.</p>",
+    [["Back to the table",function(){},"brass"],["All routines",rtRefOpen,"ghost"]]);}
+function rtMathHTML(){var t=function(r){return "<tr>"+r.map(function(c){return "<td>"+c+"</td>";}).join("")+"</tr>";};
+  return "<table class='st rtmath'>"+t(["<b>Price to call</b>","call ÷ (pot after your call). They bet 50 into 100: call 50 to win 200, 50 ÷ 200 = 25%."])+
+    t(["<b>Bluff works if</b>","they fold more than bet ÷ (pot + bet). 2/3 pot needs 40% folds, pot needs 50%."])+
+    t(["<b>Defend at least</b>","pot ÷ (pot + bet) of your range against a bet, or a pure bluff profits."])+
+    t(["<b>Draws</b>","outs x 2 = % on the next card. On the flop, outs x 4 = % by the river if all in. Flush draw 9, open-ended straight 8, gutshot 4."])+
+    t(["<b>SPR</b>","stack behind ÷ pot. Under 4: one good pair can go all in. 4 to 10: about two streets. Over 10: two pair or better for stacks."])+
+    t(["<b>Pot budget</b>","stacks for sets and better, 3 two pair, 2 to 2½ overpair, 1½ to 2 top pair, 1 middle pair, ½ weak pair. −½ per extra player or scary card."])+"</table>";}
+function rtRefHTML(){var pre=["open","limp","raise","rr","opt"],post=["bet","chk"];
+  return "<div class='lbl'>Every decision, in this order</div><ol class='rtsteps'><li><b>Before the flop:</b> what's in front of you (folded, limpers, a raise, a re-raise), then your hand score against your seat number, then follow that branch.</li><li><b>After the flop:</b> board, hand and budget, price, equity, decide, then check the size against your budget.</li></ol>"+
+    "<details class='rtd' open><summary>The whole hand</summary>"+rtSVG("whole",[],{})+"</details>"+    "<div class='lbl'>The math</div>"+rtMathHTML()+
+    "<div class='lbl'>Before the flop</div>"+pre.map(function(k){return "<details class='rtd'><summary>"+RT_CH[k].t+"</summary>"+rtSVG(k,[],{})+"</details>";}).join("")+
+    "<div class='lbl'>After the flop</div>"+post.map(function(k){return "<details class='rtd'><summary>"+RT_CH[k].t+"</summary>"+rtSVG(k,[],{})+"</details>";}).join("");}
+function rtRefOpen(){showModal("<h2>Your hand routine</h2>"+rtRefHTML(),[["Done",function(){},"brass"]]);}
+function rtCardHTML(){var D=S.drills||{},f=function(k,lab){var d=D[k];return d&&d.n?lab+" "+d.ok+" of "+d.n+(k==="rtEq"&&d.close?" ("+d.close+" more one band off)":""):"";},st=[f("rtPrice","Price right"),f("rtEq","Equity band right"),f("rtNeed","Limper rule right")].filter(Boolean).join(". ");
+  return "<div class='panel glass'><h2>Your hand routine</h2><p class='muted' style='font-size:.85rem'>The same steps at every decision, so a live game runs on habit instead of feel. At the table, tap <b>Routine</b> under the buttons to see this hand's path through the chart with the numbers filled in. Turn on <b>Routine drill</b> in Settings to be asked the price and your equity before you act.</p>"+
+    (st?"<div class='tool'><div class='k'>Drill record</div><div class='v' style='font-size:.9rem'>"+st+".</div></div>":"")+rtRefHTML()+"</div>";}
+/* the drill: one or two questions from the routine before the action buttons show. The answer never changes the advice or the grade. */
+var RT_EQB=[[0,0.25,"Under 25%"],[0.25,0.40,"25 to 40%"],[0.40,0.58,"40 to 58%"],[0.58,0.75,"58 to 75%"],[0.75,1.01,"Over 75%"]],RT_EQB3=[[0,0.35,"Under 35%"],[0.35,0.45,"35 to 45%"],[0.45,0.57,"45 to 57%"],[0.57,1.01,"57% or more"]];
+function rtDrillOn(){return S.settings.routineDrill===true&&rtOn();}
+function rtBand(Bs,x){for(var k=0;k<Bs.length;k++)if(x<Bs[k][1])return k;return Bs.length-1;}
+function rtQs(M){var A=M.A,qs=[],eqQ=function(Bs,x,lab){var b=rtBand(Bs,x);return {k:"rtEq",q:lab,opts:Bs.map(function(r){return r[2];}),ans:b,band:true,why:"About "+rtP(x)+"."};};
+  if(M.kind==="pre"){
+    if(M.chain==="limp"){var need=limpRule(A.code,A.pos,limpersIn()).need,o=[need-1,need,need+1,need+2];qs.push({k:"rtNeed",q:"Limper rule: what hand score do you need to raise?",opts:o.map(String),ans:1,why:A.code+" scores "+chenScore(A.code)+"; the raise needs "+need+"."});}
+    else if(M.chain==="raise"){var opP=chartKey(H.pos[H.preAgg]);qs.push(eqQ(RT_EQB3,VSOPEN[opP][A.code]/100,"Your equity against "+opP+"'s opening range?"));}
+    else if(M.chain==="rr")qs.push(eqQ(RT_EQB3,A.eqV!==null?A.eqV:A.eq,"Your equity against the re-raising range?"));}
+  else{if(A.L.toCall>0){var c=Math.round(A.need*100),pool=[17,20,25,29,33,38,40,43,50,57].filter(function(x){return Math.abs(x-c)>=3;}).sort(function(a,b){return Math.abs(a-c)-Math.abs(b-c);}).slice(0,3),opts=pool.concat([c]).sort(function(a,b){return a-b;});
+      qs.push({k:"rtPrice",q:"Call "+chips(A.L.toCall)+" to win "+chips(A.pot+A.L.toCall)+". Equity needed?",opts:opts.map(function(x){return x+"%";}),ans:opts.indexOf(c),why:chips(A.L.toCall)+" ÷ "+chips(A.pot+A.L.toCall)+" = "+c+"%."});}
+    qs.push(eqQ(RT_EQB,A.eq,"Your equity against their likely range?"));}
+  return qs;}
+function rtDrillHTML(){if(!rtDrillOn())return null;var k=rtKey();
+  if(RT_Q.k!==k){var M=rtModel();RT_Q={k:k,i:0,qs:M?rtQs(M):[],fb:""};}
+  var q=RT_Q.qs&&RT_Q.qs[RT_Q.i];if(!q)return null;
+  return "<div class='readrow rtqrow'><span>Routine "+(RT_Q.i+1)+" of "+RT_Q.qs.length+": "+q.q+"</span>"+q.opts.map(function(o,j){return "<button data-rq='"+j+"'>"+o+"</button>";}).join("")+"<button data-rq='skip' class='rtskip'>Skip</button></div>";}
+function rtDrillWire(c){c.querySelectorAll("[data-rq]").forEach(function(b){b.onclick=function(){var q=RT_Q.qs[RT_Q.i];if(!q)return;
+  if(b.dataset.rq==="skip"){RT_Q.i=RT_Q.qs.length;RT_Q.fb="";renderControls();return;}
+  var j=+b.dataset.rq,ok=j===q.ans,close=q.band&&Math.abs(j-q.ans)===1;dstat(q.k,ok);if(close&&!ok){S.drills[q.k].close=(S.drills[q.k].close||0)+1;save();}
+  RT_Q.fb=(ok?"Right. ":close?"Close: it's "+q.opts[q.ans]+". ":"It's "+q.opts[q.ans]+". ")+q.why;RT_Q.i++;renderControls();};});}
 /* ===== heads-up river solver: CFR+ on the real board, exact card removal, no hand abstraction =====
    Players 0 (out of position) and 1 (in position). Money is counted from the start of the river: a player's value at a terminal is what they collect minus what
    they put in on this street, so the two players' values add up to the pot at the start of the river. Strategies are per hand (combo), not per bucket. */
@@ -6410,7 +6590,7 @@ function renderSettings(){
     "<div class='toggle'><div><b>Venue looks</b><div class='muted' style='font-size:.85rem'>Each event and cash room brings its own table and atmosphere. Off uses your look everywhere.</div></div><button class='switch' role='switch' id='l-venue' aria-checked='"+(!!S.settings.venueLooks)+"' aria-label='Venue looks'></button></div></div>"+
     "<div class='panel glass'><div class='lbl' style='margin-top:0'>Bot speed</div><div class='seg' id='l-speed'><button data-v='slow'>Slow</button><button data-v='normal'>Normal</button><button data-v='fast'>Fast</button></div></div>"+
     "<div class='panel glass'><h2>Table feel</h2>"+
-    [["flatArt","Simple character art","Flat colors instead of shaded illustrations. Faster on older phones."],["gradeLive","Grade each decision","After every action in cash games, a chip under your stack shows whether your play matched the model. Tap a chip for the reason."],["potMeter","Pot budget meter","After the flop, a bar under your stack shows how big a pot your hand is worth and how much of your stack is in. Bets and raises past it count as playing the hand too strong. Tap the bar for the math."],["readPrompt","Ask for my read","When someone bets into you after the flop, a small row under the buttons asks if you put them on a strong hand, a draw, or something weaker. You find out if you were right when the hand ends."],["autoFold","Auto-fold unplayable hands","When the action folds to you and your hand is outside your opening range for that seat, it folds for you and the next hand deals. If anyone limps or raises first, you decide."],["coach","After-hand coach","Shows your biggest mistake when a hand ends."],["hud","Opponent stats on seats","How often each player plays and raises, shown under their name."],["tilt3d","3D table","Tilts the felt like you're sitting at it."],["season","Seasonal decorations","Holiday touches during the right weeks of the year."],["sound","Sounds","Card, chip, and win sounds."],["haptics","Vibration","Buzz on your turn and when you win, on phones that support it."],["fx2","Chip animations","Bets slide into the pot."]].map(function(x){return "<div class='toggle' style='border-top:0;margin-top:0'><div><b>"+x[1]+"</b><div class='muted' style='font-size:.85rem'>"+x[2]+"</div></div><button class='switch' role='switch' data-sw='"+x[0]+"' aria-checked='"+(!!S.settings[x[0]])+"' aria-label='"+x[1]+"'></button></div>";}).join("")+
+    [["flatArt","Simple character art","Flat colors instead of shaded illustrations. Faster on older phones."],["gradeLive","Grade each decision","After every action in cash games, a chip under your stack shows whether your play matched the model. Tap a chip for the reason."],["potMeter","Pot budget meter","After the flop, a bar under your stack shows how big a pot your hand is worth and how much of your stack is in. Bets and raises past it count as playing the hand too strong. Tap the bar for the math."],["readPrompt","Ask for my read","When someone bets into you after the flop, a small row under the buttons asks if you put them on a strong hand, a draw, or something weaker. You find out if you were right when the hand ends."],["routineDrill","Routine drill","Before you act, one or two quick questions from your hand routine: the equity you need for the price, your equity against their range, or the limper rule. Answer, then act. Your record is on the Coach tab."],["autoFold","Auto-fold unplayable hands","When the action folds to you and your hand is outside your opening range for that seat, it folds for you and the next hand deals. If anyone limps or raises first, you decide."],["coach","After-hand coach","Shows your biggest mistake when a hand ends."],["hud","Opponent stats on seats","How often each player plays and raises, shown under their name."],["tilt3d","3D table","Tilts the felt like you're sitting at it."],["season","Seasonal decorations","Holiday touches during the right weeks of the year."],["sound","Sounds","Card, chip, and win sounds."],["haptics","Vibration","Buzz on your turn and when you win, on phones that support it."],["fx2","Chip animations","Bets slide into the pot."]].map(function(x){return "<div class='toggle' style='border-top:0;margin-top:0'><div><b>"+x[1]+"</b><div class='muted' style='font-size:.85rem'>"+x[2]+"</div></div><button class='switch' role='switch' data-sw='"+x[0]+"' aria-checked='"+(!!S.settings[x[0]])+"' aria-label='"+x[1]+"'></button></div>";}).join("")+
     "<div class='lbl'>Shot clock (all tables)</div><div class='seg' id='l-clock'><button data-v='0'>Off</button><button data-v='30'>30 sec</button><button data-v='15'>15 sec</button></div></div>"+
     "<div class='panel glass'><h2>Live mode</h2><p class='muted' style='font-size:.85rem'>Applies to Home Game Night on the Cash tab: nine-handed, loose, with straddles and big raises.</p>"+
     "<div class='lbl' style='margin-top:0'>Difficulty</div><div class='seg' id='l-diff'><button data-v='relaxed'>Relaxed</button><button data-v='realistic'>Realistic</button><button data-v='brutal'>Brutal</button></div><p class='muted' style='font-size:.8rem' id='l-diffdesc'></p>"+

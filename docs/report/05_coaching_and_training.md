@@ -11,3 +11,10 @@ Full report: `../stage-04-05-report.md`.
 
 ## Version 44
 Decisions made before the solver finishes are graded when it lands (the chip shows "..." until then) and are not counted anywhere before that. Decisions marked with Deviate are shown against the solver but kept out of accuracy, leaks, coaching stats, and redo, and logged on the Coach tab. The Rules card adds the minimum-defense row (how much of your range has to continue against each bet size).
+
+## Version 46: the hand routine
+- **Routine button** beside Deviate on every decision. It opens a flowchart for the spot (folded to you, limpers, one raise, a re-raise, your free option, after the flop facing a bet, after the flop checked to you) with this decision's path lit and its numbers on each box: hand score and seat number, the limper rule's target, equity against the opener's range and the playability-adjusted price, board texture, hand tier and pot budget, price, SPR, equity, and whether a normal bet or raise fits the budget.
+- The routine restates the baseline's own rules as fixed steps. It never changes advice or grades. Where its short form and the baseline differ (the score rule versus the chart on about 10% of opens, or a live-table adjustment), the sheet says so and gives the baseline's reason. In 70 seeded hands it matches the baseline on at least 90% of decisions (tested).
+- **Routine drill** (Settings > Table feel, off by default): before the buttons show, one or two questions from the routine. Facing a bet after the flop: the equity the price needs, then your equity band against their range. Limped pots: the score the limper rule needs. Facing a raise or re-raise: your equity band against their range. Skip is always there. Answers are kept on the Coach tab (exact, and one band off for equity) and never touch the grade.
+- **Coach tab:** a "Your hand routine" card with the order of steps, a math table (price, bluff break-even, minimum defense, outs x 2 and x 4, SPR bands, pot budget), and all seven charts.
+- Hidden in live mode when helpers are off. Tests: `tests/test_routine.py` (8).
