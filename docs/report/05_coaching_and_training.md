@@ -18,3 +18,9 @@ Decisions made before the solver finishes are graded when it lands (the chip sho
 - **Routine drill** (Settings > Table feel, off by default): before the buttons show, one or two questions from the routine. Facing a bet after the flop: the equity the price needs, then your equity band against their range. Limped pots: the score the limper rule needs. Facing a raise or re-raise: your equity band against their range. Skip is always there. Answers are kept on the Coach tab (exact, and one band off for equity) and never touch the grade.
 - **Coach tab:** a "Your hand routine" card with the order of steps, a math table (price, bluff break-even, minimum defense, outs x 2 and x 4, SPR bands, pot budget), and all seven charts.
 - Hidden in live mode when helpers are off. Tests: `tests/test_routine.py` (8).
+
+## Version 47: Range Trainer
+- The Range Trainer lives at `range/index.html` and opens full-screen over the app from the Coach tab ("Open the Range Trainer").
+- It drills a three-question routine a person can run at a live table: what they usually have for their line (one flop bet: any pair or a draw; a second bet: top pair; a third bet or a raise: two pair or better), outs (x4 on the flop, x2 on the turn), and the price by bet size (1/3 pot 20%, 1/2 pot 25%, 2/3 or 3/4 pot 30%, pot 33%). After each hand it shows the exact equity against the weighted range. Over 400 sampled hands the routine matched the exact fold-or-continue decision 79% of the time, with another 5% within 5 points.
+- A preflop mode drills limpers, facing one raise, facing a 3-bet and facing a 4-bet against a one-page card.
+- The service worker now caches the game and the trainer under separate keys, so loading one never overwrites the other's offline copy.

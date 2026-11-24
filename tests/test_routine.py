@@ -76,3 +76,9 @@ def test_drill_asks_the_price_and_never_changes_the_grade():
 def test_coach_card_shows_every_chart():
     r = engine().run('''return {html:rtCardHTML().length,svgs:(rtRefHTML().match(/<svg/g)||[]).length};''')
     assert r['svgs'] == 8 and r['html'] > 2000, r
+
+def test_range_trainer_opens_over_the_app():
+    r = engine().run('''var html=coachTabHTML();rangeOpen();var o=document.getElementById("rangeOv"),f=o.querySelector("iframe");
+      var src=f.getAttribute("src");o.querySelector("#rangeX").onclick();var closed=o.hidden;rangeOpen();
+      return {btn:html.indexOf("rangeOpen()")>=0,src:src,closed:closed,again:!o.hidden,one:document.querySelectorAll("#rangeOv").length};''')
+    assert r == {'btn': True, 'src': 'range/index.html', 'closed': True, 'again': True, 'one': 1}, r

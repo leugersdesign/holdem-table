@@ -1068,6 +1068,7 @@ svg text{font-family:var(--body);font-size:12px}
 .rtsteps{font-size:.86rem;margin:6px 0;padding-left:20px}.rtsteps li{margin:4px 0}
 .rtnote{font-size:.84rem;border-left:3px solid var(--gold);padding-left:8px;margin:8px 0}
 .rtmath td{text-align:left!important;vertical-align:top;font-size:.84rem}.rtmath td:first-child{white-space:nowrap;padding-right:8px}
+#rangeOv{position:fixed;inset:0;z-index:9999;background:#14172a;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}#rangeOv[hidden]{display:none}#rangeOv iframe{flex:1;border:0;width:100%}#rangeOv #rangeX{margin:6px 10px;align-self:flex-end;min-height:40px}
 .rtd{margin:4px 0}.rtd summary{cursor:pointer;font-weight:700;font-size:.9rem;padding:4px 0}
 
 .rtfb{font-size:.8rem;color:var(--muted);text-align:center;margin:0 0 6px}
@@ -4896,7 +4897,8 @@ function coachLinesHTML(d){if(!d||!(d.model||d.gradedVs))return "";var L=[];
 function coachTable(title,map,N){var keys=Object.keys(map).sort(function(a,b){return map[b].n-map[a].n;});if(!keys.length)return "";
   return "<div class='lbl'>"+title+"</div><table class='st'><tr><th>Group</th><th>Decisions</th><th>EV lost per 100 decisions</th></tr>"+keys.map(function(k){var e=map[k],ci=ciOf(e.n,e.sum,e.sum2);
     return "<tr><td>"+k+"</td><td>"+e.n+"</td><td>"+(e.n<15?"<span class='muted'>too few to say</span>":(100*ci.mean).toFixed(1)+" bb <span class='muted'>("+(100*ci.lo).toFixed(1)+" to "+(100*ci.hi).toFixed(1)+")</span>")+"</td></tr>";}).join("")+"</table>";}
-function coachTabHTML(){return rulesCardHTML()+rtCardHTML()+coachTabBody()+devCardHTML();}
+function rangeCardHTML(){return "<div class='panel glass'><h2>Range Trainer</h2><p class='muted' style='font-size:.85rem'>Drill the three-question routine (what they usually have, your outs, the price) and preflop calls and re-raises, checked against the exact math.</p><button class='btn brass' id='rangeBtn' onclick='rangeOpen()'>Open the Range Trainer</button></div>";}
+function coachTabHTML(){return rangeCardHTML()+rulesCardHTML()+rtCardHTML()+coachTabBody()+devCardHTML();}
 function coachTabBody(){var C=coachOf(),h="<div class='panel glass'><h2>Coach</h2><p class='muted' style='font-size:.85rem'>These figures are the model's estimates from your practice games: how many big blinds your decisions gave up compared with the best option, with a 95% interval. They are simulated performance, not your real-world win rate, and a short sample proves nothing about profitability.</p>";
   if(C.N<30)return h+"<p><b>"+C.N+" graded decision"+(C.N===1?"":"s")+" so far.</b> No leak is named until there are at least 30 (and at least 6 examples of a pattern).</p></div>"+identCardHTML();
   var all=ciOf(C.N,C.sum,C.sum2),rows=leakReport(),flagged=rows.filter(function(r){return r.flag;});
@@ -5102,6 +5104,8 @@ function rtDrillWire(c){c.querySelectorAll("[data-rq]").forEach(function(b){b.on
   if(b.dataset.rq==="skip"){RT_Q.i=RT_Q.qs.length;RT_Q.fb="";renderControls();return;}
   var j=+b.dataset.rq,ok=j===q.ans,close=q.band&&Math.abs(j-q.ans)===1;dstat(q.k,ok);if(close&&!ok){S.drills[q.k].close=(S.drills[q.k].close||0)+1;save();}
   RT_Q.fb=(ok?"Right. ":close?"Close: it's "+q.opts[q.ans]+". ":"It's "+q.opts[q.ans]+". ")+q.why;RT_Q.i++;renderControls();};});}
+/* the Range Trainer lives at range/ and opens over the app in a full-screen frame */
+function rangeOpen(){var o=document.getElementById("rangeOv");if(!o){o=document.createElement("div");o.id="rangeOv";o.innerHTML="<button id='rangeX' class='btn'>Close</button><iframe src='range/index.html' title='Range Trainer'></iframe>";document.body.appendChild(o);o.querySelector("#rangeX").onclick=function(){o.hidden=true;};}o.hidden=false;}
 /* ===== heads-up river solver: CFR+ on the real board, exact card removal, no hand abstraction =====
    Players 0 (out of position) and 1 (in position). Money is counted from the start of the river: a player's value at a terminal is what they collect minus what
    they put in on this street, so the two players' values add up to the pot at the start of the river. Strategies are per hand (combo), not per bucket. */
